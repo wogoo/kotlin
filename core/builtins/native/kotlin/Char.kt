@@ -28,14 +28,18 @@ public class Char private constructor() : Comparable<Char> {
      * Returns zero if this value is equal to the specified other value, a negative number if it's less than other,
      * or a positive number if it's greater than other.
      */
+    @CompileTimeCalculation
     public override fun compareTo(other: Char): Int
 
     /** Adds the other Int value to this value resulting a Char. */
+    @CompileTimeCalculation
     public operator fun plus(other: Int): Char
 
     /** Subtracts the other Char value from this value resulting an Int. */
+    @CompileTimeCalculation
     public operator fun minus(other: Char): Int
     /** Subtracts the other Int value from this value resulting a Char. */
+    @CompileTimeCalculation
     public operator fun minus(other: Int): Char
 
     /** Increments this value. */
@@ -47,19 +51,31 @@ public class Char private constructor() : Comparable<Char> {
     public operator fun rangeTo(other: Char): CharRange
 
     /** Returns the value of this character as a `Byte`. */
+    @CompileTimeCalculation
     public fun toByte(): Byte
     /** Returns the value of this character as a `Char`. */
+    @CompileTimeCalculation
     public fun toChar(): Char
     /** Returns the value of this character as a `Short`. */
+    @CompileTimeCalculation
     public fun toShort(): Short
     /** Returns the value of this character as a `Int`. */
+    @CompileTimeCalculation
     public fun toInt(): Int
     /** Returns the value of this character as a `Long`. */
+    @CompileTimeCalculation
     public fun toLong(): Long
     /** Returns the value of this character as a `Float`. */
+    @CompileTimeCalculation
     public fun toFloat(): Float
     /** Returns the value of this character as a `Double`. */
+    @CompileTimeCalculation
     public fun toDouble(): Double
+
+    @CompileTimeCalculation
+    override fun toString(): String
+    @CompileTimeCalculation
+    override fun equals(other: Any?): Boolean
 
     companion object {
         /**
