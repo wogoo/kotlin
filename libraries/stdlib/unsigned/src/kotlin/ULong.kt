@@ -11,6 +11,7 @@ import kotlin.experimental.*
 
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
+@CompileTimeCalculation
 public inline class ULong @PublishedApi internal constructor(@PublishedApi internal val data: Long) : Comparable<ULong> {
 
     companion object {
@@ -287,6 +288,7 @@ public inline class ULong @PublishedApi internal constructor(@PublishedApi inter
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Byte.toULong(): ULong = ULong(this.toLong())
 /**
  * Converts this [Short] value to [ULong].
@@ -299,6 +301,7 @@ public inline fun Byte.toULong(): ULong = ULong(this.toLong())
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Short.toULong(): ULong = ULong(this.toLong())
 /**
  * Converts this [Int] value to [ULong].
@@ -311,6 +314,7 @@ public inline fun Short.toULong(): ULong = ULong(this.toLong())
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Int.toULong(): ULong = ULong(this.toLong())
 /**
  * Converts this [Long] value to [ULong].
@@ -322,6 +326,7 @@ public inline fun Int.toULong(): ULong = ULong(this.toLong())
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Long.toULong(): ULong = ULong(this)
 
 /**
@@ -333,6 +338,7 @@ public inline fun Long.toULong(): ULong = ULong(this)
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Float.toULong(): ULong = doubleToULong(this.toDouble())
 /**
  * Converts this [Double] value to [ULong].
@@ -343,4 +349,5 @@ public inline fun Float.toULong(): ULong = doubleToULong(this.toDouble())
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Double.toULong(): ULong = doubleToULong(this)

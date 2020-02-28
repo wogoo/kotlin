@@ -11,6 +11,7 @@ import kotlin.experimental.*
 
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
+@CompileTimeCalculation
 public inline class UByte @PublishedApi internal constructor(@PublishedApi internal val data: Byte) : Comparable<UByte> {
 
     companion object {
@@ -261,6 +262,7 @@ public inline class UByte @PublishedApi internal constructor(@PublishedApi inter
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Byte.toUByte(): UByte = UByte(this)
 /**
  * Converts this [Short] value to [UByte].
@@ -273,6 +275,7 @@ public inline fun Byte.toUByte(): UByte = UByte(this)
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Short.toUByte(): UByte = UByte(this.toByte())
 /**
  * Converts this [Int] value to [UByte].
@@ -285,6 +288,7 @@ public inline fun Short.toUByte(): UByte = UByte(this.toByte())
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Int.toUByte(): UByte = UByte(this.toByte())
 /**
  * Converts this [Long] value to [UByte].
@@ -297,4 +301,5 @@ public inline fun Int.toUByte(): UByte = UByte(this.toByte())
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Long.toUByte(): UByte = UByte(this.toByte())

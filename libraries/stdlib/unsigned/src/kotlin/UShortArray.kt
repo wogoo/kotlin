@@ -7,6 +7,7 @@
 
 package kotlin
 
+@CompileTimeCalculation
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 public inline class UShortArray
@@ -72,6 +73,7 @@ internal constructor(@PublishedApi internal val storage: ShortArray) : Collectio
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun UShortArray(size: Int, init: (Int) -> UShort): UShortArray {
     return UShortArray(ShortArray(size) { index -> init(index).toShort() })
 }
@@ -79,4 +81,5 @@ public inline fun UShortArray(size: Int, init: (Int) -> UShort): UShortArray {
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun ushortArrayOf(vararg elements: UShort): UShortArray = elements

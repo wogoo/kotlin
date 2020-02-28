@@ -44,6 +44,7 @@ class UnsignedTypeGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIns
 
         out.println("@SinceKotlin(\"1.3\")")
         out.println("@ExperimentalUnsignedTypes")
+        out.println("@CompileTimeCalculation")
         out.println("public inline class $className @PublishedApi internal constructor(@PublishedApi internal val data: $storageType) : Comparable<$className> {")
         out.println()
         out.println("""    companion object {
@@ -333,6 +334,7 @@ class UnsignedTypeGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIns
             out.println("@SinceKotlin(\"1.3\")")
             out.println("@ExperimentalUnsignedTypes")
             out.println("@kotlin.internal.InlineOnly")
+            out.println("@CompileTimeCalculation")
             out.print("public inline fun $otherSigned.to$className(): $className = ")
             out.println(when {
                 otherType == type -> "$className(this)"
@@ -360,6 +362,7 @@ class UnsignedTypeGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIns
             out.println("@SinceKotlin(\"1.3\")")
             out.println("@ExperimentalUnsignedTypes")
             out.println("@kotlin.internal.InlineOnly")
+            out.println("@CompileTimeCalculation")
             out.print("public inline fun $otherName.to$className(): $className = ")
             val conversion = if (otherType == PrimitiveType.DOUBLE) "" else ".toDouble()"
             out.println("doubleTo$className(this$conversion)")
@@ -400,6 +403,7 @@ class UnsignedIteratorsGenerator(out: PrintWriter) : BuiltInsSourceGenerator(out
             out.println("/** An iterator over a sequence of values of type `$s`. */")
             out.println("@SinceKotlin(\"1.3\")")
             out.println("@ExperimentalUnsignedTypes")
+            out.println("@CompileTimeCalculation")
             out.println("public abstract class ${s}Iterator : Iterator<$s> {")
             // TODO: Sort modifiers
             out.println("    override final fun next() = next$s()")
@@ -419,6 +423,7 @@ class UnsignedArrayGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIn
     val storageElementType = type.asSigned.capitalized
     val storageArrayType = storageElementType + "Array"
     override fun generateBody() {
+        out.println("@CompileTimeCalculation")
         out.println("@SinceKotlin(\"1.3\")")
         out.println("@ExperimentalUnsignedTypes")
         out.println("public inline class $arrayType")
@@ -489,6 +494,7 @@ class UnsignedArrayGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIn
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun $arrayType(size: Int, init: (Int) -> $elementType): $arrayType {
     return $arrayType($storageArrayType(size) { index -> init(index).to$storageElementType() })
 }
@@ -496,6 +502,7 @@ public inline fun $arrayType(size: Int, init: (Int) -> $elementType): $arrayType
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun $arrayTypeOf(vararg elements: $elementType): $arrayType = elements"""
         )
     }
@@ -523,6 +530,7 @@ import kotlin.internal.*
  */
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
+@CompileTimeCalculation
 public class ${elementType}Range(start: $elementType, endInclusive: $elementType) : ${elementType}Progression(start, endInclusive, 1), ClosedRange<${elementType}> {
     override val start: $elementType get() = first
     override val endInclusive: $elementType get() = last
@@ -551,6 +559,7 @@ public class ${elementType}Range(start: $elementType, endInclusive: $elementType
  */
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
+@CompileTimeCalculation
 public open class ${elementType}Progression
 internal constructor(
     start: $elementType,
@@ -611,6 +620,7 @@ internal constructor(
  */
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
+@CompileTimeCalculation
 private class ${elementType}ProgressionIterator(first: $elementType, last: $elementType, step: $stepType) : ${elementType}Iterator() {
     private val finalElement = last
     private var hasNext: Boolean = if (step > 0) first <= last else first >= last

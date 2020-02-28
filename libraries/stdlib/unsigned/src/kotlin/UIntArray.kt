@@ -7,6 +7,7 @@
 
 package kotlin
 
+@CompileTimeCalculation
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 public inline class UIntArray
@@ -72,6 +73,7 @@ internal constructor(@PublishedApi internal val storage: IntArray) : Collection<
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun UIntArray(size: Int, init: (Int) -> UInt): UIntArray {
     return UIntArray(IntArray(size) { index -> init(index).toInt() })
 }
@@ -79,4 +81,5 @@ public inline fun UIntArray(size: Int, init: (Int) -> UInt): UIntArray {
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun uintArrayOf(vararg elements: UInt): UIntArray = elements

@@ -11,6 +11,7 @@ import kotlin.experimental.*
 
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
+@CompileTimeCalculation
 public inline class UShort @PublishedApi internal constructor(@PublishedApi internal val data: Short) : Comparable<UShort> {
 
     companion object {
@@ -263,6 +264,7 @@ public inline class UShort @PublishedApi internal constructor(@PublishedApi inte
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Byte.toUShort(): UShort = UShort(this.toShort())
 /**
  * Converts this [Short] value to [UShort].
@@ -274,6 +276,7 @@ public inline fun Byte.toUShort(): UShort = UShort(this.toShort())
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Short.toUShort(): UShort = UShort(this)
 /**
  * Converts this [Int] value to [UShort].
@@ -286,6 +289,7 @@ public inline fun Short.toUShort(): UShort = UShort(this)
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Int.toUShort(): UShort = UShort(this.toShort())
 /**
  * Converts this [Long] value to [UShort].
@@ -298,4 +302,5 @@ public inline fun Int.toUShort(): UShort = UShort(this.toShort())
 @SinceKotlin("1.3")
 @ExperimentalUnsignedTypes
 @kotlin.internal.InlineOnly
+@CompileTimeCalculation
 public inline fun Long.toUShort(): UShort = UShort(this.toShort())
