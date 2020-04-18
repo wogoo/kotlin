@@ -4327,6 +4327,40 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
         }
 
         @Nested
+        @TestMetadata("compiler/testData/diagnostics/tests/constexpr")
+        @TestDataPath("$PROJECT_ROOT")
+        public class Constexpr extends AbstractDiagnosticTest {
+            @Test
+            public void testAllFilesPresentInConstexpr() throws Exception {
+                KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/constexpr"), Pattern.compile("^(.*)\\.kts?$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+            }
+
+            @Test
+            @TestMetadata("compileTimeMember.kt")
+            public void testCompileTimeMember() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/constexpr/compileTimeMember.kt");
+            }
+
+            @Test
+            @TestMetadata("constInitializer.kt")
+            public void testConstInitializer() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/constexpr/constInitializer.kt");
+            }
+
+            @Test
+            @TestMetadata("nonCompileTimeInDeclaration.kt")
+            public void testNonCompileTimeInDeclaration() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/constexpr/nonCompileTimeInDeclaration.kt");
+            }
+
+            @Test
+            @TestMetadata("nonConstInitializer.kt")
+            public void testNonConstInitializer() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/constexpr/nonConstInitializer.kt");
+            }
+        }
+
+        @Nested
         @TestMetadata("compiler/testData/diagnostics/tests/constructorConsistency")
         @TestDataPath("$PROJECT_ROOT")
         public class ConstructorConsistency {
