@@ -220,6 +220,7 @@ internal actual inline fun <T> Array<out T>.copyToArrayOfAny(isVarargs: Boolean)
 
 
 @PublishedApi
+@CompileTimeCalculation
 internal actual fun checkIndexOverflow(index: Int): Int {
     if (index < 0) {
         throwIndexOverflow()
@@ -228,6 +229,7 @@ internal actual fun checkIndexOverflow(index: Int): Int {
 }
 
 @PublishedApi
+@CompileTimeCalculation
 internal actual fun checkCountOverflow(count: Int): Int {
     if (count < 0) {
         throwCountOverflow()
