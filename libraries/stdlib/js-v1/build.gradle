@@ -80,6 +80,9 @@ task prepareComparableSource(type: Copy) {
     from("${builtinsDir}/native/kotlin") {
         include "Comparable.kt"
     }
+    from("${builtinsDir}/src/kotlin") {
+        include "CompileTimeAnnotations.kt"
+    }
     into builtinsSrcDir2
 }
 
