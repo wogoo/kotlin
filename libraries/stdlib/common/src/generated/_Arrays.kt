@@ -7905,6 +7905,7 @@ public val CharArray.indices: IntRange
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun <T> Array<out T>.isEmpty(): Boolean {
     return size == 0
@@ -7913,6 +7914,7 @@ public inline fun <T> Array<out T>.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun ByteArray.isEmpty(): Boolean {
     return size == 0
@@ -7921,6 +7923,7 @@ public inline fun ByteArray.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun ShortArray.isEmpty(): Boolean {
     return size == 0
@@ -7929,6 +7932,7 @@ public inline fun ShortArray.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun IntArray.isEmpty(): Boolean {
     return size == 0
@@ -7937,6 +7941,7 @@ public inline fun IntArray.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun LongArray.isEmpty(): Boolean {
     return size == 0
@@ -7945,6 +7950,7 @@ public inline fun LongArray.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun FloatArray.isEmpty(): Boolean {
     return size == 0
@@ -7953,6 +7959,7 @@ public inline fun FloatArray.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun DoubleArray.isEmpty(): Boolean {
     return size == 0
@@ -7961,6 +7968,7 @@ public inline fun DoubleArray.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun BooleanArray.isEmpty(): Boolean {
     return size == 0
@@ -7969,6 +7977,7 @@ public inline fun BooleanArray.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun CharArray.isEmpty(): Boolean {
     return size == 0
@@ -7977,6 +7986,7 @@ public inline fun CharArray.isEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun <T> Array<out T>.isNotEmpty(): Boolean {
     return !isEmpty()
@@ -7985,6 +7995,7 @@ public inline fun <T> Array<out T>.isNotEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun ByteArray.isNotEmpty(): Boolean {
     return !isEmpty()
@@ -7993,6 +8004,7 @@ public inline fun ByteArray.isNotEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun ShortArray.isNotEmpty(): Boolean {
     return !isEmpty()
@@ -8001,6 +8013,7 @@ public inline fun ShortArray.isNotEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun IntArray.isNotEmpty(): Boolean {
     return !isEmpty()
@@ -8009,6 +8022,7 @@ public inline fun IntArray.isNotEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun LongArray.isNotEmpty(): Boolean {
     return !isEmpty()
@@ -8017,6 +8031,7 @@ public inline fun LongArray.isNotEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun FloatArray.isNotEmpty(): Boolean {
     return !isEmpty()
@@ -8025,6 +8040,7 @@ public inline fun FloatArray.isNotEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun DoubleArray.isNotEmpty(): Boolean {
     return !isEmpty()
@@ -8033,6 +8049,7 @@ public inline fun DoubleArray.isNotEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun BooleanArray.isNotEmpty(): Boolean {
     return !isEmpty()
@@ -8041,6 +8058,7 @@ public inline fun BooleanArray.isNotEmpty(): Boolean {
 /**
  * Returns `true` if the array is not empty.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun CharArray.isNotEmpty(): Boolean {
     return !isEmpty()
