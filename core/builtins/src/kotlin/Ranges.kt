@@ -30,6 +30,7 @@ public class CharRange(start: Char, endInclusive: Char) : CharProgression(start,
 
     companion object {
         /** An empty range of values of type Char. */
+        @CompileTimeCalculation
         public val EMPTY: CharRange = CharRange(1.toChar(), 0.toChar())
     }
 }
@@ -57,6 +58,7 @@ public class IntRange(start: Int, endInclusive: Int) : IntProgression(start, end
 
     companion object {
         /** An empty range of values of type Int. */
+        @CompileTimeCalculation
         public val EMPTY: IntRange = IntRange(1, 0)
     }
 }
@@ -84,6 +86,7 @@ public class LongRange(start: Long, endInclusive: Long) : LongProgression(start,
 
     companion object {
         /** An empty range of values of type Long. */
+        @CompileTimeCalculation
         public val EMPTY: LongRange = LongRange(1, 0)
     }
 }
