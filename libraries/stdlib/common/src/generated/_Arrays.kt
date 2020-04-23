@@ -3438,6 +3438,7 @@ public inline fun CharArray.singleOrNull(predicate: (Char) -> Boolean): Char? {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun <T> Array<out T>.drop(n: Int): List<T> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3450,6 +3451,7 @@ public fun <T> Array<out T>.drop(n: Int): List<T> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun ByteArray.drop(n: Int): List<Byte> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3462,6 +3464,7 @@ public fun ByteArray.drop(n: Int): List<Byte> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun ShortArray.drop(n: Int): List<Short> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3474,6 +3477,7 @@ public fun ShortArray.drop(n: Int): List<Short> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun IntArray.drop(n: Int): List<Int> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3486,6 +3490,7 @@ public fun IntArray.drop(n: Int): List<Int> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun LongArray.drop(n: Int): List<Long> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3498,6 +3503,7 @@ public fun LongArray.drop(n: Int): List<Long> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun FloatArray.drop(n: Int): List<Float> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3510,6 +3516,7 @@ public fun FloatArray.drop(n: Int): List<Float> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun DoubleArray.drop(n: Int): List<Double> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3522,6 +3529,7 @@ public fun DoubleArray.drop(n: Int): List<Double> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun BooleanArray.drop(n: Int): List<Boolean> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3534,6 +3542,7 @@ public fun BooleanArray.drop(n: Int): List<Boolean> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun CharArray.drop(n: Int): List<Char> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return takeLast((size - n).coerceAtLeast(0))
@@ -3546,6 +3555,7 @@ public fun CharArray.drop(n: Int): List<Char> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun <T> Array<out T>.dropLast(n: Int): List<T> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3558,6 +3568,7 @@ public fun <T> Array<out T>.dropLast(n: Int): List<T> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun ByteArray.dropLast(n: Int): List<Byte> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3570,6 +3581,7 @@ public fun ByteArray.dropLast(n: Int): List<Byte> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun ShortArray.dropLast(n: Int): List<Short> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3582,6 +3594,7 @@ public fun ShortArray.dropLast(n: Int): List<Short> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun IntArray.dropLast(n: Int): List<Int> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3594,6 +3607,7 @@ public fun IntArray.dropLast(n: Int): List<Int> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun LongArray.dropLast(n: Int): List<Long> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3606,6 +3620,7 @@ public fun LongArray.dropLast(n: Int): List<Long> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun FloatArray.dropLast(n: Int): List<Float> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3618,6 +3633,7 @@ public fun FloatArray.dropLast(n: Int): List<Float> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun DoubleArray.dropLast(n: Int): List<Double> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3630,6 +3646,7 @@ public fun DoubleArray.dropLast(n: Int): List<Double> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun BooleanArray.dropLast(n: Int): List<Boolean> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3642,6 +3659,7 @@ public fun BooleanArray.dropLast(n: Int): List<Boolean> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun CharArray.dropLast(n: Int): List<Char> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return take((size - n).coerceAtLeast(0))
@@ -3652,6 +3670,7 @@ public fun CharArray.dropLast(n: Int): List<Char> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun <T> Array<out T>.dropLastWhile(predicate: (T) -> Boolean): List<T> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3666,6 +3685,7 @@ public inline fun <T> Array<out T>.dropLastWhile(predicate: (T) -> Boolean): Lis
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun ByteArray.dropLastWhile(predicate: (Byte) -> Boolean): List<Byte> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3680,6 +3700,7 @@ public inline fun ByteArray.dropLastWhile(predicate: (Byte) -> Boolean): List<By
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun ShortArray.dropLastWhile(predicate: (Short) -> Boolean): List<Short> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3694,6 +3715,7 @@ public inline fun ShortArray.dropLastWhile(predicate: (Short) -> Boolean): List<
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun IntArray.dropLastWhile(predicate: (Int) -> Boolean): List<Int> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3708,6 +3730,7 @@ public inline fun IntArray.dropLastWhile(predicate: (Int) -> Boolean): List<Int>
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun LongArray.dropLastWhile(predicate: (Long) -> Boolean): List<Long> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3722,6 +3745,7 @@ public inline fun LongArray.dropLastWhile(predicate: (Long) -> Boolean): List<Lo
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun FloatArray.dropLastWhile(predicate: (Float) -> Boolean): List<Float> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3736,6 +3760,7 @@ public inline fun FloatArray.dropLastWhile(predicate: (Float) -> Boolean): List<
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun DoubleArray.dropLastWhile(predicate: (Double) -> Boolean): List<Double> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3750,6 +3775,7 @@ public inline fun DoubleArray.dropLastWhile(predicate: (Double) -> Boolean): Lis
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun BooleanArray.dropLastWhile(predicate: (Boolean) -> Boolean): List<Boolean> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3764,6 +3790,7 @@ public inline fun BooleanArray.dropLastWhile(predicate: (Boolean) -> Boolean): L
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun CharArray.dropLastWhile(predicate: (Char) -> Boolean): List<Char> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -3778,6 +3805,7 @@ public inline fun CharArray.dropLastWhile(predicate: (Char) -> Boolean): List<Ch
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun <T> Array<out T>.dropWhile(predicate: (T) -> Boolean): List<T> {
     var yielding = false
     val list = ArrayList<T>()
@@ -3796,6 +3824,7 @@ public inline fun <T> Array<out T>.dropWhile(predicate: (T) -> Boolean): List<T>
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun ByteArray.dropWhile(predicate: (Byte) -> Boolean): List<Byte> {
     var yielding = false
     val list = ArrayList<Byte>()
@@ -3814,6 +3843,7 @@ public inline fun ByteArray.dropWhile(predicate: (Byte) -> Boolean): List<Byte> 
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun ShortArray.dropWhile(predicate: (Short) -> Boolean): List<Short> {
     var yielding = false
     val list = ArrayList<Short>()
@@ -3832,6 +3862,7 @@ public inline fun ShortArray.dropWhile(predicate: (Short) -> Boolean): List<Shor
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun IntArray.dropWhile(predicate: (Int) -> Boolean): List<Int> {
     var yielding = false
     val list = ArrayList<Int>()
@@ -3850,6 +3881,7 @@ public inline fun IntArray.dropWhile(predicate: (Int) -> Boolean): List<Int> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun LongArray.dropWhile(predicate: (Long) -> Boolean): List<Long> {
     var yielding = false
     val list = ArrayList<Long>()
@@ -3868,6 +3900,7 @@ public inline fun LongArray.dropWhile(predicate: (Long) -> Boolean): List<Long> 
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun FloatArray.dropWhile(predicate: (Float) -> Boolean): List<Float> {
     var yielding = false
     val list = ArrayList<Float>()
@@ -3886,6 +3919,7 @@ public inline fun FloatArray.dropWhile(predicate: (Float) -> Boolean): List<Floa
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun DoubleArray.dropWhile(predicate: (Double) -> Boolean): List<Double> {
     var yielding = false
     val list = ArrayList<Double>()
@@ -3904,6 +3938,7 @@ public inline fun DoubleArray.dropWhile(predicate: (Double) -> Boolean): List<Do
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun BooleanArray.dropWhile(predicate: (Boolean) -> Boolean): List<Boolean> {
     var yielding = false
     val list = ArrayList<Boolean>()
@@ -3922,6 +3957,7 @@ public inline fun BooleanArray.dropWhile(predicate: (Boolean) -> Boolean): List<
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public inline fun CharArray.dropWhile(predicate: (Char) -> Boolean): List<Char> {
     var yielding = false
     val list = ArrayList<Char>()
@@ -3940,6 +3976,7 @@ public inline fun CharArray.dropWhile(predicate: (Char) -> Boolean): List<Char> 
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun <T> Array<out T>.filter(predicate: (T) -> Boolean): List<T> {
     return filterTo(ArrayList<T>(), predicate)
 }
@@ -3949,6 +3986,7 @@ public inline fun <T> Array<out T>.filter(predicate: (T) -> Boolean): List<T> {
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun ByteArray.filter(predicate: (Byte) -> Boolean): List<Byte> {
     return filterTo(ArrayList<Byte>(), predicate)
 }
@@ -3958,6 +3996,7 @@ public inline fun ByteArray.filter(predicate: (Byte) -> Boolean): List<Byte> {
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun ShortArray.filter(predicate: (Short) -> Boolean): List<Short> {
     return filterTo(ArrayList<Short>(), predicate)
 }
@@ -3967,6 +4006,7 @@ public inline fun ShortArray.filter(predicate: (Short) -> Boolean): List<Short> 
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun IntArray.filter(predicate: (Int) -> Boolean): List<Int> {
     return filterTo(ArrayList<Int>(), predicate)
 }
@@ -3976,6 +4016,7 @@ public inline fun IntArray.filter(predicate: (Int) -> Boolean): List<Int> {
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun LongArray.filter(predicate: (Long) -> Boolean): List<Long> {
     return filterTo(ArrayList<Long>(), predicate)
 }
@@ -3985,6 +4026,7 @@ public inline fun LongArray.filter(predicate: (Long) -> Boolean): List<Long> {
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun FloatArray.filter(predicate: (Float) -> Boolean): List<Float> {
     return filterTo(ArrayList<Float>(), predicate)
 }
@@ -3994,6 +4036,7 @@ public inline fun FloatArray.filter(predicate: (Float) -> Boolean): List<Float> 
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun DoubleArray.filter(predicate: (Double) -> Boolean): List<Double> {
     return filterTo(ArrayList<Double>(), predicate)
 }
@@ -4003,6 +4046,7 @@ public inline fun DoubleArray.filter(predicate: (Double) -> Boolean): List<Doubl
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun BooleanArray.filter(predicate: (Boolean) -> Boolean): List<Boolean> {
     return filterTo(ArrayList<Boolean>(), predicate)
 }
@@ -4012,6 +4056,7 @@ public inline fun BooleanArray.filter(predicate: (Boolean) -> Boolean): List<Boo
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun CharArray.filter(predicate: (Char) -> Boolean): List<Char> {
     return filterTo(ArrayList<Char>(), predicate)
 }
@@ -4023,6 +4068,7 @@ public inline fun CharArray.filter(predicate: (Char) -> Boolean): List<Char> {
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun <T> Array<out T>.filterIndexed(predicate: (index: Int, T) -> Boolean): List<T> {
     return filterIndexedTo(ArrayList<T>(), predicate)
 }
@@ -4034,6 +4080,7 @@ public inline fun <T> Array<out T>.filterIndexed(predicate: (index: Int, T) -> B
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun ByteArray.filterIndexed(predicate: (index: Int, Byte) -> Boolean): List<Byte> {
     return filterIndexedTo(ArrayList<Byte>(), predicate)
 }
@@ -4045,6 +4092,7 @@ public inline fun ByteArray.filterIndexed(predicate: (index: Int, Byte) -> Boole
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun ShortArray.filterIndexed(predicate: (index: Int, Short) -> Boolean): List<Short> {
     return filterIndexedTo(ArrayList<Short>(), predicate)
 }
@@ -4056,6 +4104,7 @@ public inline fun ShortArray.filterIndexed(predicate: (index: Int, Short) -> Boo
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun IntArray.filterIndexed(predicate: (index: Int, Int) -> Boolean): List<Int> {
     return filterIndexedTo(ArrayList<Int>(), predicate)
 }
@@ -4067,6 +4116,7 @@ public inline fun IntArray.filterIndexed(predicate: (index: Int, Int) -> Boolean
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun LongArray.filterIndexed(predicate: (index: Int, Long) -> Boolean): List<Long> {
     return filterIndexedTo(ArrayList<Long>(), predicate)
 }
@@ -4078,6 +4128,7 @@ public inline fun LongArray.filterIndexed(predicate: (index: Int, Long) -> Boole
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun FloatArray.filterIndexed(predicate: (index: Int, Float) -> Boolean): List<Float> {
     return filterIndexedTo(ArrayList<Float>(), predicate)
 }
@@ -4089,6 +4140,7 @@ public inline fun FloatArray.filterIndexed(predicate: (index: Int, Float) -> Boo
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun DoubleArray.filterIndexed(predicate: (index: Int, Double) -> Boolean): List<Double> {
     return filterIndexedTo(ArrayList<Double>(), predicate)
 }
@@ -4100,6 +4152,7 @@ public inline fun DoubleArray.filterIndexed(predicate: (index: Int, Double) -> B
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun BooleanArray.filterIndexed(predicate: (index: Int, Boolean) -> Boolean): List<Boolean> {
     return filterIndexedTo(ArrayList<Boolean>(), predicate)
 }
@@ -4111,6 +4164,7 @@ public inline fun BooleanArray.filterIndexed(predicate: (index: Int, Boolean) ->
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public inline fun CharArray.filterIndexed(predicate: (index: Int, Char) -> Boolean): List<Char> {
     return filterIndexedTo(ArrayList<Char>(), predicate)
 }
@@ -4122,6 +4176,7 @@ public inline fun CharArray.filterIndexed(predicate: (index: Int, Char) -> Boole
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <T, C : MutableCollection<in T>> Array<out T>.filterIndexedTo(destination: C, predicate: (index: Int, T) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4136,6 +4191,7 @@ public inline fun <T, C : MutableCollection<in T>> Array<out T>.filterIndexedTo(
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Byte>> ByteArray.filterIndexedTo(destination: C, predicate: (index: Int, Byte) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4150,6 +4206,7 @@ public inline fun <C : MutableCollection<in Byte>> ByteArray.filterIndexedTo(des
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Short>> ShortArray.filterIndexedTo(destination: C, predicate: (index: Int, Short) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4164,6 +4221,7 @@ public inline fun <C : MutableCollection<in Short>> ShortArray.filterIndexedTo(d
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Int>> IntArray.filterIndexedTo(destination: C, predicate: (index: Int, Int) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4178,6 +4236,7 @@ public inline fun <C : MutableCollection<in Int>> IntArray.filterIndexedTo(desti
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Long>> LongArray.filterIndexedTo(destination: C, predicate: (index: Int, Long) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4192,6 +4251,7 @@ public inline fun <C : MutableCollection<in Long>> LongArray.filterIndexedTo(des
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Float>> FloatArray.filterIndexedTo(destination: C, predicate: (index: Int, Float) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4206,6 +4266,7 @@ public inline fun <C : MutableCollection<in Float>> FloatArray.filterIndexedTo(d
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Double>> DoubleArray.filterIndexedTo(destination: C, predicate: (index: Int, Double) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4220,6 +4281,7 @@ public inline fun <C : MutableCollection<in Double>> DoubleArray.filterIndexedTo
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Boolean>> BooleanArray.filterIndexedTo(destination: C, predicate: (index: Int, Boolean) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4234,6 +4296,7 @@ public inline fun <C : MutableCollection<in Boolean>> BooleanArray.filterIndexed
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Char>> CharArray.filterIndexedTo(destination: C, predicate: (index: Int, Char) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -4255,6 +4318,7 @@ public inline fun <reified R> Array<*>.filterIsInstance(): List<@kotlin.internal
  * 
  * @sample samples.collections.Collections.Filtering.filterIsInstanceTo
  */
+@CompileTimeCalculation
 public inline fun <reified R, C : MutableCollection<in R>> Array<*>.filterIsInstanceTo(destination: C): C {
     for (element in this) if (element is R) destination.add(element)
     return destination
@@ -4265,6 +4329,7 @@ public inline fun <reified R, C : MutableCollection<in R>> Array<*>.filterIsInst
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun <T> Array<out T>.filterNot(predicate: (T) -> Boolean): List<T> {
     return filterNotTo(ArrayList<T>(), predicate)
 }
@@ -4274,6 +4339,7 @@ public inline fun <T> Array<out T>.filterNot(predicate: (T) -> Boolean): List<T>
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun ByteArray.filterNot(predicate: (Byte) -> Boolean): List<Byte> {
     return filterNotTo(ArrayList<Byte>(), predicate)
 }
@@ -4283,6 +4349,7 @@ public inline fun ByteArray.filterNot(predicate: (Byte) -> Boolean): List<Byte> 
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun ShortArray.filterNot(predicate: (Short) -> Boolean): List<Short> {
     return filterNotTo(ArrayList<Short>(), predicate)
 }
@@ -4292,6 +4359,7 @@ public inline fun ShortArray.filterNot(predicate: (Short) -> Boolean): List<Shor
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun IntArray.filterNot(predicate: (Int) -> Boolean): List<Int> {
     return filterNotTo(ArrayList<Int>(), predicate)
 }
@@ -4301,6 +4369,7 @@ public inline fun IntArray.filterNot(predicate: (Int) -> Boolean): List<Int> {
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun LongArray.filterNot(predicate: (Long) -> Boolean): List<Long> {
     return filterNotTo(ArrayList<Long>(), predicate)
 }
@@ -4310,6 +4379,7 @@ public inline fun LongArray.filterNot(predicate: (Long) -> Boolean): List<Long> 
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun FloatArray.filterNot(predicate: (Float) -> Boolean): List<Float> {
     return filterNotTo(ArrayList<Float>(), predicate)
 }
@@ -4319,6 +4389,7 @@ public inline fun FloatArray.filterNot(predicate: (Float) -> Boolean): List<Floa
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun DoubleArray.filterNot(predicate: (Double) -> Boolean): List<Double> {
     return filterNotTo(ArrayList<Double>(), predicate)
 }
@@ -4328,6 +4399,7 @@ public inline fun DoubleArray.filterNot(predicate: (Double) -> Boolean): List<Do
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun BooleanArray.filterNot(predicate: (Boolean) -> Boolean): List<Boolean> {
     return filterNotTo(ArrayList<Boolean>(), predicate)
 }
@@ -4337,6 +4409,7 @@ public inline fun BooleanArray.filterNot(predicate: (Boolean) -> Boolean): List<
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public inline fun CharArray.filterNot(predicate: (Char) -> Boolean): List<Char> {
     return filterNotTo(ArrayList<Char>(), predicate)
 }
@@ -4346,6 +4419,7 @@ public inline fun CharArray.filterNot(predicate: (Char) -> Boolean): List<Char> 
  * 
  * @sample samples.collections.Collections.Filtering.filterNotNull
  */
+@CompileTimeCalculation
 public fun <T : Any> Array<out T?>.filterNotNull(): List<T> {
     return filterNotNullTo(ArrayList<T>())
 }
@@ -4355,6 +4429,7 @@ public fun <T : Any> Array<out T?>.filterNotNull(): List<T> {
  * 
  * @sample samples.collections.Collections.Filtering.filterNotNullTo
  */
+@CompileTimeCalculation
 public fun <C : MutableCollection<in T>, T : Any> Array<out T?>.filterNotNullTo(destination: C): C {
     for (element in this) if (element != null) destination.add(element)
     return destination
@@ -4365,6 +4440,7 @@ public fun <C : MutableCollection<in T>, T : Any> Array<out T?>.filterNotNullTo(
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <T, C : MutableCollection<in T>> Array<out T>.filterNotTo(destination: C, predicate: (T) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4375,6 +4451,7 @@ public inline fun <T, C : MutableCollection<in T>> Array<out T>.filterNotTo(dest
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Byte>> ByteArray.filterNotTo(destination: C, predicate: (Byte) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4385,6 +4462,7 @@ public inline fun <C : MutableCollection<in Byte>> ByteArray.filterNotTo(destina
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Short>> ShortArray.filterNotTo(destination: C, predicate: (Short) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4395,6 +4473,7 @@ public inline fun <C : MutableCollection<in Short>> ShortArray.filterNotTo(desti
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Int>> IntArray.filterNotTo(destination: C, predicate: (Int) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4405,6 +4484,7 @@ public inline fun <C : MutableCollection<in Int>> IntArray.filterNotTo(destinati
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Long>> LongArray.filterNotTo(destination: C, predicate: (Long) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4415,6 +4495,7 @@ public inline fun <C : MutableCollection<in Long>> LongArray.filterNotTo(destina
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Float>> FloatArray.filterNotTo(destination: C, predicate: (Float) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4425,6 +4506,7 @@ public inline fun <C : MutableCollection<in Float>> FloatArray.filterNotTo(desti
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Double>> DoubleArray.filterNotTo(destination: C, predicate: (Double) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4435,6 +4517,7 @@ public inline fun <C : MutableCollection<in Double>> DoubleArray.filterNotTo(des
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Boolean>> BooleanArray.filterNotTo(destination: C, predicate: (Boolean) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4445,6 +4528,7 @@ public inline fun <C : MutableCollection<in Boolean>> BooleanArray.filterNotTo(d
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Char>> CharArray.filterNotTo(destination: C, predicate: (Char) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -4455,6 +4539,7 @@ public inline fun <C : MutableCollection<in Char>> CharArray.filterNotTo(destina
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <T, C : MutableCollection<in T>> Array<out T>.filterTo(destination: C, predicate: (T) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4465,6 +4550,7 @@ public inline fun <T, C : MutableCollection<in T>> Array<out T>.filterTo(destina
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Byte>> ByteArray.filterTo(destination: C, predicate: (Byte) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4475,6 +4561,7 @@ public inline fun <C : MutableCollection<in Byte>> ByteArray.filterTo(destinatio
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Short>> ShortArray.filterTo(destination: C, predicate: (Short) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4485,6 +4572,7 @@ public inline fun <C : MutableCollection<in Short>> ShortArray.filterTo(destinat
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Int>> IntArray.filterTo(destination: C, predicate: (Int) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4495,6 +4583,7 @@ public inline fun <C : MutableCollection<in Int>> IntArray.filterTo(destination:
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Long>> LongArray.filterTo(destination: C, predicate: (Long) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4505,6 +4594,7 @@ public inline fun <C : MutableCollection<in Long>> LongArray.filterTo(destinatio
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Float>> FloatArray.filterTo(destination: C, predicate: (Float) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4515,6 +4605,7 @@ public inline fun <C : MutableCollection<in Float>> FloatArray.filterTo(destinat
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Double>> DoubleArray.filterTo(destination: C, predicate: (Double) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4525,6 +4616,7 @@ public inline fun <C : MutableCollection<in Double>> DoubleArray.filterTo(destin
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Boolean>> BooleanArray.filterTo(destination: C, predicate: (Boolean) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4535,6 +4627,7 @@ public inline fun <C : MutableCollection<in Boolean>> BooleanArray.filterTo(dest
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <C : MutableCollection<in Char>> CharArray.filterTo(destination: C, predicate: (Char) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -4916,6 +5009,7 @@ public fun CharArray.sliceArray(indices: IntRange): CharArray {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun <T> Array<out T>.take(n: Int): List<T> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -4938,6 +5032,7 @@ public fun <T> Array<out T>.take(n: Int): List<T> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun ByteArray.take(n: Int): List<Byte> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -4960,6 +5055,7 @@ public fun ByteArray.take(n: Int): List<Byte> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun ShortArray.take(n: Int): List<Short> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -4982,6 +5078,7 @@ public fun ShortArray.take(n: Int): List<Short> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun IntArray.take(n: Int): List<Int> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5004,6 +5101,7 @@ public fun IntArray.take(n: Int): List<Int> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun LongArray.take(n: Int): List<Long> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5026,6 +5124,7 @@ public fun LongArray.take(n: Int): List<Long> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun FloatArray.take(n: Int): List<Float> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5048,6 +5147,7 @@ public fun FloatArray.take(n: Int): List<Float> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun DoubleArray.take(n: Int): List<Double> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5070,6 +5170,7 @@ public fun DoubleArray.take(n: Int): List<Double> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun BooleanArray.take(n: Int): List<Boolean> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5092,6 +5193,7 @@ public fun BooleanArray.take(n: Int): List<Boolean> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun CharArray.take(n: Int): List<Char> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5114,6 +5216,7 @@ public fun CharArray.take(n: Int): List<Char> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun <T> Array<out T>.takeLast(n: Int): List<T> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5133,6 +5236,7 @@ public fun <T> Array<out T>.takeLast(n: Int): List<T> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun ByteArray.takeLast(n: Int): List<Byte> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5152,6 +5256,7 @@ public fun ByteArray.takeLast(n: Int): List<Byte> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun ShortArray.takeLast(n: Int): List<Short> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5171,6 +5276,7 @@ public fun ShortArray.takeLast(n: Int): List<Short> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun IntArray.takeLast(n: Int): List<Int> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5190,6 +5296,7 @@ public fun IntArray.takeLast(n: Int): List<Int> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun LongArray.takeLast(n: Int): List<Long> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5209,6 +5316,7 @@ public fun LongArray.takeLast(n: Int): List<Long> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun FloatArray.takeLast(n: Int): List<Float> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5228,6 +5336,7 @@ public fun FloatArray.takeLast(n: Int): List<Float> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun DoubleArray.takeLast(n: Int): List<Double> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5247,6 +5356,7 @@ public fun DoubleArray.takeLast(n: Int): List<Double> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun BooleanArray.takeLast(n: Int): List<Boolean> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5266,6 +5376,7 @@ public fun BooleanArray.takeLast(n: Int): List<Boolean> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun CharArray.takeLast(n: Int): List<Char> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     if (n == 0) return emptyList()
@@ -5283,6 +5394,7 @@ public fun CharArray.takeLast(n: Int): List<Char> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun <T> Array<out T>.takeLastWhile(predicate: (T) -> Boolean): List<T> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5297,6 +5409,7 @@ public inline fun <T> Array<out T>.takeLastWhile(predicate: (T) -> Boolean): Lis
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun ByteArray.takeLastWhile(predicate: (Byte) -> Boolean): List<Byte> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5311,6 +5424,7 @@ public inline fun ByteArray.takeLastWhile(predicate: (Byte) -> Boolean): List<By
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun ShortArray.takeLastWhile(predicate: (Short) -> Boolean): List<Short> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5325,6 +5439,7 @@ public inline fun ShortArray.takeLastWhile(predicate: (Short) -> Boolean): List<
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun IntArray.takeLastWhile(predicate: (Int) -> Boolean): List<Int> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5339,6 +5454,7 @@ public inline fun IntArray.takeLastWhile(predicate: (Int) -> Boolean): List<Int>
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun LongArray.takeLastWhile(predicate: (Long) -> Boolean): List<Long> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5353,6 +5469,7 @@ public inline fun LongArray.takeLastWhile(predicate: (Long) -> Boolean): List<Lo
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun FloatArray.takeLastWhile(predicate: (Float) -> Boolean): List<Float> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5367,6 +5484,7 @@ public inline fun FloatArray.takeLastWhile(predicate: (Float) -> Boolean): List<
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun DoubleArray.takeLastWhile(predicate: (Double) -> Boolean): List<Double> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5381,6 +5499,7 @@ public inline fun DoubleArray.takeLastWhile(predicate: (Double) -> Boolean): Lis
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun BooleanArray.takeLastWhile(predicate: (Boolean) -> Boolean): List<Boolean> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5395,6 +5514,7 @@ public inline fun BooleanArray.takeLastWhile(predicate: (Boolean) -> Boolean): L
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun CharArray.takeLastWhile(predicate: (Char) -> Boolean): List<Char> {
     for (index in lastIndex downTo 0) {
         if (!predicate(this[index])) {
@@ -5409,6 +5529,7 @@ public inline fun CharArray.takeLastWhile(predicate: (Char) -> Boolean): List<Ch
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun <T> Array<out T>.takeWhile(predicate: (T) -> Boolean): List<T> {
     val list = ArrayList<T>()
     for (item in this) {
@@ -5424,6 +5545,7 @@ public inline fun <T> Array<out T>.takeWhile(predicate: (T) -> Boolean): List<T>
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun ByteArray.takeWhile(predicate: (Byte) -> Boolean): List<Byte> {
     val list = ArrayList<Byte>()
     for (item in this) {
@@ -5439,6 +5561,7 @@ public inline fun ByteArray.takeWhile(predicate: (Byte) -> Boolean): List<Byte> 
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun ShortArray.takeWhile(predicate: (Short) -> Boolean): List<Short> {
     val list = ArrayList<Short>()
     for (item in this) {
@@ -5454,6 +5577,7 @@ public inline fun ShortArray.takeWhile(predicate: (Short) -> Boolean): List<Shor
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun IntArray.takeWhile(predicate: (Int) -> Boolean): List<Int> {
     val list = ArrayList<Int>()
     for (item in this) {
@@ -5469,6 +5593,7 @@ public inline fun IntArray.takeWhile(predicate: (Int) -> Boolean): List<Int> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun LongArray.takeWhile(predicate: (Long) -> Boolean): List<Long> {
     val list = ArrayList<Long>()
     for (item in this) {
@@ -5484,6 +5609,7 @@ public inline fun LongArray.takeWhile(predicate: (Long) -> Boolean): List<Long> 
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun FloatArray.takeWhile(predicate: (Float) -> Boolean): List<Float> {
     val list = ArrayList<Float>()
     for (item in this) {
@@ -5499,6 +5625,7 @@ public inline fun FloatArray.takeWhile(predicate: (Float) -> Boolean): List<Floa
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun DoubleArray.takeWhile(predicate: (Double) -> Boolean): List<Double> {
     val list = ArrayList<Double>()
     for (item in this) {
@@ -5514,6 +5641,7 @@ public inline fun DoubleArray.takeWhile(predicate: (Double) -> Boolean): List<Do
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun BooleanArray.takeWhile(predicate: (Boolean) -> Boolean): List<Boolean> {
     val list = ArrayList<Boolean>()
     for (item in this) {
@@ -5529,6 +5657,7 @@ public inline fun BooleanArray.takeWhile(predicate: (Boolean) -> Boolean): List<
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public inline fun CharArray.takeWhile(predicate: (Char) -> Boolean): List<Char> {
     val list = ArrayList<Char>()
     for (item in this) {

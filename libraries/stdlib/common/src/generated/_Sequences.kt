@@ -378,6 +378,7 @@ public inline fun <T> Sequence<T>.singleOrNull(predicate: (T) -> Boolean): T? {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.drop(n: Int): Sequence<T> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return when {
@@ -394,6 +395,7 @@ public fun <T> Sequence<T>.drop(n: Int): Sequence<T> {
  * 
  * @sample samples.collections.Collections.Transformations.drop
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.dropWhile(predicate: (T) -> Boolean): Sequence<T> {
     return DropWhileSequence(this, predicate)
 }
@@ -405,6 +407,7 @@ public fun <T> Sequence<T>.dropWhile(predicate: (T) -> Boolean): Sequence<T> {
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.filter(predicate: (T) -> Boolean): Sequence<T> {
     return FilteringSequence(this, true, predicate)
 }
@@ -418,6 +421,7 @@ public fun <T> Sequence<T>.filter(predicate: (T) -> Boolean): Sequence<T> {
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexed
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.filterIndexed(predicate: (index: Int, T) -> Boolean): Sequence<T> {
     // TODO: Rewrite with generalized MapFilterIndexingSequence
     return TransformingSequence(FilteringSequence(IndexingSequence(this), true, { predicate(it.index, it.value) }), { it.value })
@@ -432,6 +436,7 @@ public fun <T> Sequence<T>.filterIndexed(predicate: (index: Int, T) -> Boolean):
  * 
  * @sample samples.collections.Collections.Filtering.filterIndexedTo
  */
+@CompileTimeCalculation
 public inline fun <T, C : MutableCollection<in T>> Sequence<T>.filterIndexedTo(destination: C, predicate: (index: Int, T) -> Boolean): C {
     forEachIndexed { index, element ->
         if (predicate(index, element)) destination.add(element)
@@ -458,6 +463,7 @@ public inline fun <reified R> Sequence<*>.filterIsInstance(): Sequence<@kotlin.i
  * 
  * @sample samples.collections.Collections.Filtering.filterIsInstanceTo
  */
+@CompileTimeCalculation
 public inline fun <reified R, C : MutableCollection<in R>> Sequence<*>.filterIsInstanceTo(destination: C): C {
     for (element in this) if (element is R) destination.add(element)
     return destination
@@ -470,6 +476,7 @@ public inline fun <reified R, C : MutableCollection<in R>> Sequence<*>.filterIsI
  * 
  * @sample samples.collections.Collections.Filtering.filter
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.filterNot(predicate: (T) -> Boolean): Sequence<T> {
     return FilteringSequence(this, false, predicate)
 }
@@ -481,6 +488,7 @@ public fun <T> Sequence<T>.filterNot(predicate: (T) -> Boolean): Sequence<T> {
  * 
  * @sample samples.collections.Collections.Filtering.filterNotNull
  */
+@CompileTimeCalculation
 public fun <T : Any> Sequence<T?>.filterNotNull(): Sequence<T> {
     @Suppress("UNCHECKED_CAST")
     return filterNot { it == null } as Sequence<T>
@@ -493,6 +501,7 @@ public fun <T : Any> Sequence<T?>.filterNotNull(): Sequence<T> {
  * 
  * @sample samples.collections.Collections.Filtering.filterNotNullTo
  */
+@CompileTimeCalculation
 public fun <C : MutableCollection<in T>, T : Any> Sequence<T?>.filterNotNullTo(destination: C): C {
     for (element in this) if (element != null) destination.add(element)
     return destination
@@ -505,6 +514,7 @@ public fun <C : MutableCollection<in T>, T : Any> Sequence<T?>.filterNotNullTo(d
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <T, C : MutableCollection<in T>> Sequence<T>.filterNotTo(destination: C, predicate: (T) -> Boolean): C {
     for (element in this) if (!predicate(element)) destination.add(element)
     return destination
@@ -517,6 +527,7 @@ public inline fun <T, C : MutableCollection<in T>> Sequence<T>.filterNotTo(desti
  * 
  * @sample samples.collections.Collections.Filtering.filterTo
  */
+@CompileTimeCalculation
 public inline fun <T, C : MutableCollection<in T>> Sequence<T>.filterTo(destination: C, predicate: (T) -> Boolean): C {
     for (element in this) if (predicate(element)) destination.add(element)
     return destination
@@ -531,6 +542,7 @@ public inline fun <T, C : MutableCollection<in T>> Sequence<T>.filterTo(destinat
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.take(n: Int): Sequence<T> {
     require(n >= 0) { "Requested element count $n is less than zero." }
     return when {
@@ -547,6 +559,7 @@ public fun <T> Sequence<T>.take(n: Int): Sequence<T> {
  * 
  * @sample samples.collections.Collections.Transformations.take
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.takeWhile(predicate: (T) -> Boolean): Sequence<T> {
     return TakeWhileSequence(this, predicate)
 }
