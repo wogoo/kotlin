@@ -1308,6 +1308,7 @@ public inline fun <K, V, M : MutableMap<in K, in V>> Iterable<K>.associateWithTo
 /**
  * Appends all elements to the given [destination] collection.
  */
+@CompileTimeCalculation
 public fun <T, C : MutableCollection<in T>> Iterable<T>.toCollection(destination: C): C {
     for (item in this) {
         destination.add(item)
@@ -1325,6 +1326,7 @@ public fun <T> Iterable<T>.toHashSet(): HashSet<T> {
 /**
  * Returns a [List] containing all elements.
  */
+@CompileTimeCalculation
 public fun <T> Iterable<T>.toList(): List<T> {
     if (this is Collection) {
         return when (size) {
@@ -1339,6 +1341,7 @@ public fun <T> Iterable<T>.toList(): List<T> {
 /**
  * Returns a new [MutableList] filled with all elements of this collection.
  */
+@CompileTimeCalculation
 public fun <T> Iterable<T>.toMutableList(): MutableList<T> {
     if (this is Collection<T>)
         return this.toMutableList()
@@ -1348,6 +1351,7 @@ public fun <T> Iterable<T>.toMutableList(): MutableList<T> {
 /**
  * Returns a new [MutableList] filled with all elements of this collection.
  */
+@CompileTimeCalculation
 public fun <T> Collection<T>.toMutableList(): MutableList<T> {
     return ArrayList(this)
 }
@@ -1357,6 +1361,7 @@ public fun <T> Collection<T>.toMutableList(): MutableList<T> {
  * 
  * The returned set preserves the element iteration order of the original collection.
  */
+@CompileTimeCalculation
 public fun <T> Iterable<T>.toSet(): Set<T> {
     if (this is Collection) {
         return when (size) {

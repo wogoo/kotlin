@@ -20,6 +20,7 @@ import kotlin.ranges.reversed
 /**
  * Returns a [List] containing all key-value pairs.
  */
+@CompileTimeCalculation
 public fun <K, V> Map<out K, V>.toList(): List<Pair<K, V>> {
     if (size == 0)
         return emptyList()
