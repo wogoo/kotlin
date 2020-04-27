@@ -1063,6 +1063,7 @@ public fun CharSequence.withIndex(): Iterable<IndexedValue<Char>> {
  * 
  * @sample samples.collections.Collections.Aggregates.all
  */
+@CompileTimeCalculation
 public inline fun CharSequence.all(predicate: (Char) -> Boolean): Boolean {
     for (element in this) if (!predicate(element)) return false
     return true
@@ -1073,6 +1074,7 @@ public inline fun CharSequence.all(predicate: (Char) -> Boolean): Boolean {
  * 
  * @sample samples.collections.Collections.Aggregates.any
  */
+@CompileTimeCalculation
 public fun CharSequence.any(): Boolean {
     return !isEmpty()
 }
@@ -1090,6 +1092,7 @@ public inline fun CharSequence.any(predicate: (Char) -> Boolean): Boolean {
 /**
  * Returns the length of this char sequence.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun CharSequence.count(): Int {
     return length
@@ -1112,6 +1115,7 @@ public inline fun CharSequence.count(predicate: (Char) -> Boolean): Int {
  * 
  * @param [operation] function that takes current accumulator value and a character, and calculates the next accumulator value.
  */
+@CompileTimeCalculation
 public inline fun <R> CharSequence.fold(initial: R, operation: (acc: R, Char) -> R): R {
     var accumulator = initial
     for (element in this) accumulator = operation(accumulator, element)
@@ -1173,6 +1177,7 @@ public inline fun <R> CharSequence.foldRightIndexed(initial: R, operation: (inde
 /**
  * Performs the given [action] on each character.
  */
+@CompileTimeCalculation
 public inline fun CharSequence.forEach(action: (Char) -> Unit): Unit {
     for (element in this) action(element)
 }
@@ -1182,6 +1187,7 @@ public inline fun CharSequence.forEach(action: (Char) -> Unit): Unit {
  * @param [action] function that takes the index of a character and the character itself
  * and performs the action on the character.
  */
+@CompileTimeCalculation
 public inline fun CharSequence.forEachIndexed(action: (index: Int, Char) -> Unit): Unit {
     var index = 0
     for (item in this) action(index++, item)
@@ -1666,6 +1672,7 @@ public fun CharSequence.minWithOrNull(comparator: Comparator<in Char>): Char? {
  * 
  * @sample samples.collections.Collections.Aggregates.none
  */
+@CompileTimeCalculation
 public fun CharSequence.none(): Boolean {
     return isEmpty()
 }
@@ -1684,6 +1691,7 @@ public inline fun CharSequence.none(predicate: (Char) -> Boolean): Boolean {
  * Performs the given [action] on each character and returns the char sequence itself afterwards.
  */
 @SinceKotlin("1.1")
+@CompileTimeCalculation
 public inline fun <S : CharSequence> S.onEach(action: (Char) -> Unit): S {
     return apply { for (element in this) action(element) }
 }
@@ -1711,6 +1719,7 @@ public inline fun <S : CharSequence> S.onEachIndexed(action: (index: Int, Char) 
  * 
  * @sample samples.collections.Collections.Aggregates.reduce
  */
+@CompileTimeCalculation
 public inline fun CharSequence.reduce(operation: (acc: Char, Char) -> Char): Char {
     if (isEmpty())
         throw UnsupportedOperationException("Empty char sequence can't be reduced.")

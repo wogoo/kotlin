@@ -129,6 +129,7 @@ public inline fun <K, V, R, C : MutableCollection<in R>> Map<out K, V>.mapTo(des
  * 
  * @sample samples.collections.Collections.Aggregates.all
  */
+@CompileTimeCalculation
 public inline fun <K, V> Map<out K, V>.all(predicate: (Map.Entry<K, V>) -> Boolean): Boolean {
     if (isEmpty()) return true
     for (element in this) if (!predicate(element)) return false
@@ -140,6 +141,7 @@ public inline fun <K, V> Map<out K, V>.all(predicate: (Map.Entry<K, V>) -> Boole
  * 
  * @sample samples.collections.Collections.Aggregates.any
  */
+@CompileTimeCalculation
 public fun <K, V> Map<out K, V>.any(): Boolean {
     return !isEmpty()
 }
@@ -158,6 +160,7 @@ public inline fun <K, V> Map<out K, V>.any(predicate: (Map.Entry<K, V>) -> Boole
 /**
  * Returns the number of entries in this map.
  */
+@CompileTimeCalculation
 @kotlin.internal.InlineOnly
 public inline fun <K, V> Map<out K, V>.count(): Int {
     return size
@@ -176,6 +179,7 @@ public inline fun <K, V> Map<out K, V>.count(predicate: (Map.Entry<K, V>) -> Boo
 /**
  * Performs the given [action] on each entry.
  */
+@CompileTimeCalculation
 @kotlin.internal.HidesMembers
 public inline fun <K, V> Map<out K, V>.forEach(action: (Map.Entry<K, V>) -> Unit): Unit {
     for (element in this) action(element)
@@ -476,6 +480,7 @@ public inline fun <K, V> Map<out K, V>.minWithOrNull(comparator: Comparator<in M
  * 
  * @sample samples.collections.Collections.Aggregates.none
  */
+@CompileTimeCalculation
 public fun <K, V> Map<out K, V>.none(): Boolean {
     return isEmpty()
 }
@@ -495,6 +500,7 @@ public inline fun <K, V> Map<out K, V>.none(predicate: (Map.Entry<K, V>) -> Bool
  * Performs the given [action] on each entry and returns the map itself afterwards.
  */
 @SinceKotlin("1.1")
+@CompileTimeCalculation
 public inline fun <K, V, M : Map<out K, V>> M.onEach(action: (Map.Entry<K, V>) -> Unit): M {
     return apply { for (element in this) action(element) }
 }

@@ -1189,6 +1189,7 @@ public fun <T> Sequence<T>.toMutableSet(): MutableSet<T> {
  * 
  * @sample samples.collections.Collections.Aggregates.all
  */
+@CompileTimeCalculation
 public inline fun <T> Sequence<T>.all(predicate: (T) -> Boolean): Boolean {
     for (element in this) if (!predicate(element)) return false
     return true
@@ -1201,6 +1202,7 @@ public inline fun <T> Sequence<T>.all(predicate: (T) -> Boolean): Boolean {
  * 
  * @sample samples.collections.Collections.Aggregates.any
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.any(): Boolean {
     return iterator().hasNext()
 }
@@ -1222,6 +1224,7 @@ public inline fun <T> Sequence<T>.any(predicate: (T) -> Boolean): Boolean {
  *
  * The operation is _terminal_.
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.count(): Int {
     var count = 0
     for (element in this) checkCountOverflow(++count)
@@ -1249,6 +1252,7 @@ public inline fun <T> Sequence<T>.count(predicate: (T) -> Boolean): Int {
  *
  * The operation is _terminal_.
  */
+@CompileTimeCalculation
 public inline fun <T, R> Sequence<T>.fold(initial: R, operation: (acc: R, T) -> R): R {
     var accumulator = initial
     for (element in this) accumulator = operation(accumulator, element)
@@ -1278,6 +1282,7 @@ public inline fun <T, R> Sequence<T>.foldIndexed(initial: R, operation: (index: 
  *
  * The operation is _terminal_.
  */
+@CompileTimeCalculation
 public inline fun <T> Sequence<T>.forEach(action: (T) -> Unit): Unit {
     for (element in this) action(element)
 }
@@ -1289,6 +1294,7 @@ public inline fun <T> Sequence<T>.forEach(action: (T) -> Unit): Unit {
  *
  * The operation is _terminal_.
  */
+@CompileTimeCalculation
 public inline fun <T> Sequence<T>.forEachIndexed(action: (index: Int, T) -> Unit): Unit {
     var index = 0
     for (item in this) action(checkIndexOverflow(index++), item)
@@ -1943,6 +1949,7 @@ public fun <T> Sequence<T>.minWithOrNull(comparator: Comparator<in T>): T? {
  * 
  * @sample samples.collections.Collections.Aggregates.none
  */
+@CompileTimeCalculation
 public fun <T> Sequence<T>.none(): Boolean {
     return !iterator().hasNext()
 }
