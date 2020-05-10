@@ -234,6 +234,11 @@ public class JsIrWithKlibTestGenerated extends AbstractJsIrWithKlibTest {
         runTest("compiler/testData/ir/interpreter/overrideDifferentName.kt");
     }
 
+    @TestMetadata("overrideExtension.kt")
+    public void testOverrideExtension() throws Exception {
+        runTest("compiler/testData/ir/interpreter/overrideExtension.kt");
+    }
+
     @TestMetadata("progressionFromClosedRange.kt")
     public void testProgressionFromClosedRange() throws Exception {
         runTest("compiler/testData/ir/interpreter/progressionFromClosedRange.kt");
