@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 @TestMetadata("compiler/testData/ir/interpreter")
 @TestDataPath("$PROJECT_ROOT")
 @RunWith(JUnit3RunnerWithInners.class)
-public class JsIrWithKlibTestGenerated extends AbstractJsIrWithKlibTest {
+public class JsInterpreterTestCaseGenerated extends AbstractJsInterpreterTestCase {
     private void runTest(String testDataFilePath) throws Exception {
         KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
     }
@@ -327,7 +327,7 @@ public class JsIrWithKlibTestGenerated extends AbstractJsIrWithKlibTest {
     @TestMetadata("compiler/testData/ir/interpreter/collections")
     @TestDataPath("$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners.class)
-    public static class Collections extends AbstractJsIrWithKlibTest {
+    public static class Collections extends AbstractJsInterpreterTestCase {
         private void runTest(String testDataFilePath) throws Exception {
             KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
         }
@@ -360,7 +360,7 @@ public class JsIrWithKlibTestGenerated extends AbstractJsIrWithKlibTest {
     @TestMetadata("compiler/testData/ir/interpreter/exceptions")
     @TestDataPath("$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners.class)
-    public static class Exceptions extends AbstractJsIrWithKlibTest {
+    public static class Exceptions extends AbstractJsInterpreterTestCase {
         private void runTest(String testDataFilePath) throws Exception {
             KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
         }
@@ -443,7 +443,7 @@ public class JsIrWithKlibTestGenerated extends AbstractJsIrWithKlibTest {
     @TestMetadata("compiler/testData/ir/interpreter/generatedStdlib")
     @TestDataPath("$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners.class)
-    public static class GeneratedStdlib extends AbstractJsIrWithKlibTest {
+    public static class GeneratedStdlib extends AbstractJsInterpreterTestCase {
         private void runTest(String testDataFilePath) throws Exception {
             KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
         }

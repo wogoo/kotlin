@@ -25,10 +25,9 @@ import org.jetbrains.kotlin.test.TargetBackend
 import org.jetbrains.kotlin.test.TestJdkKind
 import java.io.File
 
-abstract class AbstractJsIrWithKlibTest : AbstractIrJsTextTestCase() {
-    // TODO reuse
-    private val fullRuntimeKlib = "libraries/stdlib/js-ir/build/fullRuntime/klib"
-    private val kotlinTestKLib = "libraries/stdlib/js-ir/build/kotlin.test/klib"
+abstract class AbstractJsInterpreterTestCase : AbstractIrJsTextTestCase() {
+
+    private val fullRuntimeKlib = "build/js-ir-runtime/klib"
     private val messageCollector = TestMessageCollector()
 
     class TestMessageCollector : MessageCollector {
@@ -57,7 +56,7 @@ abstract class AbstractJsIrWithKlibTest : AbstractIrJsTextTestCase() {
         setupEnvironment(testFiles)
         loadMultiFiles(testFiles)
 
-        val runtimeKlibs = listOf(fullRuntimeKlib, kotlinTestKLib)
+        val runtimeKlibs = listOf(fullRuntimeKlib)
         val allKlibPaths = runtimeKlibs.map { File(it).absolutePath }
         val resolvedLibraries = jsResolveLibraries(allKlibPaths, emptyList(), messageCollectorLogger(MessageCollector.NONE))
 
