@@ -9,27 +9,52 @@ import org.jetbrains.kotlin.backend.common.overrides.FakeOverrideBuilder
 import org.jetbrains.kotlin.backend.common.serialization.*
 import org.jetbrains.kotlin.backend.common.serialization.encodings.BinarySymbolData
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureSerializer
+import org.jetbrains.kotlin.backend.common.serialization.proto.*
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrFile
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.konan.KlibModuleOrigin
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.builders.TranslationPluginContext
+import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.declarations.impl.IrAnonymousInitializerImpl
 import org.jetbrains.kotlin.ir.declarations.impl.IrModuleFragmentImpl
-import org.jetbrains.kotlin.ir.descriptors.IrAbstractFunctionFactory
-import org.jetbrains.kotlin.ir.descriptors.IrBuiltIns
+import org.jetbrains.kotlin.ir.declarations.impl.IrValueParameterImpl
+import org.jetbrains.kotlin.ir.declarations.impl.IrVariableImpl
+import org.jetbrains.kotlin.ir.descriptors.*
+import org.jetbrains.kotlin.ir.expressions.IrBody
+import org.jetbrains.kotlin.ir.expressions.impl.IrExpressionBodyImpl
 import org.jetbrains.kotlin.ir.symbols.IrFieldSymbol
+import org.jetbrains.kotlin.ir.symbols.IrPropertySymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.symbols.isPublicApi
-import org.jetbrains.kotlin.ir.util.DeclarationStubGenerator
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.util.IdSignature
 import org.jetbrains.kotlin.ir.util.IrMessageLogger
 import org.jetbrains.kotlin.ir.util.SymbolTable
 import org.jetbrains.kotlin.library.IrLibrary
-import org.jetbrains.kotlin.load.java.descriptors.JavaCallableMemberDescriptor
-import org.jetbrains.kotlin.load.java.descriptors.JavaClassDescriptor
+import org.jetbrains.kotlin.load.java.descriptors.*
 import org.jetbrains.kotlin.load.java.lazy.descriptors.LazyJavaPackageFragment
+import org.jetbrains.kotlin.load.kotlin.JvmPackagePartSource
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.resolve.descriptorUtil.classId
+import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
+import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedClassDescriptor
+import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedSimpleFunctionDescriptor
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrAnonymousInit as ProtoAnonymousInit
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrConstructor as ProtoConstructor
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrConstructorCall as ProtoConstructorCall
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrEnumEntry as ProtoEnumEntry
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrFunction as ProtoFunction
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrProperty as ProtoProperty
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrField as ProtoField
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrClass as ProtoClass
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrValueParameter as ProtoValueParameter
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrVariable as ProtoVariable
+import org.jetbrains.kotlin.backend.common.serialization.proto.IrFunctionBase as ProtoFunctionBase
 
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 class JvmIrLinker(
@@ -42,6 +67,8 @@ class JvmIrLinker(
     private val stubGenerator: DeclarationStubGenerator,
     private val manglerDesc: JvmManglerDesc
 ) : KotlinIrLinker(currentModule, messageLogger, builtIns, symbolTable, emptyList()) {
+
+    var deserializerForCompileTime: KlibModuleDeserializer? = null
 
     override val fakeOverrideBuilder = FakeOverrideBuilder(this, symbolTable, IdSignatureSerializer(JvmManglerIr), builtIns)
 
@@ -60,8 +87,194 @@ class JvmIrLinker(
         return MetadataJVMModuleDeserializer(moduleDescriptor, emptyList())
     }
 
+    fun addDeserializerForCompileTimeDeclarations(moduleDescriptor: ModuleDescriptor, klib: IrLibrary) {
+        deserializerForCompileTime = KlibModuleDeserializer(moduleDescriptor, klib).apply { init() }
+    }
+
     private inner class JvmModuleDeserializer(moduleDescriptor: ModuleDescriptor, klib: IrLibrary, strategy: DeserializationStrategy) :
         KotlinIrLinker.BasicIrModuleDeserializer(moduleDescriptor, klib, strategy)
+
+    inner class KlibModuleDeserializer(moduleDescriptor: ModuleDescriptor, klib: IrLibrary) :
+        KotlinIrLinker.BasicIrModuleDeserializer(moduleDescriptor, klib, DeserializationStrategy.ONLY_REFERENCED) {
+
+        override fun createIrDeserializerForFile(
+            fileProto: IrFile, fileIndex: Int, moduleDeserializer: IrModuleDeserializer, allowErrorNodes: Boolean
+        ): IrDeserializerForFile {
+            return IrDeserializerForCompileTime(fileProto.annotationList, fileProto.actualsList, fileIndex, moduleDeserializer)
+        }
+
+        fun declare(irSymbol: IrSymbol) {
+            val idSig = irSymbol.signature!!
+            assert(idSig.isPublic)
+
+            val fileDeserializer = scheduleTopLevelSignatureDeserialization(idSig)
+
+            if (idSig != idSig.topLevelSignature()) {
+                super.declareIrSymbol(irSymbol)
+            } else {
+                val symbol = fileDeserializer.fileLocalDeserializationState.deserializedSymbols[idSig]
+                if (symbol == null) {
+                    fileDeserializer.deserializeDeclaration(idSig)
+                }
+            }
+        }
+
+        fun getBodies(): Map<IdSignature, IrBody> {
+            return mutableMapOf<IdSignature, IrBody>().apply {
+                fileToDeserializerMap.forEach { putAll((it.value as IrDeserializerForCompileTime).bodies) }
+            }
+        }
+
+        inner class IrDeserializerForCompileTime(
+            annotations: List<ProtoConstructorCall>?, actuals: List<Actual>, fileIndex: Int, moduleDeserializer: IrModuleDeserializer
+        ) : KotlinIrLinker.IrDeserializerForFile(
+            annotations, actuals, fileIndex, onlyHeaders = false, inlineBodies = true, moduleDeserializer, allowErrorNodes = false
+        ) {
+            val bodies = mutableMapOf<IdSignature, IrBody>()
+
+            override fun deserializeIrValueParameter(proto: ProtoValueParameter, index: Int): IrValueParameterImpl {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.symbol)
+
+                if (symbol.isBound) {
+                    return (symbol.owner as IrValueParameterImpl).apply {
+                        if (proto.hasDefaultValue()) defaultValue = IrExpressionBodyImpl(deserializeExpressionBody(proto.defaultValue))
+                    }
+                }
+
+                return super.deserializeIrValueParameter(proto, index)
+            }
+
+            override fun deserializeIrClass(proto: ProtoClass): IrClass {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.symbol)
+
+                val classId = (symbol.takeIf { symbol.hasDescriptor }?.descriptor as? DeserializedClassDescriptor)?.classId
+                val packageName = classId?.packageFqName?.toString()
+                val className = classId?.relativeClassName?.toString()
+                // unsigned and reflect classes are deserialized to early (with Any), but their owner's must be created with stub generator
+                val isReflect = packageName == "kotlin.reflect" && (className == "KClass" || className == "KCallable" || className == "KFunction")
+                val isUnsigned = packageName == "kotlin" && (className == "UShort" || className == "UByte" || className == "UInt" || className == "ULong")
+                if (symbol.isBound || isReflect || isUnsigned) {
+                    val owner = if (symbol.isBound) symbol.owner else stubGenerator.generateMemberStub(symbol.descriptor)
+                    return (owner as IrClass).apply {
+                        usingParent {
+                            typeParameters = deserializeTypeParameters(proto.typeParameterList, true)
+                            proto.declarationList.forEach { deserializeDeclaration(it) }
+                        }
+                    }
+                }
+
+                return super.deserializeIrClass(proto)
+            }
+
+            private fun deserializeFunctionBase(symbol: IrSymbol, proto: ProtoFunctionBase): IrFunction {
+                val irFunction = symbol.owner as IrFunction
+                try {
+                    recordDelegatedSymbol(symbol)
+                    val oldBody = irFunction.body   // must save old values in case if JvmIrLinker already created stub
+                    val oldReturnType = irFunction.returnType
+                    val result = symbolTable.withScope(symbol) {
+                        irFunction.deserializeIrFunctionBase(proto)
+                    }
+                    result.body?.let { bodies[symbol.signature!!] = it }
+                    result.annotations += deserializeAnnotations(proto.base.annotationList)
+                    result.body = oldBody
+                    irFunction.returnType = oldReturnType
+                    return result
+                } finally {
+                    eraseDelegatedSymbol(symbol)
+                }
+            }
+
+            override fun deserializeIrFunction(proto: ProtoFunction): IrSimpleFunction {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.base.symbol)
+
+                if (!symbol.isBound && symbol.hasDescriptor && (symbol.descriptor as? DeserializedSimpleFunctionDescriptor)?.containerSource is JvmPackagePartSource) {
+                    // cover case when symbol is presented in files and owner must be created by JvmIrLinker
+                    return stubGenerator.generateMemberStub(symbol.descriptor).let {
+                        deserializeFunctionBase(symbol, proto.base) as IrSimpleFunction
+                    }
+                }
+                if (symbol.isBound) {
+                    return deserializeFunctionBase(symbol, proto.base) as IrSimpleFunction
+                }
+
+                return super.deserializeIrFunction(proto)
+            }
+
+            override fun deserializeIrConstructor(proto: ProtoConstructor): IrConstructor {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.base.symbol)
+
+                if (symbol.isBound) {
+                    return deserializeFunctionBase(symbol, proto.base) as IrConstructor
+                }
+
+                return super.deserializeIrConstructor(proto)
+            }
+
+            override fun deserializeIrVariable(proto: ProtoVariable): IrVariableImpl {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.symbol)
+
+                if (symbol.isBound) return (symbol.owner as IrVariableImpl).apply {
+                    if (proto.hasInitializer()) initializer = deserializeExpression(proto.initializer)
+                }
+
+                return super.deserializeIrVariable(proto)
+            }
+
+            override fun deserializeIrEnumEntry(proto: ProtoEnumEntry): IrEnumEntry {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.symbol)
+
+                if (symbol.isBound) return (symbol.owner as IrEnumEntry).apply {
+                    if (proto.hasCorrespondingClass()) correspondingClass = deserializeIrClass(proto.correspondingClass)
+                    if (proto.hasInitializer()) initializerExpression = IrExpressionBodyImpl(deserializeExpressionBody(proto.initializer))
+                }
+
+                return super.deserializeIrEnumEntry(proto)
+            }
+
+            override fun deserializeIrAnonymousInit(proto: ProtoAnonymousInit): IrAnonymousInitializerImpl {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.symbol)
+
+                if (symbol.isBound) {
+                    return symbol.owner.apply { deserializeStatementBody(proto.body) } as IrAnonymousInitializerImpl
+                }
+
+                return super.deserializeIrAnonymousInit(proto)
+            }
+
+            override fun deserializeIrField(proto: ProtoField): IrField {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.symbol)
+
+                if (symbol.isBound) return (symbol.owner as IrField).apply {
+                    if (proto.hasInitializer()) initializer = IrExpressionBodyImpl(deserializeExpressionBody(proto.initializer))
+                }
+
+                return super.deserializeIrField(proto)
+            }
+
+            override fun deserializeIrProperty(proto: ProtoProperty): IrProperty {
+                val (symbol, _) = deserializeIrSymbolToDeclare(proto.base.symbol)
+
+                if (symbol.isBound) return (symbol.owner as IrProperty).apply {
+                    if (proto.hasGetter()) {
+                        getter = deserializeIrFunction(proto.getter).also {
+                            it.correspondingPropertySymbol = symbol as IrPropertySymbol
+                        }
+                    }
+                    if (proto.hasSetter()) {
+                        setter = deserializeIrFunction(proto.setter).also {
+                            it.correspondingPropertySymbol = symbol as IrPropertySymbol
+                        }
+                    }
+                    if (proto.hasBackingField()) {
+                        backingField = deserializeIrField(proto.backingField)
+                    }
+                }
+
+                return super.deserializeIrProperty(proto)
+            }
+        }
+    }
 
     private fun DeclarationDescriptor.isJavaDescriptor(): Boolean {
         if (this is PackageFragmentDescriptor) {
@@ -159,6 +372,9 @@ class JvmIrLinker(
                 declareJavaFieldStub(symbol)
             } else {
                 stubGenerator.generateMemberStub(symbol.descriptor)
+                if (symbol.descriptor.annotations.hasAnnotation(FqName("kotlin.CompileTimeCalculation"))) {
+                    deserializerForCompileTime?.declare(symbol)
+                }
             }
         }
 

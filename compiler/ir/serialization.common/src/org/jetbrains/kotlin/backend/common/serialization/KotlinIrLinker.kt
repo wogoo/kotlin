@@ -77,7 +77,7 @@ abstract class KotlinIrLinker(
     abstract inner class BasicIrModuleDeserializer(moduleDescriptor: ModuleDescriptor, override val klib: IrLibrary, override val strategy: DeserializationStrategy, private val containsErrorCode: Boolean = false) :
         IrModuleDeserializer(moduleDescriptor) {
 
-        private val fileToDeserializerMap = mutableMapOf<IrFile, IrDeserializerForFile>()
+        protected val fileToDeserializerMap = mutableMapOf<IrFile, IrDeserializerForFile>()
 
         private inner class ModuleDeserializationState {
             private val filesWithPendingTopLevels = mutableSetOf<IrDeserializerForFile>()
@@ -143,6 +143,16 @@ abstract class KotlinIrLinker(
         override fun deserializeIrSymbol(idSig: IdSignature, symbolKind: BinarySymbolData.SymbolKind): IrSymbol {
             assert(idSig.isPublic)
 
+            val fileDeserializationState = scheduleTopLevelSignatureDeserialization(idSig).fileLocalDeserializationState
+            return fileDeserializationState.deserializedSymbols.getOrPut(idSig) {
+//                val descriptor = resolveSpecialSignature(idSig)
+                val symbol = referenceDeserializedSymbol(symbolKind, idSig)
+
+                handleExpectActualMapping(idSig, symbol)
+            }
+        }
+
+        protected fun scheduleTopLevelSignatureDeserialization(idSig: IdSignature): IrDeserializerForFile {
             val topLevelSignature = idSig.topLevelSignature()
             val fileDeserializer = moduleReversedFileIndex[topLevelSignature]
                 ?: error("No file for $topLevelSignature (@ $idSig) in module $moduleDescriptor")
@@ -152,15 +162,20 @@ abstract class KotlinIrLinker(
             fileDeserializationState.addIdSignature(topLevelSignature)
             moduleDeserializationState.enqueueFile(fileDeserializer)
 
-            return fileDeserializationState.deserializedSymbols.getOrPut(idSig) {
-//                val descriptor = resolveSpecialSignature(idSig)
-                val symbol = referenceDeserializedSymbol(symbolKind, idSig)
-
-                handleExpectActualMapping(idSig, symbol)
-            }
+            return fileDeserializer
         }
 
         override val moduleFragment: IrModuleFragment = IrModuleFragmentImpl(moduleDescriptor, builtIns, emptyList())
+
+        open fun createIrDeserializerForFile(fileProto: ProtoFile, fileIndex: Int, moduleDeserializer: IrModuleDeserializer, allowErrorNodes: Boolean) =
+            IrDeserializerForFile(
+                fileProto.annotationList,
+                fileProto.actualsList,
+                fileIndex,
+                !strategy.needBodies,
+                strategy.inlineBodies,
+                moduleDeserializer, allowErrorNodes
+            )
 
         private fun deserializeIrFile(fileProto: ProtoFile, fileIndex: Int, moduleDeserializer: IrModuleDeserializer, allowErrorNodes: Boolean): IrFile {
 
@@ -168,25 +183,16 @@ abstract class KotlinIrLinker(
 
             val fileEntry = NaiveSourceBasedFileEntryImpl(fileName, fileProto.fileEntry.lineStartOffsetsList.toIntArray())
 
-            val fileDeserializer =
-                IrDeserializerForFile(
-                    fileProto.annotationList,
-                    fileProto.actualsList,
-                    fileIndex,
-                    !strategy.needBodies,
-                    strategy.inlineBodies,
-                    moduleDeserializer, allowErrorNodes
-                ).apply {
-
-                    // Explicitly exported declarations (e.g. top-level initializers) must be deserialized before all other declarations.
-                    // Thus we schedule their deserialization in deserializer's constructor.
-                    fileProto.explicitlyExportedToCompilerList.forEach {
-                        val symbolData = parseSymbolData(it)
-                        val sig = deserializeIdSignature(symbolData.signatureId)
-                        assert(!sig.isPackageSignature())
-                        fileLocalDeserializationState.addIdSignature(sig.topLevelSignature())
-                    }
+            val fileDeserializer = createIrDeserializerForFile(fileProto, fileIndex, moduleDeserializer, allowErrorNodes).apply {
+                // Explicitly exported declarations (e.g. top-level initializers) must be deserialized before all other declarations.
+                // Thus we schedule their deserialization in deserializer's constructor.
+                fileProto.explicitlyExportedToCompilerList.forEach {
+                    val symbolData = parseSymbolData(it)
+                    val sig = deserializeIdSignature(symbolData.signatureId)
+                    assert(!sig.isPackageSignature())
+                    fileLocalDeserializationState.addIdSignature(sig.topLevelSignature())
                 }
+            }
 
             val fqName = FqName(fileDeserializer.deserializeFqName(fileProto.fqNameList))
 
@@ -231,7 +237,7 @@ abstract class KotlinIrLinker(
         }
     }
 
-    inner class IrDeserializerForFile(
+    open inner class IrDeserializerForFile(
         private var annotations: List<ProtoConstructorCall>?,
         private val actuals: List<ProtoActual>,
         private val fileIndex: Int,
