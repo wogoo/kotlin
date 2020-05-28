@@ -273,6 +273,14 @@ private val kotlinNothingValueExceptionPhase = makeIrFilePhase<CommonBackendCont
     description = "Throw proper exception for calls returning value of type 'kotlin.Nothing'"
 )
 
+val compileTimeEvaluationPhase = makeIrModulePhase(
+    ::CompileTimeCalculationLowering,
+    name = "CompileTimeEvaluation",
+    //TODO change annotation to modifier
+    description = "Evaluate calls that are marked with @CompileTimeCalculation annotation",
+    prerequisite = setOf(expectDeclarationsRemovingPhase)
+)
+
 private val jvmFilePhases = listOf(
     typeAliasAnnotationMethodsPhase,
     stripTypeAliasDeclarationsPhase,
@@ -387,6 +395,7 @@ val jvmPhases = NamedCompilerPhase(
     lower = validateIrBeforeLowering then
             processOptionalAnnotationsPhase then
             expectDeclarationsRemovingPhase then
+            compileTimeEvaluationPhase then
             scriptsToClassesPhase then
             fileClassPhase then
             jvmStaticInObjectPhase then
