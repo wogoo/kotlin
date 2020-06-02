@@ -34,7 +34,13 @@ fun tryCatchFinally(): Int {
     return 0
 }
 
+@CompileTimeCalculation
+fun returnTryFinally(): String {
+    return try { "OK" } finally { "NOT OK" } // result from finally is never used
+}
+
 const val a1 = tryFinally(0)
 const val a2 = tryFinally(10)
 const val b1 = tryFinally2()
 const val c1 = tryCatchFinally()
+const val d1 = returnTryFinally()
