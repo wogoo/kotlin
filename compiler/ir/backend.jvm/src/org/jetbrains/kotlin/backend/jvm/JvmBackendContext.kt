@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.backend.jvm.lower.inlineclasses.MemoizedInlineClassR
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
+import org.jetbrains.kotlin.diagnostics.*
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.irBlock
@@ -35,6 +36,7 @@ import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.SymbolTable
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi2ir.PsiErrorBuilder
 import org.jetbrains.kotlin.psi2ir.PsiSourceManager
 import org.jetbrains.kotlin.resolve.jvm.JvmClassName
@@ -145,6 +147,20 @@ class JvmBackendContext(
 
     override fun report(element: IrElement?, irFile: IrFile?, message: String, isError: Boolean) {
         /*TODO*/
+        val psiFileEntry = irFile?.fileEntry as? PsiSourceManager.PsiFileEntry
+        val elementInfo = when {
+            psiFileEntry != null && element != null -> {
+                var psi = psiFileEntry.findPsiElement(element)
+                while (psi?.parent !is KtProperty && psi?.parent !is KtBlockExpression && psi?.parent is KtExpression) psi = psi.parent
+                "${psi?.text} at ${psiFileEntry.getLineNumber(element.startOffset)} line"
+            }
+            else -> ""
+        }
+        //val messageCollector = configuration[CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY]!!
+        val severity = if (isError) "EXCEPTION" else "INFO"
+        val textInTheMiddle = if (isError) "will produce exception:" else "will be replaced on:"
+        //messageCollector.report(severity, "$elementInfo $textInTheMiddle $message")
+        psiErrorBuilder.at(element!!, irFile!!).report(Errors.NEW_INFERENCE_DIAGNOSTIC, "$severity: $elementInfo $textInTheMiddle $message")
         print(message)
     }
 
