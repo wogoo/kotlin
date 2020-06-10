@@ -154,6 +154,11 @@ public class JsIrWithKlibTestGenerated extends AbstractJsIrWithKlibTest {
         runTest("compiler/testData/ir/interpreter/inlineReturn.kt");
     }
 
+    @TestMetadata("innerClass.kt")
+    public void testInnerClass() throws Exception {
+        runTest("compiler/testData/ir/interpreter/innerClass.kt");
+    }
+
     @TestMetadata("instanceOf.kt")
     public void testInstanceOf() throws Exception {
         runTest("compiler/testData/ir/interpreter/instanceOf.kt");
