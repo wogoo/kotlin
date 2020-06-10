@@ -1,14 +1,10 @@
-EXCEPTION: echo(Long.MIN_VALUE) as Long at 78 line will produce exception:
-Exception kotlin.ClassCastException: kotlin.Long cannot be cast to kotlin.Long
+INFO: echo(Long.MIN_VALUE) as Long at 78 line will be replaced on: -9223372036854775808
 
-EXCEPTION: echo(Long.MAX_VALUE) as Long at 79 line will produce exception:
-Exception kotlin.ClassCastException: kotlin.Long cannot be cast to kotlin.Long
+INFO: echo(Long.MAX_VALUE) as Long at 79 line will be replaced on: 9223372036854775807
 
-EXCEPTION: echo(Long.SIZE_BYTES) as Int at 80 line will produce exception:
-Exception kotlin.ClassCastException: kotlin.Int cannot be cast to kotlin.Int
+INFO: echo(Long.SIZE_BYTES) as Int at 80 line will be replaced on: 8
 
-EXCEPTION: echo(Long.SIZE_BITS) as Int at 81 line will produce exception:
-Exception kotlin.ClassCastException: kotlin.Int cannot be cast to kotlin.Int
+INFO: echo(Long.SIZE_BITS) as Int at 81 line will be replaced on: 64
 
 INFO: compareTo(5L, 1.toByte()) at 83 line will be replaced on: 1
 
