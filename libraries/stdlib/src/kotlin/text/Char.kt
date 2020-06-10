@@ -311,4 +311,5 @@ public expect fun Char.isISOControl(): Boolean
  *
  * @sample samples.text.Chars.isWhitespace
  */
+@CompileTimeCalculation
 public expect fun Char.isWhitespace(): Boolean
