@@ -461,5 +461,10 @@ public class JsIrWithKlibTestGenerated extends AbstractJsIrWithKlibTest {
         public void testJoinToString() throws Exception {
             runTest("compiler/testData/ir/interpreter/generatedStdlib/joinToString.kt");
         }
+
+        @TestMetadata("toList.kt")
+        public void testToList() throws Exception {
+            runTest("compiler/testData/ir/interpreter/generatedStdlib/toList.kt");
+        }
     }
 }

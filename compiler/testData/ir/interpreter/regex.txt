@@ -1,5 +1,9 @@
 INFO: Regex("pattern").pattern at 2 line will be replaced on: pattern
 
+INFO: Regex("pattern", RegexOption.IGNORE_CASE).options.iterator().next().name at 3 line will be replaced on: IGNORE_CASE
+
+INFO: Regex("pattern", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)).options.size at 4 line will be replaced on: 2
+
 INFO: Regex("pat").matchEntire("pat")?.value at 6 line will be replaced on: pat
 
 INFO: Regex("[abc]").matchEntire("a")?.range?.last at 7 line will be replaced on: 0
@@ -31,6 +35,12 @@ INFO: Regex("(red|green|blue)").find("Roses are red, Violets are blue")?.destruc
 INFO: Regex("(red|green|blue)").find("Roses are red, Violets are blue")?.next()?.value at 24 line will be replaced on: blue
 
 INFO: Regex("(red|green|blue)").find("Roses are red, Violets are blue", 15)?.value at 25 line will be replaced on: blue
+
+INFO: Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.value at 26 line will be replaced on: red
+
+INFO: Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.next()?.value at 27 line will be replaced on: blue
+
+INFO: Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.next()?.next()?.value at 28 line will be replaced on: null
 
 INFO: Regex.fromLiteral("[a-z0-9]+").pattern at 31 line will be replaced on: [a-z0-9]+
 

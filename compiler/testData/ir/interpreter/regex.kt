@@ -1,8 +1,8 @@
 // !LANGUAGE: +CompileTimeCalculations
 
 const val regConstructor1 = Regex("pattern").pattern
-//val regConstructor2 = Regex("pattern", RegexOption.IGNORE_CASE).options.iterator().next().name
-//val regConstructor3 = Regex("pattern", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)).options.//getSize
+const val regConstructor2 = Regex("pattern", RegexOption.IGNORE_CASE).options.iterator().next().name
+const val regConstructor3 = Regex("pattern", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE)).options.size
 
 val matchEntire1 = Regex("pat").matchEntire("pat")?.value
 val matchEntire2 = Regex("[abc]").matchEntire("a")?.range?.last
@@ -24,9 +24,9 @@ val find2 = Regex("(red|green|blue)").find("Roses are red, Violets are blue")?.g
 val find3 = Regex("(red|green|blue)").find("Roses are red, Violets are blue")?.destructured?.component1()
 val find4 = Regex("(red|green|blue)").find("Roses are red, Violets are blue")?.next()?.value
 val find5 = Regex("(red|green|blue)").find("Roses are red, Violets are blue", 15)?.value
-//val find6 = Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.value
-//val find7 = Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.next()?.value
-//val find8 = Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.next()?.next()?.value
+val find6 = Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.value
+val find7 = Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.next()?.value
+val find8 = Regex("(red|green|blue)").findAll("Roses are red, Violets are blue").iterator().next()?.next()?.next()?.value
 
 //companion
 const val fromLiteral = Regex.fromLiteral("[a-z0-9]+").pattern
