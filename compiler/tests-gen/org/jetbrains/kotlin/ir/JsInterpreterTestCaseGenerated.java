@@ -46,7 +46,7 @@ public class JsInterpreterTestCaseGenerated extends AbstractJsInterpreterTestCas
     }
 
     public void testAllFilesPresentInInterpreter() throws Exception {
-        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true);
+        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true, "jvm");
     }
 
     @TestMetadata("arrayConstructor.kt")

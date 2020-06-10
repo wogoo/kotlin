@@ -477,4 +477,22 @@ public class JvmInterpreterTestCaseGenerated extends AbstractJvmInterpreterTestC
             runTest("compiler/testData/ir/interpreter/generatedStdlib/toList.kt");
         }
     }
+
+    @TestMetadata("compiler/testData/ir/interpreter/jvm")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class Jvm extends AbstractJvmInterpreterTestCase {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInJvm() throws Exception {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter/jvm"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true);
+        }
+
+        @TestMetadata("javaStatic.kt")
+        public void testJavaStatic() throws Exception {
+            runTest("compiler/testData/ir/interpreter/jvm/javaStatic.kt");
+        }
+    }
 }

@@ -139,7 +139,7 @@ fun generateJUnit3CompilerTests(args: Array<String>) {
             }
 
             testClass<AbstractJsInterpreterTestCase> {
-                model("ir/interpreter", pattern = "^(.+)\\.kt(s)?\$")
+                model("ir/interpreter", pattern = "^(.+)\\.kt(s)?\$", excludeDirs = listOf("jvm"))
             }
 
             testClass<AbstractJvmInterpreterTestCase> {
