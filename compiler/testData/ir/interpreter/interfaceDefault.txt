@@ -1,0 +1,7 @@
+INFO: B(5).getStr() at 16 line will be replaced on: Number is 5
+
+INFO: B(5).getStrFromB() at 17 line will be replaced on: B Number is 5
+
+INFO: D(10).getInt() at 30 line will be replaced on: 10
+
+INFO: D(10).getStr() at 31 line will be replaced on: D num = 10

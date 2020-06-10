@@ -1,0 +1,3 @@
+INFO: return Int.MAX_VALUE at 14 line will be replaced on: 2147483647
+
+INFO: A.getStaticNumber() at 28 line will be replaced on: 2147483647

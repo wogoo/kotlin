@@ -1,0 +1,13 @@
+EXCEPTION: Junk().a() at 35 line will produce exception:
+Exception HighLevelException: MidLevelException: LowLevelException
+	at ExceptionWithCauseKt.Junk.a(exceptionWithCause.kt:13)
+Caused by: MidLevelException: LowLevelException
+	at ExceptionWithCauseKt.Junk.c(exceptionWithCause.kt:23)
+	at ExceptionWithCauseKt.Junk.b(exceptionWithCause.kt:21)
+	at ExceptionWithCauseKt.Junk.a(exceptionWithCause.kt:13)
+Caused by: LowLevelException
+	at ExceptionWithCauseKt.Junk.e(exceptionWithCause.kt:33)
+	at ExceptionWithCauseKt.Junk.d(exceptionWithCause.kt:31)
+	at ExceptionWithCauseKt.Junk.c(exceptionWithCause.kt:23)
+	at ExceptionWithCauseKt.Junk.b(exceptionWithCause.kt:21)
+	at ExceptionWithCauseKt.Junk.a(exceptionWithCause.kt:13)

@@ -1,0 +1,19 @@
+INFO: echo("Success") at 35 line will be replaced on: Success
+
+INFO: echo("String concatenation example: $constStr") at 36 line will be replaced on: String concatenation example: Success
+
+INFO: echo("String concatenation example with primitive: ${1}") at 37 line will be replaced on: String concatenation example with primitive: 1
+
+INFO: echo("String concatenation example with primitive and explicit toString call: ${1.toString()}") at 38 line will be replaced on: String concatenation example with primitive and explicit toString call: 1
+
+INFO: "String concatenation example with function that return primitive: ${getDoubledValue(10)}" at 39 line will be replaced on: String concatenation example with function that return primitive: 20
+
+INFO: "String concatenation example with A class: ${A()}" at 40 line will be replaced on: String concatenation example with A class: toString call from A class
+
+INFO: "String concatenation example with B class, where toString is FAKE_OVERRIDDEN: ${B()}" at 41 line will be replaced on: String concatenation example with B class, where toString is FAKE_OVERRIDDEN: toString call from A class
+
+INFO: "String concatenation example with B class and explicit toString call: ${B().toString()}" at 42 line will be replaced on: String concatenation example with B class and explicit toString call: toString call from A class
+
+INFO: "String concatenation example with C class, where toString isn't present; is it correct: ${checkToStringCorrectness(C(), 'C')}" at 43 line will be replaced on: String concatenation example with C class, where toString isn't present; is it correct: true
+
+INFO: "String concatenation example with D class, where toString is taken from Any; is it correct: ${checkToStringCorrectness(D(), 'D')}" at 44 line will be replaced on: String concatenation example with D class, where toString is taken from Any; is it correct: true

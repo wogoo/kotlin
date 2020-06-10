@@ -1,0 +1,13 @@
+EXCEPTION: foo(0) at 5 line will produce exception:
+Exception java.lang.StackOverflowError
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	at StackOverflowKt.foo(stackOverflow.kt:4)
+	...

@@ -1,0 +1,4 @@
+EXCEPTION: callToOtherFile(true, "Exception from file1.kt") at 10 line will produce exception:
+Exception kotlin.Exception: Exception from file1.kt
+	at File1Kt.throwException(file1.kt:4)
+	at MainKt.callToOtherFile(main.kt:6)

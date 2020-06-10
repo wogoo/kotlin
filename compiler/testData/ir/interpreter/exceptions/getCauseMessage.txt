@@ -1,0 +1,11 @@
+INFO: try {
+    getArrayElement(intArrayOf(1, 2, 3), -1).let { "Element at given index is " + it }
+} catch (e: Exception) {
+    e.cause?.message ?: "Exception without message"
+} at 11 line will be replaced on: -1
+
+INFO: try {
+    getArrayElement(intArrayOf(1, 2, 3), 0).let { "Element at given index is " + it }
+} catch (e: Exception) {
+    e.cause?.message ?: "Exception without message"
+} at 17 line will be replaced on: Element at given index is 1

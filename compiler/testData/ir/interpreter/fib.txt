@@ -1,0 +1,5 @@
+INFO: fib(2) at 8 line will be replaced on: 1
+
+INFO: fib(10) at 9 line will be replaced on: 55
+
+INFO: fib(20) at 10 line will be replaced on: 6765

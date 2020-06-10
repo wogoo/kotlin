@@ -1,0 +1,33 @@
+INFO: A(1).get() at 54 line will be replaced on: 1
+
+INFO: A(1).setA(2).get() at 55 line will be replaced on: 2
+
+INFO: A(1).openGet() at 56 line will be replaced on: 1
+
+INFO: B(1).getAFromB() at 58 line will be replaced on: 2
+
+INFO: B(1).getFromProperty() at 59 line will be replaced on: 2
+
+INFO: B(1).aObj.get() at 60 line will be replaced on: 2
+
+INFO: B(1).aObj.setA(-1).get() at 61 line will be replaced on: -1
+
+INFO: B(1).aObj.a at 62 line will be replaced on: 2
+
+INFO: C(1).getAFromC() at 64 line will be replaced on: 3
+
+INFO: C(1).getBFromC() at 65 line will be replaced on: 2
+
+INFO: C(1).aObj.get() at 66 line will be replaced on: 3
+
+INFO: C(1).openGet() at 67 line will be replaced on: 3
+
+INFO: C(1).bObj.getAFromB() at 68 line will be replaced on: 3
+
+INFO: C(1).bObj.getFromProperty() at 69 line will be replaced on: 3
+
+INFO: C(1).bObj.aObj.setA(-2).get() at 70 line will be replaced on: -2
+
+INFO: C(1).bObj.b at 71 line will be replaced on: 2
+
+INFO: C(1).aObj.a at 72 line will be replaced on: 3

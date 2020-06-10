@@ -1,0 +1,2 @@
+EXCEPTION: infinityWhile() at 8 line will produce exception: 
+Exceeded execution limit of constexpr expression
