@@ -101,6 +101,7 @@ internal actual inline fun <E> buildSetInternal(capacity: Int, builderAction: Mu
  * Returns an immutable map, mapping only the specified key to the
  * specified value.
  */
+@CompileTimeCalculation
 public fun <K, V> mapOf(pair: Pair<K, V>): Map<K, V> = hashMapOf(pair)
 
 @PublishedApi
@@ -204,6 +205,7 @@ internal fun <T> arrayCopy(source: Array<out T>, destination: Array<in T>, desti
 }
 
 // no singleton map implementation in js, return map as is
+@CompileTimeCalculation
 @Suppress("NOTHING_TO_INLINE")
 internal actual inline fun <K, V> Map<K, V>.toSingletonMapOrSelf(): Map<K, V> = this
 
