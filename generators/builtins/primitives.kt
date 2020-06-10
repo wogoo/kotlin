@@ -69,6 +69,7 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
         for (kind in PrimitiveType.onlyNumeric) {
             val className = kind.capitalized
             generateDoc(kind)
+            out.println("@CompileTimeCalculation")
             out.println("public class $className private constructor() : Number(), Comparable<$className> {")
 
             out.print("    companion object {")
@@ -145,9 +146,6 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
 
             generateConversions(kind)
 
-            generateToString()
-            generateEquals()
-
             out.println("}\n")
         }
     }
@@ -167,7 +165,6 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
      * Returns zero if this value is equal to the specified other value, a negative number if it's less than other,
      * or a positive number if it's greater than other.
      */""")
-            out.println("    @CompileTimeCalculation")
             out.print("    public ")
             if (otherKind == thisKind) out.print("override ")
             out.println("operator fun compareTo(other: ${otherKind.capitalized}): Int")
@@ -190,7 +187,6 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
                 "rem" ->
                     out.println("    @SinceKotlin(\"1.1\")")
             }
-            out.println("    @CompileTimeCalculation")
             out.println("    public operator fun $name(other: ${otherKind.capitalized}): ${returnType.capitalized}")
         }
         out.println()
@@ -204,7 +200,6 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
             if (returnType == PrimitiveType.DOUBLE || returnType == PrimitiveType.FLOAT)
                 continue
             out.println("     /** Creates a range from this value to the specified [other] value. */")
-            out.println("    @CompileTimeCalculation")
             out.println("    public operator fun rangeTo(other: ${otherKind.capitalized}): ${returnType.capitalized}Range")
         }
         out.println()
@@ -216,7 +211,6 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
             val returnType = if (kind in listOf(PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR) &&
                                  name in listOf("unaryPlus", "unaryMinus")) "Int" else kind.capitalized
             out.println("    /** $doc */")
-            if (name !in listOf("inc", "dec")) out.println("    @CompileTimeCalculation")
             out.println("    public operator fun $name(): $returnType")
         }
         out.println()
@@ -231,7 +225,6 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
             out.println("     *")
             out.println(detail.replaceIndent("     "))
             out.println("     */")
-            out.println("    @CompileTimeCalculation")
             out.println("    public infix fun $name(bitCount: Int): $className")
             out.println()
         }
@@ -240,12 +233,10 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
         for ((name, doc) in bitwiseOperators) {
             out.println("    /** $doc */")
             since?.let { out.println("    @SinceKotlin(\"$it\")") }
-            out.println("    @CompileTimeCalculation")
             out.println("    public infix fun $name(other: $className): $className")
         }
         out.println("    /** Inverts the bits in this value. */")
         since?.let { out.println("    @SinceKotlin(\"$it\")") }
-        out.println("    @CompileTimeCalculation")
         out.println("    public fun inv(): $className")
         out.println()
     }
@@ -398,7 +389,6 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
                 "    /**\n     * Converts this [$thisName] value to [$otherName].\n     *\n" + detail.replaceIndent("     ")
             }
             out.println(doc)
-            out.println("    @CompileTimeCalculation")
 
             if (isConversionDeprecated(otherKind)) {
                 out.println("    @Deprecated(\"Unclear conversion. To achieve the same result convert to Int explicitly and then to $otherName.\", ReplaceWith(\"toInt().to$otherName()\"))")
@@ -415,17 +405,5 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
         require(kind1 != PrimitiveType.BOOLEAN) { "kind1 must not be BOOLEAN" }
         require(kind2 != PrimitiveType.BOOLEAN) { "kind2 must not be BOOLEAN" }
         return maxByDomainCapacity(maxByDomainCapacity(kind1, kind2), PrimitiveType.INT)
-    }
-
-    private fun generateToString() {
-        out.println()
-        out.println("    @CompileTimeCalculation")
-        out.println("    public override fun toString(): String")
-    }
-
-    private fun generateEquals() {
-        out.println()
-        out.println("    @CompileTimeCalculation")
-        out.println("    public override fun equals(other: Any?): Boolean")
     }
 }
