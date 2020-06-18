@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.ir.interpreter.builtins.evaluateIntrinsicAnnotation
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.descriptors.IrBuiltIns
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
@@ -34,7 +35,8 @@ class IrCompileTimeChecker(
     private fun IrDeclaration.isMarkedAsEvaluateIntrinsic() = isMarkedWith(evaluateIntrinsicAnnotation)
     private fun IrDeclaration.isMarkedAsCompileTime(expression: IrCall? = null): Boolean {
         if (mode == EvaluationMode.FULL) {
-            return isMarkedWith(compileTimeAnnotation) ||
+            return isMarkedWith(compileTimeAnnotation) || this.origin == IrBuiltIns.BUILTIN_OPERATOR ||
+                    (this is IrSimpleFunction && this.isOperator && this.name.asString() == "invoke") ||
                     (this is IrSimpleFunction && this.isFakeOverride && this.overriddenSymbols.any { it.owner.isMarkedAsCompileTime() }) ||
                     this.parentClassOrNull?.fqNameWhenAvailable?.asString() in compileTimeTypeAliases
         }
