@@ -7,7 +7,7 @@ package org.jetbrains.kotlin.backend.common.lower
 
 import org.jetbrains.kotlin.backend.common.CommonBackendContext
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
-import org.jetbrains.kotlin.ir.interpreter.IrCompileTimeChecker
+import org.jetbrains.kotlin.ir.interpreter.checker.IrCompileTimeChecker
 import org.jetbrains.kotlin.ir.interpreter.*
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageFeature
