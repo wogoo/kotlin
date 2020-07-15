@@ -71,6 +71,7 @@ object InlineClassDescriptorResolver {
         functionDescriptor.initialize(
             null,
             null,
+            emptyList<ReceiverParameterDescriptor>(),
             emptyList<TypeParameterDescriptor>(),
             createValueParametersForSpecializedEquals(functionDescriptor, inlinedValue),
             owner.builtIns.booleanType,
@@ -98,6 +99,7 @@ object InlineClassDescriptorResolver {
         functionDescriptor.initialize(
             null,
             if (isBoxMethod) null else owner.thisAsReceiverParameter,
+            emptyList<ReceiverParameterDescriptor>(),
             emptyList<TypeParameterDescriptor>(),
             if (isBoxMethod) listOf(createValueParameterForBoxing(functionDescriptor, inlinedValue)) else emptyList(),
             if (isBoxMethod) owner.defaultType else inlinedValue.returnType,

@@ -418,7 +418,7 @@ class CallableBuilder(val config: CallableBuilderConfiguration) {
             }
 
             return fakeFunction.initialize(
-                null, null, typeParameters, Collections.emptyList(), null,
+                null, null, Collections.emptyList(), typeParameters, Collections.emptyList(), null,
                 null, DescriptorVisibilities.INTERNAL
             )
         }
