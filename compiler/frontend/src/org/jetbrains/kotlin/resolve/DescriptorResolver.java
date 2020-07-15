@@ -63,6 +63,8 @@ import org.jetbrains.kotlin.types.expressions.*;
 import org.jetbrains.kotlin.types.typeUtil.TypeUtilsKt;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget.*;
 import static org.jetbrains.kotlin.diagnostics.Errors.*;
@@ -925,6 +927,7 @@ public class DescriptorResolver {
         LexicalScope scopeForDeclarationResolutionWithTypeParameters;
         LexicalScope scopeForInitializerResolutionWithTypeParameters;
         KotlinType receiverType = null;
+        Stream<KotlinType> contextReceiverTypes;
 
         {
             List<KtTypeParameter> typeParameters = variableDeclaration.getTypeParameters();
@@ -963,6 +966,8 @@ public class DescriptorResolver {
             for (KtTypeReference contextReceiverTypeRef: contextReceiverTypeRefs) {
                 typeResolver.resolveType(scopeForDeclarationResolutionWithTypeParameters, contextReceiverTypeRef, trace, true);
             }
+            contextReceiverTypes = contextReceiverTypeRefs.stream()
+                    .map((typeRef) -> typeResolver.resolveType(scopeForDeclarationResolutionWithTypeParameters, typeRef, trace, true));
         }
 
         ReceiverParameterDescriptor receiverDescriptor;
@@ -975,6 +980,13 @@ public class DescriptorResolver {
         else {
             receiverDescriptor = null;
         }
+
+        List<ReceiverParameterDescriptor> contextReceiverDescriptors = contextReceiverTypes.map((type) -> {
+            AnnotationSplitter splitter = new AnnotationSplitter(storageManager, type.getAnnotations(), EnumSet.of(RECEIVER));
+            return DescriptorFactory.createExtensionReceiverParameterForCallable(
+                    propertyDescriptor, type, splitter.getAnnotationsForTarget(RECEIVER)
+            );
+        }).collect(Collectors.toList());
 
         LexicalScope scopeForInitializer = ScopeUtils.makeScopeForPropertyInitializer(scopeForInitializerResolutionWithTypeParameters, propertyDescriptor);
         KotlinType propertyType = propertyInfo.getVariableType();
@@ -1002,7 +1014,8 @@ public class DescriptorResolver {
                 propertyDescriptor, scopeForInitializer, variableDeclaration, dataFlowInfo, type, inferenceSession, trace
         );
 
-        propertyDescriptor.setType(type, typeParameterDescriptors, getDispatchReceiverParameterIfNeeded(container), receiverDescriptor);
+        propertyDescriptor.setType(type, typeParameterDescriptors, getDispatchReceiverParameterIfNeeded(container), receiverDescriptor,
+                                   contextReceiverDescriptors);
 
         PropertySetterDescriptor setter = resolvePropertySetterDescriptor(
                 scopeForDeclarationResolutionWithTypeParameters,
@@ -1290,7 +1303,8 @@ public class DescriptorResolver {
                 false,
                 false
         );
-        propertyDescriptor.setType(type, Collections.emptyList(), getDispatchReceiverParameterIfNeeded(classDescriptor), null);
+        propertyDescriptor.setType(type, Collections.emptyList(), getDispatchReceiverParameterIfNeeded(classDescriptor), null,
+                                   CollectionsKt.emptyList());
 
         Annotations setterAnnotations = annotationSplitter.getAnnotationsForTarget(PROPERTY_SETTER);
         Annotations getterAnnotations = new CompositeAnnotations(CollectionsKt.listOf(

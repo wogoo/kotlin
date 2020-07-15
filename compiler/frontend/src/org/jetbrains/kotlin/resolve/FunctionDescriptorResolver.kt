@@ -186,7 +186,7 @@ class FunctionDescriptorResolver(
                 if (function is KtFunctionLiteral) expectedFunctionType.getReceiverType() else null
             }
 
-        function.contextReceiverTypeReferences.onEach {
+        val contextReceiverTypes = function.contextReceiverTypeReferences.map {
             typeResolver.resolveType(headerScope, it, trace, true)
         }
 
@@ -220,10 +220,17 @@ class FunctionDescriptorResolver(
                 functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER)
             )
         }
+        val contextReceivers = contextReceiverTypes.map {
+            val splitter = AnnotationSplitter(storageManager, it.annotations, EnumSet.of(AnnotationUseSiteTarget.RECEIVER))
+            DescriptorFactory.createExtensionReceiverParameterForCallable(
+                functionDescriptor, it, splitter.getAnnotationsForTarget(AnnotationUseSiteTarget.RECEIVER)
+            )
+        }
 
         functionDescriptor.initialize(
             extensionReceiver,
             getDispatchReceiverParameterIfNeeded(container),
+            contextReceivers,
             typeParameterDescriptors,
             valueParameterDescriptors,
             returnType,
@@ -379,9 +386,9 @@ class FunctionDescriptorResolver(
         )
         constructorDescriptor.isExpect = classDescriptor.isExpect
         constructorDescriptor.isActual =
-                modifierList?.hasActualModifier() == true ||
-                // We don't require 'actual' for constructors of actual annotations
-                classDescriptor.kind == ClassKind.ANNOTATION_CLASS && classDescriptor.isActual
+            modifierList?.hasActualModifier() == true ||
+                    // We don't require 'actual' for constructors of actual annotations
+                    classDescriptor.kind == ClassKind.ANNOTATION_CLASS && classDescriptor.isActual
         if (declarationToTrace is PsiElement)
             trace.record(BindingContext.CONSTRUCTOR, declarationToTrace, constructorDescriptor)
         val parameterScope = LexicalWritableScope(

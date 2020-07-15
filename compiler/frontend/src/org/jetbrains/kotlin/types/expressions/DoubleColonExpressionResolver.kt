@@ -635,7 +635,7 @@ class DoubleColonExpressionResolver(
         )
 
         functionDescriptor.initialize(
-            null, null, emptyList(),
+            null, null, emptyList(), emptyList(),
             createValueParametersForInvokeInFunctionType(functionDescriptor, type.arguments.dropLast(1)),
             type.arguments.last().type,
             Modality.FINAL,
