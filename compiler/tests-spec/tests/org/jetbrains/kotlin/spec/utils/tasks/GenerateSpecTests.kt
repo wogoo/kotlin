@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.spec.utils.tasks
 import org.jetbrains.kotlin.generators.impl.generateTestGroupSuite
 import org.jetbrains.kotlin.spec.checkers.AbstractDiagnosticsTestSpec
 import org.jetbrains.kotlin.spec.codegen.AbstractBlackBoxCodegenTestSpec
+import org.jetbrains.kotlin.spec.codegen.AbstractIrInterpreterCodegenTestSpec
 import org.jetbrains.kotlin.spec.parsing.AbstractParsingTestSpec
 import org.jetbrains.kotlin.spec.utils.GeneralConfiguration.SPEC_TESTDATA_PATH
 import org.jetbrains.kotlin.spec.utils.GeneralConfiguration.SPEC_TEST_PATH
@@ -59,6 +60,13 @@ fun generateTests() {
             }
             testClass<AbstractBlackBoxCodegenTestSpec> {
                 model("codegen/box", excludeDirs = listOf("helpers", "templates") + detectDirsWithTestsMapFileOnly("codegen/box"))
+            }
+
+            testClass<AbstractIrInterpreterCodegenTestSpec> {
+                model(
+                    relativeRootPath = "codegen/box",
+                    excludeDirs = listOf("helpers", "templates") + detectDirsWithTestsMapFileOnly("codegen/box"),
+                )
             }
         }
     }

@@ -33,6 +33,7 @@ import org.jetbrains.kotlin.generators.util.TestGeneratorUtil.KT_OR_KTS_WITHOUT_
 import org.jetbrains.kotlin.generators.util.TestGeneratorUtil.KT_WITHOUT_DOTS_IN_NAME
 import org.jetbrains.kotlin.integration.AbstractAntTaskTest
 import org.jetbrains.kotlin.ir.*
+import org.jetbrains.kotlin.ir.interpreter.codegen.AbstractIrInterpreterBlackBoxTest
 import org.jetbrains.kotlin.jvm.compiler.*
 import org.jetbrains.kotlin.jvm.compiler.ir.AbstractIrCompileJavaAgainstKotlinTest
 import org.jetbrains.kotlin.jvm.compiler.ir.AbstractIrCompileKotlinAgainstJavaTest
@@ -89,6 +90,10 @@ fun generateJUnit3CompilerTests(args: Array<String>) {
                 model("psi", testMethod = "doParsingTest", pattern = "^(.*)\\.kts?$")
                 model("parseCodeFragment/expression", testMethod = "doExpressionCodeFragmentParsingTest", extension = "kt")
                 model("parseCodeFragment/block", testMethod = "doBlockCodeFragmentParsingTest", extension = "kt")
+            }
+
+            testClass<AbstractIrInterpreterBlackBoxTest> {
+                model("codegen/box", targetBackend = TargetBackend.JVM)
             }
 
             testClass<AbstractLightAnalysisModeTest> {
