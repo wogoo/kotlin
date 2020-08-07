@@ -12,8 +12,10 @@ import org.jetbrains.kotlin.ir.interpreter.builtins.compileTimeAnnotation
 import org.jetbrains.kotlin.ir.interpreter.builtins.contractsDslAnnotation
 import org.jetbrains.kotlin.ir.interpreter.builtins.evaluateIntrinsicAnnotation
 import org.jetbrains.kotlin.ir.interpreter.hasAnnotation
+import org.jetbrains.kotlin.ir.interpreter.isPrimitiveArray
 import org.jetbrains.kotlin.ir.interpreter.isUnsigned
 import org.jetbrains.kotlin.ir.types.isAny
+import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.types.isPrimitiveType
 import org.jetbrains.kotlin.ir.types.isString
 import org.jetbrains.kotlin.ir.util.*
@@ -21,8 +23,26 @@ import org.jetbrains.kotlin.name.FqName
 
 enum class EvaluationMode(protected val mustCheckBody: Boolean) {
     FULL(mustCheckBody = true) {
+        private val visited = mutableMapOf<String, Boolean>()
+
         override fun canEvaluateFunction(function: IrFunction, expression: IrCall?): Boolean {
-            TODO("Not implemented")
+            return true//function.isBuiltin() || isIrBuiltin() || isIntrinsic() || function.body != null
+        }
+
+        private fun IrFunction.isBuiltin(): Boolean {
+            val parent = this.parentClassOrNull ?: return false
+            val parentType = parent.defaultType
+            return parentType.let { it.isPrimitiveType() || it.isString() || it.isArray() || it.isPrimitiveArray() }
+        }
+
+        private fun isIrBuiltin(): Boolean {
+
+            return false
+        }
+
+        private fun isIntrinsic(): Boolean {
+
+            return false
         }
     },
 
