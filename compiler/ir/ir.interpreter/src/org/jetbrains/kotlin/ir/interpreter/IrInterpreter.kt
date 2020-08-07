@@ -28,6 +28,7 @@ import java.lang.invoke.MethodHandle
 import kotlin.concurrent.thread
 
 private const val MAX_COMMANDS = 500_000
+private const val MAX_STACK = 500
 
 class IrInterpreter(private val irBuiltIns: IrBuiltIns, private val bodyMap: Map<IdSignature, IrBody> = emptyMap()) {
     private val irExceptions = mutableListOf<IrClass>()
@@ -73,23 +74,19 @@ class IrInterpreter(private val irBuiltIns: IrBuiltIns, private val bodyMap: Map
 
     fun interpret(expression: IrExpression): IrExpression {
         stack.clean()
-        lateinit var result: IrExpression
-        thread(start = true) {
-            result = try {
-                when (val returnLabel = expression.interpret().returnLabel) {
-                    ReturnLabel.REGULAR -> stack.popReturnValue().toIrExpression(expression)
-                    ReturnLabel.EXCEPTION -> {
-                        val message = (stack.popReturnValue() as ExceptionState).getFullDescription()
-                        IrErrorExpressionImpl(expression.startOffset, expression.endOffset, expression.type, "\n" + message)
-                    }
-                    else -> TODO("$returnLabel not supported as result of interpretation")
+        return try {
+            when (val returnLabel = expression.interpret().returnLabel) {
+                ReturnLabel.REGULAR -> stack.popReturnValue().toIrExpression(expression)
+                ReturnLabel.EXCEPTION -> {
+                    val message = (stack.popReturnValue() as ExceptionState).getFullDescription()
+                    IrErrorExpressionImpl(expression.startOffset, expression.endOffset, expression.type, "\n" + message)
                 }
-            } catch (e: Throwable) {
-                // TODO don't handle, throw to lowering
-                IrErrorExpressionImpl(expression.startOffset, expression.endOffset, expression.type, "\n" + e.message)
+                else -> TODO("$returnLabel not supported as result of interpretation")
             }
-        }.join()
-        return result
+        } catch (e: Throwable) {
+            // TODO don't handle, throw to lowering
+            IrErrorExpressionImpl(expression.startOffset, expression.endOffset, expression.type, "\n" + e.message)
+        }
     }
 
     private fun IrElement.interpret(): ExecutionResult {
@@ -146,6 +143,7 @@ class IrInterpreter(private val irBuiltIns: IrBuiltIns, private val bodyMap: Map
 
     // this method is used to get stack trace after exception
     private fun interpretFunction(irFunction: IrSimpleFunction): ExecutionResult {
+        if (stack.getStackCount() >= MAX_STACK) StackOverflowError().throwAsUserException()
         if (irFunction.fileOrNull != null) stack.setCurrentFrameName(irFunction)
 
         if (irFunction.body is IrSyntheticBody) return handleIntrinsicMethods(irFunction)
