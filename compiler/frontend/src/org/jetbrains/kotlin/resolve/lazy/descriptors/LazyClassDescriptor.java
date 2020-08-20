@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.descriptors.*;
 import org.jetbrains.kotlin.descriptors.annotations.Annotations;
 import org.jetbrains.kotlin.descriptors.impl.ClassDescriptorBase;
 import org.jetbrains.kotlin.descriptors.impl.FunctionDescriptorImpl;
+import org.jetbrains.kotlin.descriptors.impl.ReceiverParameterDescriptorImpl;
 import org.jetbrains.kotlin.diagnostics.DiagnosticFactory0;
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation;
 import org.jetbrains.kotlin.lexer.KtTokens;
@@ -41,6 +42,7 @@ import org.jetbrains.kotlin.resolve.lazy.declarations.ClassMemberDeclarationProv
 import org.jetbrains.kotlin.resolve.scopes.LexicalScope;
 import org.jetbrains.kotlin.resolve.scopes.MemberScope;
 import org.jetbrains.kotlin.resolve.scopes.StaticScopeForKotlinEnum;
+import org.jetbrains.kotlin.resolve.scopes.receivers.ExtensionClassReceiver;
 import org.jetbrains.kotlin.resolve.source.KotlinSourceElementKt;
 import org.jetbrains.kotlin.storage.MemoizedFunctionToNotNull;
 import org.jetbrains.kotlin.storage.NotNullLazyValue;
@@ -53,8 +55,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static kotlin.collections.CollectionsKt.emptyList;
 import static kotlin.collections.CollectionsKt.firstOrNull;
 import static org.jetbrains.kotlin.descriptors.DescriptorVisibilities.PRIVATE;
 import static org.jetbrains.kotlin.descriptors.DescriptorVisibilities.PUBLIC;
@@ -106,6 +108,8 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
     private final NotNullLazyValue<LexicalScope> scopeForInitializerResolution;
 
     private final NotNullLazyValue<Collection<ClassDescriptor>> sealedSubclasses;
+
+    private final NotNullLazyValue<List<ReceiverParameterDescriptor>> contextReceivers;
 
     public LazyClassDescriptor(
             @NotNull LazyClassContext c,
@@ -275,9 +279,23 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
             storageManager.createLazyValue(() -> {
                 if (getModality() == Modality.SEALED) {
                     return c.getSealedClassInheritorsProvider().computeSealedSubclasses(this, freedomForSealedInterfacesSupported);
-                } else {
+                }
+                else {
                     return Collections.emptyList();
                 }
+            });
+        this.contextReceivers = storageManager.createLazyValue(() -> {
+            if (classOrObject == null) {
+                return CollectionsKt.emptyList();
+            }
+            return classOrObject.getContextReceiverTypeReferences().stream().map(typeReference -> {
+                KotlinType kotlinType = c.getTypeResolver().resolveType(getScopeForClassHeaderResolution(), typeReference, c.getTrace(), true);
+                return new ReceiverParameterDescriptorImpl(
+                        this,
+                        new ExtensionClassReceiver(this, kotlinType, null),
+                        Annotations.Companion.getEMPTY()
+                );
+            }).collect(Collectors.toList());
         });
     }
 
@@ -412,6 +430,12 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
     @Override
     public Collection<ClassConstructorDescriptor> getConstructors() {
         return ((LazyClassMemberScope) getUnsubstitutedMemberScope()).getConstructors();
+    }
+
+    @NotNull
+    @Override
+    public List<ReceiverParameterDescriptor> getContextReceivers() {
+        return contextReceivers.invoke();
     }
 
     @Override
@@ -605,6 +629,7 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
         ForceResolveUtil.forceResolveAllContents(getDescriptorsForExtraCompanionObjects());
         ForceResolveUtil.forceResolveAllContents(getUnsubstitutedMemberScope());
         ForceResolveUtil.forceResolveAllContents(getTypeConstructor());
+        ForceResolveUtil.forceResolveAllContents(this.getContextReceivers());
     }
 
     // Note: headers of member classes' members are not resolved
@@ -634,6 +659,7 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
         }
         getUnsubstitutedPrimaryConstructor();
         getVisibility();
+        getContextReceivers();
     }
 
     @NotNull
