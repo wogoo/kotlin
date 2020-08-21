@@ -1,2 +1,3 @@
 EXCEPTION: infinityWhile() at 8 line will produce exception: 
-Exceeded execution limit of constexpr expression
+Exception org.jetbrains.kotlin.ir.interpreter.exceptions.InterpreterTimeOutError: Exceeded execution limit of constexpr expression
+	at CommandsOutExceptionKt.infinityWhile(commandsOutException.kt:4)
