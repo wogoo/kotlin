@@ -53,6 +53,7 @@ fun compile(
     propertyLazyInitialization: Boolean,
     traceMethods: Boolean = false,
     focusOnTest: String? = null,
+    forceAllJs: Boolean = false,
 ): CompilerResult {
     val irFactory = if (dceDriven) PersistentIrFactory() else IrFactoryImpl
 
