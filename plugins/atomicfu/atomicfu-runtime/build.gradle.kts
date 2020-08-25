@@ -1,22 +1,33 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
-import org.jetbrains.kotlin.gradle.plugin.KotlinJsCompilerType.IR
-
 description = "Atomicfu Runtime"
 
 plugins {
     kotlin("js")
+    `maven-publish`
 }
 
 group = "kotlinx.atomicfu"
 
-kotlin.sourceSets {
-    getByName("main") {
-        dependencies {
-            implementation(kotlin("stdlib-js"))
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+kotlin {
+    js()
+
+    sourceSets {
+        js().compilations["main"].defaultSourceSet {
+            dependencies {
+                implementation(kotlin("stdlib-js"))
+            }
         }
     }
 }
 
-kotlin.target {
-    nodejs()
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["kotlin"])
+        }
+    }
 }

@@ -41,6 +41,7 @@ dependencies {
     compileOnly(project(":js:js.frontend"))
     compileOnly(project(":js:js.translator"))
     compile(project(":compiler:backend.js"))
+    compileOnly(project(":kotlinx-atomicfu-runtime"))
 
     runtimeOnly(kotlinStdlib())
 
