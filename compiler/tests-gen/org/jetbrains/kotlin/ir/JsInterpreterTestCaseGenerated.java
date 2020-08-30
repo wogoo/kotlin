@@ -144,6 +144,11 @@ public class JsInterpreterTestCaseGenerated extends AbstractJsInterpreterTestCas
         runTest("compiler/testData/ir/interpreter/fib.kt");
     }
 
+    @TestMetadata("genericListOfPairs.kt")
+    public void testGenericListOfPairs() throws Exception {
+        runTest("compiler/testData/ir/interpreter/genericListOfPairs.kt");
+    }
+
     @TestMetadata("inKeyword.kt")
     public void testInKeyword() throws Exception {
         runTest("compiler/testData/ir/interpreter/inKeyword.kt");
@@ -485,6 +490,44 @@ public class JsInterpreterTestCaseGenerated extends AbstractJsInterpreterTestCas
         @TestMetadata("toList.kt")
         public void testToList() throws Exception {
             runTest("compiler/testData/ir/interpreter/generatedStdlib/toList.kt");
+        }
+    }
+
+    @TestMetadata("compiler/testData/ir/interpreter/proxy")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class Proxy extends AbstractJsInterpreterTestCase {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInProxy() throws Exception {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter/proxy"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true);
+        }
+
+        @TestMetadata("customCharSequence.kt")
+        public void testCustomCharSequence() throws Exception {
+            runTest("compiler/testData/ir/interpreter/proxy/customCharSequence.kt");
+        }
+
+        @TestMetadata("customEquals.kt")
+        public void testCustomEquals() throws Exception {
+            runTest("compiler/testData/ir/interpreter/proxy/customEquals.kt");
+        }
+
+        @TestMetadata("proxyLambda.kt")
+        public void testProxyLambda() throws Exception {
+            runTest("compiler/testData/ir/interpreter/proxy/proxyLambda.kt");
+        }
+
+        @TestMetadata("proxyPair.kt")
+        public void testProxyPair() throws Exception {
+            runTest("compiler/testData/ir/interpreter/proxy/proxyPair.kt");
+        }
+
+        @TestMetadata("superWrapper.kt")
+        public void testSuperWrapper() throws Exception {
+            runTest("compiler/testData/ir/interpreter/proxy/superWrapper.kt");
         }
     }
 }
