@@ -7,6 +7,7 @@ package org.jetbrains.kotlinx.atomicfu.compiler.extensions
 
 import org.jetbrains.kotlin.backend.common.deepCopyWithVariables
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContextImpl
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.ir.*
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder.buildValueParameter
@@ -122,11 +123,17 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
             return buildFunction(parent, origin, name, visibility, isInline, returnType).apply {
                 oldDeclaration.acceptVoid(ChangeDeclarationParentsVisitor(oldDeclaration, this))
                 body = oldDeclaration.body
-                val extendedValueParameters = oldDeclaration.valueParameters + listOf(
+                val oldParameters = oldDeclaration.valueParameters.mapIndexed { index, p ->
+                    // todo: here the value parameter is just copied,
+                    // todo: but p.kotlinType.constructor.declarationDescriptor.containingDeclaration still contains old function declaration
+                    buildValueParameter(this, p.name.identifier, index, p.type)
+                }
+                val extendedValueParameters = oldParameters + listOf(
                     buildValueParameter(this, GETTER, valueParametersCount, getterType),
                     buildValueParameter(this, SETTER, valueParametersCount + 1, setterType)
                 )
                 valueParameters = extendedValueParameters
+                typeParameters = oldDeclaration.typeParameters
                 extensionReceiverParameter = null
             }
         }
@@ -254,7 +261,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
                     dispatchReceiver = dispatchReceiver!!.transformAtomicFunctionCall(parentDeclaration)
                 }
                 getValueArguments().forEachIndexed { i, arg ->
-                    putValueArgument(i, arg?.transformAtomicFunctionCall(parentDeclaration) as IrExpression)
+                    putValueArgument(i, arg?.transformAtomicFunctionCall(parentDeclaration))
                 }
                 val isInline = symbol.owner.isInline
                 val callReceiver = extensionReceiver ?: dispatchReceiver ?: return this
@@ -273,7 +280,6 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
                     }
                 }
                 // 3. transform inline Atomic* extension function call
-                //
                 if (isInline && callReceiver is IrCall && callReceiver.type.isAtomicValueType()) {
                     val accessors = callReceiver.getPropertyAccessors(parentDeclaration)
                     val dispatch = dispatchReceiver
@@ -406,9 +412,8 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
     }
 
     private fun IrCall.getPropertyAccessors(parentDeclaration: IrDeclaration): List<IrExpression> =
-        listOf( buildAccessorLambda(isSetter = false, parentDeclaration = parentDeclaration),
-               buildAccessorLambda(isSetter = true, parentDeclaration = parentDeclaration)
-        )
+        listOf(buildAccessorLambda(isSetter = false, parentDeclaration = parentDeclaration),
+               buildAccessorLambda(isSetter = true, parentDeclaration = parentDeclaration))
 
     private fun getRuntimeFunctionSymbol(name: String, type: IrType): IrSimpleFunctionSymbol {
         val functionName = when (name) {
@@ -489,11 +494,19 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
         packageName: String,
         name: String,
         predicate: (IrFunctionSymbol) -> Boolean = { true }
-    ) = context.referenceFunctions(FqName("$packageName.$name")).single(predicate)
+    ) = try {
+            context.referenceFunctions(FqName("$packageName.$name")).single(predicate)
+        } catch (e: RuntimeException) {
+            error("Exception while looking for the function `$name` in package `$packageName`: ${e.message}, scope: ${buildString { for (N in (context as IrPluginContextImpl).scopeFunctions(FqName("$packageName.atomic"))!!) { append(N.identifier); append("\n") } }}")
+        }
 
     private fun referenceFunction(classSymbol: IrClassSymbol, functionName: String): IrSimpleFunctionSymbol {
         val functionId = FqName("$KOTLIN.${classSymbol.owner.name}.$functionName")
-        return context.referenceFunctions(functionId).single()
+        return try {
+            context.referenceFunctions(functionId).single()
+        } catch (e: RuntimeException) {
+            error("Exception while looking for the function `$functionId`: ${e.message}")
+        }
     }
 
     companion object {
