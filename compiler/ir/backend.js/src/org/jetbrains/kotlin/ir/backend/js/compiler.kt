@@ -54,6 +54,7 @@ fun compile(
     traceMethods: Boolean = false,
     focusOnTest: String? = null,
     forceAllJs: Boolean = false,
+    legacyPropertyAccess: Boolean = false,
 ): CompilerResult {
     val irFactory = if (dceDriven) PersistentIrFactory() else IrFactoryImpl
 
@@ -77,7 +78,8 @@ fun compile(
         es6mode = es6mode,
         dceRuntimeDiagnostic = dceRuntimeDiagnostic,
         propertyLazyInitialization = propertyLazyInitialization,
-        irFactory = irFactory
+        irFactory = irFactory,
+        legacyPropertyAccess = legacyPropertyAccess
     )
 
     // Load declarations referenced during `context` initialization
