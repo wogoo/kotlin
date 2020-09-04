@@ -228,7 +228,12 @@ class FunctionGenerator(declarationGenerator: DeclarationGenerator) : Declaratio
         primaryConstructorDescriptor: ClassConstructorDescriptor,
         ktClassOrObject: KtPureClassOrObject
     ): IrConstructor =
-        declareConstructor(ktClassOrObject, ktClassOrObject.primaryConstructor ?: ktClassOrObject, primaryConstructorDescriptor) {
+        declareConstructor(
+            ktClassOrObject,
+            ktClassOrObject.primaryConstructor ?: ktClassOrObject,
+            ktClassOrObject.contextReceiverTypeReferences,
+            primaryConstructorDescriptor
+        ) { irConstructor ->
             if (
                 primaryConstructorDescriptor.isExpect ||
                 DescriptorUtils.isAnnotationClass(primaryConstructorDescriptor.constructedClass) ||
@@ -236,12 +241,17 @@ class FunctionGenerator(declarationGenerator: DeclarationGenerator) : Declaratio
             )
                 null
             else
-                generatePrimaryConstructorBody(ktClassOrObject)
+                generatePrimaryConstructorBody(ktClassOrObject, irConstructor)
         }
 
-    fun generateSecondaryConstructor(ktConstructor: KtSecondaryConstructor): IrConstructor {
+    fun generateSecondaryConstructor(ktConstructor: KtSecondaryConstructor, ktClassOrObject: KtPureClassOrObject): IrConstructor {
         val constructorDescriptor = getOrFail(BindingContext.CONSTRUCTOR, ktConstructor) as ClassConstructorDescriptor
-        return declareConstructor(ktConstructor, ktConstructor, constructorDescriptor) {
+        return declareConstructor(
+            ktConstructor,
+            ktConstructor,
+            ktClassOrObject.contextReceiverTypeReferences,
+            constructorDescriptor
+        ) {
             when {
                 constructorDescriptor.constructedClass.isEffectivelyExternal() ->
                     null
@@ -258,8 +268,9 @@ class FunctionGenerator(declarationGenerator: DeclarationGenerator) : Declaratio
     private inline fun declareConstructor(
         ktConstructorElement: KtPureElement,
         ktParametersElement: KtPureElement,
+        ktContextReceiversElements: List<KtPureElement>,
         constructorDescriptor: ClassConstructorDescriptor,
-        generateBody: BodyGenerator.() -> IrBody?
+        generateBody: BodyGenerator.(IrConstructor) -> IrBody?
     ): IrConstructor {
         val startOffset = ktConstructorElement.getStartOffsetOfConstructorDeclarationKeywordOrNull() ?: ktConstructorElement.pureStartOffset
         val endOffset = ktConstructorElement.pureEndOffset
@@ -274,8 +285,8 @@ class FunctionGenerator(declarationGenerator: DeclarationGenerator) : Declaratio
                 metadata = DescriptorMetadataSource.Function(it.descriptor)
             }
         }.buildWithScope { irConstructor ->
-            generateValueParameterDeclarations(irConstructor, ktParametersElement, null, emptyList())
-            irConstructor.body = createBodyGenerator(irConstructor.symbol).generateBody()
+            generateValueParameterDeclarations(irConstructor, ktParametersElement, null, ktContextReceiversElements)
+            irConstructor.body = createBodyGenerator(irConstructor.symbol).generateBody(irConstructor)
             irConstructor.returnType = constructorDescriptor.returnType.toIrType()
         }
     }

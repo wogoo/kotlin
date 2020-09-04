@@ -34,6 +34,7 @@ import org.jetbrains.kotlin.ir.symbols.impl.IrSimpleFunctionSymbolImpl
 import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtConstructorDelegationCall
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.ValueArgument
@@ -59,6 +60,22 @@ import org.jetbrains.kotlin.util.OperatorNameConventions
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import kotlin.math.max
 import kotlin.math.min
+
+fun StatementGenerator.generateReceiverForDelegatingCall(
+    ktDefaultElement: KtElement,
+    receiver: ExtensionClassReceiver
+): IntermediateValue {
+    val irReceiverType = receiver.type.toIrType()
+    return generateDelegatedValue(irReceiverType) {
+        val receiverClassDescriptor = receiver.classDescriptor
+        val receiverParameter = receiverClassDescriptor.contextReceivers.single { it.value == receiver }
+        val receiverExpression = IrGetValueImpl(
+            ktDefaultElement.startOffsetSkippingComments, ktDefaultElement.endOffset, irReceiverType,
+            context.symbolTable.referenceValueParameter(receiverParameter)
+        )
+        OnceExpressionValue(receiverExpression)
+    }
+}
 
 fun StatementGenerator.generateReceiverOrNull(ktDefaultElement: KtElement, receiver: ReceiverValue?): IntermediateValue? =
     receiver?.let { generateReceiver(ktDefaultElement, receiver) }
@@ -93,6 +110,20 @@ fun StatementGenerator.generateReceiver(defaultStartOffset: Int, defaultEndOffse
                         defaultStartOffset, defaultEndOffset, irReceiverType,
                         context.symbolTable.referenceValueParameter(receiverClassDescriptor.thisAsReceiverParameter)
                     )
+            }
+            is ExtensionClassReceiver -> {
+                val receiverClassDescriptor = receiver.classDescriptor
+                val thisAsReceiverParameter = receiverClassDescriptor.thisAsReceiverParameter
+                val thisReceiver = IrGetValueImpl(
+                    defaultStartOffset, defaultEndOffset,
+                    thisAsReceiverParameter.type.toIrType(),
+                    context.symbolTable.referenceValue(thisAsReceiverParameter)
+                )
+                IrGetFieldImpl(
+                    defaultStartOffset, defaultEndOffset,
+                    context.symbolTable.referenceField(context.additionalDescriptorStorage.getField(receiver)),
+                    irReceiverType, thisReceiver
+                )
             }
             is ThisClassReceiver ->
                 generateThisOrSuperReceiver(receiver, receiver.classDescriptor)
@@ -222,7 +253,10 @@ fun StatementGenerator.generateCallReceiver(
         else -> {
             dispatchReceiverValue = generateReceiverOrNull(ktDefaultElement, dispatchReceiver)
             extensionReceiverValue = generateReceiverOrNull(ktDefaultElement, extensionReceiver)
-            contextReceiverValues = contextReceivers.mapNotNull { generateReceiverOrNull(ktDefaultElement, it) }
+            contextReceiverValues = if (ktDefaultElement is KtConstructorDelegationCall) contextReceivers.mapNotNull {
+                generateReceiverForDelegatingCall(ktDefaultElement, it as ExtensionClassReceiver)
+            }
+            else contextReceivers.mapNotNull { generateReceiverOrNull(ktDefaultElement, it) }
         }
     }
 
