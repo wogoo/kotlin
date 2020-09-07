@@ -115,7 +115,7 @@ interface TransformerHelpers {
     fun buildGetterType(valueType: IrType) = buildFunctionSimpleType(0, listOf(valueType))
     fun buildSetterType(valueType: IrType) = buildFunctionSimpleType(1, listOf(valueType, context.irBuiltIns.unitType))
 
-    private fun buildGetValue(symbol: IrValueSymbol) =
+    fun buildGetValue(symbol: IrValueSymbol) =
         IrGetValueImpl(UNDEFINED_OFFSET, UNDEFINED_OFFSET, symbol.owner.type, symbol)
 
     fun getterName(name: String) = "<get-$name>"
@@ -127,7 +127,7 @@ interface TransformerHelpers {
         return makeTypeProjection(this, Variance.INVARIANT)
     }
 
-    fun IrCall.getValueArguments() = (0 until valueArgumentsCount).map { i ->
+    fun IrFunctionAccessExpression.getValueArguments() = (0 until valueArgumentsCount).map { i ->
         getValueArgument(i)
     }
 

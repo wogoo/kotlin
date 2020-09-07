@@ -11,11 +11,17 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContextImpl
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.ir.*
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder.buildValueParameter
+import org.jetbrains.kotlin.ir.builders.declarations.buildTypeParameter
 import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.descriptors.WrappedClassDescriptor
+import org.jetbrains.kotlin.ir.descriptors.WrappedTypeParameterDescriptor
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.*
+import org.jetbrains.kotlin.ir.symbols.impl.IrClassSymbolImpl
+import org.jetbrains.kotlin.ir.symbols.impl.IrTypeParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
@@ -109,31 +115,50 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
         }
 
     private fun IrDeclaration.transformAtomicInlineDeclaration(): IrDeclaration {
+        // inline fun Atomic*<T>.foo(...) { ... }
         if (this is IrFunction &&
             isInline &&
             extensionReceiverParameter != null &&
             extensionReceiverParameter!!.type.isAtomicValueType()
         ) {
-            val type = extensionReceiverParameter!!.type
-            val valueType = type.atomicToValueType()
-            val getterType = buildGetterType(valueType)
-            val setterType = buildSetterType(valueType)
+            val extensionReceiverAtomicType = extensionReceiverParameter!!.type // Atomic*<T>
+            val extensionReceiverValueType = extensionReceiverAtomicType.atomicToValueType() // T
+            val extensionReceiverTypeParameter = extensionReceiverValueType.classifierOrNull?.owner
+            // containing declaration of this type parameter is transformed -> wrap it's type descriptor, so that MangleChecker will skip it
+            val wrappedExtensionReceiverType = extensionReceiverValueType.wrapTypeParameterDescriptor()
+            val getterType = buildGetterType(wrappedExtensionReceiverType)
+            val setterType = buildSetterType(wrappedExtensionReceiverType)
             val valueParametersCount = valueParameters.size
             val oldDeclaration = this
             return buildFunction(parent, origin, name, visibility, isInline, returnType).apply {
                 oldDeclaration.acceptVoid(ChangeDeclarationParentsVisitor(oldDeclaration, this))
                 body = oldDeclaration.body
                 val oldParameters = oldDeclaration.valueParameters.mapIndexed { index, p ->
-                    // todo: here the value parameter is just copied,
-                    // todo: but p.kotlinType.constructor.declarationDescriptor.containingDeclaration still contains old function declaration
-                    buildValueParameter(this, p.name.identifier, index, p.type)
+                    val typeParameter = p.type.classifierOrNull?.owner
+                    val wrappedType = if (typeParameter is IrClass) {
+                        val arguments = (p.type as IrSimpleType).arguments.map { typeArg ->
+                            if (typeArg is IrSimpleType && typeArg.classifier.owner === extensionReceiverTypeParameter) {
+                                wrappedExtensionReceiverType as IrTypeArgument
+                            } else typeArg
+                        }
+                        p.type.wrapClassTypeDescriptor(arguments)
+                    } else p.type.wrapTypeParameterDescriptor()
+                    buildValueParameter(this, p.name.identifier, index, wrappedType)
                 }
                 val extendedValueParameters = oldParameters + listOf(
                     buildValueParameter(this, GETTER, valueParametersCount, getterType),
                     buildValueParameter(this, SETTER, valueParametersCount + 1, setterType)
                 )
                 valueParameters = extendedValueParameters
-                typeParameters = oldDeclaration.typeParameters
+                typeParameters = oldDeclaration.typeParameters.mapIndexed { i, t ->
+                    buildTypeParameter(this) {
+                        origin = t.origin
+                        name = t.name
+                        index = i
+                        isReified = t.isReified
+                        variance = t.variance
+                    }
+                }
                 extensionReceiverParameter = null
             }
         }
@@ -150,6 +175,24 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
             if (declaration.parent == parent) declaration.parent = newParent
             super.visitDeclaration(declaration)
         }
+    }
+
+    private fun IrType.wrapClassTypeDescriptor(typeArguments: List<IrTypeArgument>): IrType {
+        val typeParameter = classifierOrNull?.owner
+        return if (this is IrSimpleType && typeParameter is IrClass) {
+            val classDesc = WrappedClassDescriptor().apply { bind(typeParameter) }
+            val classifier = IrClassSymbolImpl(classDesc).apply { bind(typeParameter) }
+            IrSimpleTypeImpl(classifier, hasQuestionMark, typeArguments, annotations, abbreviation)
+        } else this
+    }
+
+    private fun IrType.wrapTypeParameterDescriptor(): IrType {
+        val typeParameter = classifierOrNull?.owner
+        return if (this is IrSimpleType && typeParameter is IrTypeParameter) {
+            val typeParameterDescriptor = WrappedTypeParameterDescriptor().apply { bind(typeParameter) }
+            val classifier = IrTypeParameterSymbolImpl(typeParameterDescriptor).apply { bind(typeParameter) }
+            IrSimpleTypeImpl(classifier, hasQuestionMark, arguments, annotations, abbreviation)
+        } else this
     }
 
     private fun IrExpression.getPureTypeValue(): IrExpression {
@@ -256,6 +299,16 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
                     }
                 }
             }
+            is IrGetValue -> {
+                if (symbol is IrValueParameterSymbol && symbol.owner.parent is IrFunction) {
+                    val parentFunction = symbol.owner.parent as IrFunction
+                    val index = (symbol.owner as IrValueParameter).index
+                    if (index >= 0) { // index == -1 for `this` parameter
+                        val transformedValueParameter = parentFunction.valueParameters[index]
+                        return buildGetValue(transformedValueParameter.symbol)
+                    }
+                }
+            }
             is IrCall -> {
                 if (dispatchReceiver != null) {
                     dispatchReceiver = dispatchReceiver!!.transformAtomicFunctionCall(parentDeclaration)
@@ -295,6 +348,11 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
                     }
                 }
             }
+            is IrConstructorCall -> {
+                getValueArguments().forEachIndexed { i, arg ->
+                    putValueArgument(i, arg?.transformAtomicFunctionCall(parentDeclaration))
+                }
+            }
         }
         return this
     }
@@ -308,8 +366,8 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
                 it is IrSimpleFunction &&
                         it.name == symbol.owner.name &&
                         it.valueParameters.size == params.size + 2 &&
-                        it.valueParameters.dropLast(2).withIndex().all { p -> p.value.type == params[p.index] } &&
-                        it.getGetterReturnType() == extensionType
+                        it.valueParameters.dropLast(2).withIndex().all { p -> p.value.type.classifierOrNull?.owner == params[p.index].classifierOrNull?.owner } &&
+                        it.getGetterReturnType()?.classifierOrNull?.owner == extensionType?.classifierOrNull?.owner
             } as IrSimpleFunction
         } catch (e: RuntimeException) {
             error("Exception while looking for the declaration with accessor parameters: ${e.message}")
@@ -427,7 +485,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
         }
     }
 
-    private fun IrFunction.getGetterReturnType() = (valueParameters[valueParameters.lastIndex - 1].type as IrSimpleType).arguments.first()
+    private fun IrFunction.getGetterReturnType() = (valueParameters[valueParameters.lastIndex - 1].type as IrSimpleType).arguments.first().typeOrNull
 
     private fun IrCall.isAtomicFactoryFunction(): Boolean {
         val name = symbol.owner.name

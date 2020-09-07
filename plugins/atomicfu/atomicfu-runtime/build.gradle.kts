@@ -5,7 +5,7 @@ plugins {
     `maven-publish`
 }
 
-group = "kotlinx.atomicfu"
+group = "org.jetbrains.kotlin"
 
 repositories {
     mavenLocal()

@@ -112,4 +112,9 @@ public class ArithmeticTestGenerated extends AbstractBasicAtomicfuTest {
     public void testPropertyDeclarationTest() throws Exception {
         runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/PropertyDeclarationTest.kt");
     }
+
+    @TestMetadata("ParameterizedInlineFunExtensionTest.kt")
+    public void testParameterizedInlineFunExtensionTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/ParameterizedInlineFunExtensionTest.kt");
+    }
 }
