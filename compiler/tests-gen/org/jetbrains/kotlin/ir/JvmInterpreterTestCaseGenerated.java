@@ -114,6 +114,11 @@ public class JvmInterpreterTestCaseGenerated extends AbstractJvmInterpreterTestC
         runTest("compiler/testData/ir/interpreter/doWhileLoop.kt");
     }
 
+    @TestMetadata("doubleArrayOf.kt")
+    public void testDoubleArrayOf() throws Exception {
+        runTest("compiler/testData/ir/interpreter/doubleArrayOf.kt");
+    }
+
     @TestMetadata("elvis.kt")
     public void testElvis() throws Exception {
         runTest("compiler/testData/ir/interpreter/elvis.kt");
@@ -349,6 +354,11 @@ public class JvmInterpreterTestCaseGenerated extends AbstractJvmInterpreterTestC
 
         public void testAllFilesPresentInCollections() throws Exception {
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter/collections"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true);
+        }
+
+        @TestMetadata("doubleList.kt")
+        public void testDoubleList() throws Exception {
+            runTest("compiler/testData/ir/interpreter/collections/doubleList.kt");
         }
 
         @TestMetadata("mapOf.kt")
