@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.targets.js.KotlinJsTarget
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
+import org.jetbrains.kotlin.gradle.dsl.*
 
 class AtomicfuGradleSubplugin : Plugin<Project> {
     companion object {
@@ -45,8 +46,15 @@ class AtomicfuKotlinGradleSubplugin : KotlinGradleSubplugin<AbstractCompile> {
     override fun isApplicable(project: Project, task: AbstractCompile) =
         task is Kotlin2JsCompile && project.hasIrTargets()
 
+
     private fun Project.hasIrTargets(): Boolean {
         extensions.findByType(KotlinProjectExtension::class.java)?.let { kotlinExtension ->
+            if (kotlinExtension is KotlinJsProjectExtension) {
+                val target = kotlinExtension._target
+                if ((target is KotlinJsTarget && target.irTarget != null) || target is KotlinJsIrTarget) {
+                    return true
+                }
+            }
             val targetsExtension = (kotlinExtension as? ExtensionAware)?.extensions?.findByName("targets")
             @Suppress("UNCHECKED_CAST")
             if (targetsExtension != null) {

@@ -18,7 +18,7 @@ kotlin {
     sourceSets {
         js().compilations["main"].defaultSourceSet {
             dependencies {
-                implementation(kotlin("stdlib-js"))
+                compileOnly(kotlin("stdlib-js"))
             }
         }
     }

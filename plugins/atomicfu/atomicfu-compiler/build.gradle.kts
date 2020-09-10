@@ -27,6 +27,7 @@ val atomicfuRuntimeForTests by configurations.creating {
 }
 
 repositories {
+    mavenLocal()
     jcenter()
 }
 
@@ -41,7 +42,6 @@ dependencies {
     compileOnly(project(":js:js.frontend"))
     compileOnly(project(":js:js.translator"))
     compile(project(":compiler:backend.js"))
-    compileOnly(project(":kotlinx-atomicfu-runtime"))
 
     runtimeOnly(kotlinStdlib())
 
@@ -55,18 +55,10 @@ dependencies {
     testRuntime(project(":compiler:backend-common"))
     testRuntime(commonDep("org.fusesource.jansi", "jansi"))
 
-    atomicfuClasspath("org.jetbrains.kotlinx:atomicfu-js:0.14.4") {
+    atomicfuClasspath("org.jetbrains.kotlinx:atomicfu-js:0.14.4-1.4-test") {
         isTransitive = false
     }
 
-    embedded(project(":kotlinx-atomicfu-runtime")) {
-        isTransitive = false
-        attributes {
-            attribute(KotlinPlatformType.attribute, KotlinPlatformType.js)
-            attribute(KotlinJsCompilerAttribute.jsCompilerAttribute, KotlinJsCompilerAttribute.ir)
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(KotlinUsages.KOTLIN_RUNTIME))
-        }
-    }
     atomicfuRuntimeForTests(project(":kotlinx-atomicfu-runtime"))  { isTransitive = false }
 
     val currentOs = OperatingSystem.current()

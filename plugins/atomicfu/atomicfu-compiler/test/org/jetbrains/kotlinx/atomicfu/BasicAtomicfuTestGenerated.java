@@ -33,14 +33,14 @@ public class BasicAtomicfuTestGenerated extends AbstractBasicAtomicfuTest {
         runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/ArithmeticTest.kt");
     }
 
-    @TestMetadata("ArrayInlineFunctionTest.kt")
-    public void testArrayInlineFunctionTest() throws Exception {
-        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/ArrayInlineFunctionTest.kt");
-    }
-
     @TestMetadata("AtomicArrayTest.kt")
     public void testAtomicArrayTest() throws Exception {
         runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/AtomicArrayTest.kt");
+    }
+
+    @TestMetadata("ArrayInlineFunctionTest.kt")
+    public void testArrayInlineFunctionTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/ArrayInlineFunctionTest.kt");
     }
 
     @TestMetadata("ExtensionsTest.kt")
@@ -53,14 +53,9 @@ public class BasicAtomicfuTestGenerated extends AbstractBasicAtomicfuTest {
         runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/IndexArrayElementGetterTest.kt");
     }
 
-    @TestMetadata("LockFreeIntBitsTest.kt")
-    public void testLockFreeIntBitsTest() throws Exception {
-        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockFreeIntBitsTest.kt");
-    }
-
-    @TestMetadata("LockFreeLongCounterTest.kt")
-    public void testLockFreeLongCounterTest() throws Exception {
-        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockFreeLongCounterTest.kt");
+    @TestMetadata("LockFreeStackTest.kt")
+    public void testLockFreeStackTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockFreeStackTest.kt");
     }
 
     @TestMetadata("LockFreeQueueTest.kt")
@@ -68,14 +63,14 @@ public class BasicAtomicfuTestGenerated extends AbstractBasicAtomicfuTest {
         runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockFreeQueueTest.kt");
     }
 
-    @TestMetadata("LockFreeStackTest.kt")
-    public void testLockFreeStackTest() throws Exception {
-        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockFreeStackTest.kt");
+    @TestMetadata("LockFreeLongCounterTest.kt")
+    public void testLockFreeLongCounterTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockFreeLongCounterTest.kt");
     }
 
-    @TestMetadata("LockTest.kt")
-    public void testLockTest() throws Exception {
-        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockTest.kt");
+    @TestMetadata("LockFreeIntBitsTest.kt")
+    public void testLockFreeIntBitsTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockFreeIntBitsTest.kt");
     }
 
     @TestMetadata("LoopTest.kt")
@@ -83,14 +78,19 @@ public class BasicAtomicfuTestGenerated extends AbstractBasicAtomicfuTest {
         runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LoopTest.kt");
     }
 
-    @TestMetadata("MultiInitTest.kt")
-    public void testMultiInitTest() throws Exception {
-        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/MultiInitTest.kt");
-    }
-
     @TestMetadata("ScopeTest.kt")
     public void testScopeTest() throws Exception {
         runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/ScopeTest.kt");
+    }
+
+    @TestMetadata("LockTest.kt")
+    public void testLockTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/LockTest.kt");
+    }
+
+    @TestMetadata("MultiInitTest.kt")
+    public void testMultiInitTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/MultiInitTest.kt");
     }
 
     @TestMetadata("SimpleLockTest.kt")
@@ -106,5 +106,15 @@ public class BasicAtomicfuTestGenerated extends AbstractBasicAtomicfuTest {
     @TestMetadata("UncheckedCastTest.kt")
     public void testUncheckedCastTest() throws Exception {
         runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/UncheckedCastTest.kt");
+    }
+
+    @TestMetadata("PropertyDeclarationTest.kt")
+    public void testPropertyDeclarationTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/PropertyDeclarationTest.kt");
+    }
+
+    @TestMetadata("ParameterizedInlineFunExtensionTest.kt")
+    public void testParameterizedInlineFunExtensionTest() throws Exception {
+        runTest("plugins/atomicfu/atomicfu-compiler/testData/basic/ParameterizedInlineFunExtensionTest.kt");
     }
 }

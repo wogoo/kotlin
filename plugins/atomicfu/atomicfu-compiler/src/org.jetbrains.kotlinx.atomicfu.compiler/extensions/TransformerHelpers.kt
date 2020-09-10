@@ -6,6 +6,7 @@
 package org.jetbrains.kotlinx.atomicfu.compiler.extensions
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -31,7 +32,7 @@ interface TransformerHelpers {
         parent: IrDeclarationParent,
         origin: IrDeclarationOrigin,
         name: Name,
-        visibility: Visibility,
+        visibility: DescriptorVisibility,
         isInline: Boolean,
         returnType: IrType
     ): IrSimpleFunction =

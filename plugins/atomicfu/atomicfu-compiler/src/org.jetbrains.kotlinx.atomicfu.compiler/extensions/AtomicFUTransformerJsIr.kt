@@ -7,8 +7,7 @@ package org.jetbrains.kotlinx.atomicfu.compiler.extensions
 
 import org.jetbrains.kotlin.backend.common.deepCopyWithVariables
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.common.extensions.IrPluginContextImpl
-import org.jetbrains.kotlin.descriptors.Visibilities
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.*
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder.buildValueParameter
 import org.jetbrains.kotlin.ir.builders.declarations.buildTypeParameter
@@ -267,7 +266,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
             is IrReturn -> {
                 return apply { value = value.transformAtomicFunctionCall(parentDeclaration) }
             }
-            is IrSetVariable -> {
+            is IrSetValue -> {
                 return apply { value = value.transformAtomicFunctionCall(parentDeclaration) }
             }
             is IrSetField -> {
@@ -405,7 +404,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
             parent = parentDeclaration as IrDeclarationParent,
             origin = IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR,
             name = Name.identifier(name),
-            visibility = Visibilities.LOCAL,
+            visibility = DescriptorVisibilities.LOCAL,
             isInline = true,
             returnType = returnType
         ).apply {
@@ -500,7 +499,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
     private fun IrConstructorCall.isAtomicArrayConstructor() = (type as IrSimpleType).isAtomicArrayType()
 
     private fun IrSymbol.isKotlinxAtomicfuPackage() =
-        this.isPublicApi && signature.packageFqName().asString() == AFU_PKG.prettyStr()
+        this.isPublicApi && signature?.packageFqName()?.asString() == AFU_PKG.prettyStr()
 
     private fun IrType.isAtomicValueType() = belongsTo(ATOMICFU_VALUE_TYPE)
     private fun IrType.isAtomicArrayType() = belongsTo(ATOMIC_ARRAY_TYPE)
@@ -510,14 +509,14 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
 
     private fun IrType.belongsTo(packageName: String, typeName: String): Boolean {
         if (this !is IrSimpleType || !(classifier.isPublicApi && classifier is IrClassSymbol)) return false
-        val signature = classifier.signature.asPublic()!!
+        val signature = classifier.signature?.asPublic() ?: return false
         val pckg = signature.packageFqName().asString()
         val type = signature.declarationFqName
         return pckg == packageName.prettyStr() && type.matches(typeName.toRegex())
     }
 
     private fun IrCall.getAtomicFunctionName(): String {
-        val signature = symbol.signature
+        val signature = symbol.signature!!
         val classFqName = if (signature is IdSignature.AccessorSignature) {
             signature.accessorSignature.declarationFqName
         } else (signature.asPublic()!!).declarationFqName
@@ -555,7 +554,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
     ) = try {
             context.referenceFunctions(FqName("$packageName.$name")).single(predicate)
         } catch (e: RuntimeException) {
-            error("Exception while looking for the function `$name` in package `$packageName`: ${e.message}, scope: ${buildString { for (N in (context as IrPluginContextImpl).scopeFunctions(FqName("$packageName.atomic"))!!) { append(N.identifier); append("\n") } }}")
+            error("Exception while looking for the function `$name` in package `$packageName`: ${e.message}")
         }
 
     private fun referenceFunction(classSymbol: IrClassSymbol, functionName: String): IrSimpleFunctionSymbol {
