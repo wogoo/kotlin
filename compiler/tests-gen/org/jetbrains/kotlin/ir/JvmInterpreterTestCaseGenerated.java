@@ -558,4 +558,22 @@ public class JvmInterpreterTestCaseGenerated extends AbstractJvmInterpreterTestC
             runTest("compiler/testData/ir/interpreter/proxy/superWrapper.kt");
         }
     }
+
+    @TestMetadata("compiler/testData/ir/interpreter/reference")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class Reference extends AbstractJvmInterpreterTestCase {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInReference() throws Exception {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter/reference"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true);
+        }
+
+        @TestMetadata("propertyReference.kt")
+        public void testPropertyReference() throws Exception {
+            runTest("compiler/testData/ir/interpreter/reference/propertyReference.kt");
+        }
+    }
 }
