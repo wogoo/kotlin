@@ -18,13 +18,17 @@ package org.jetbrains.kotlin.psi2ir.generators
 
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.descriptors.annotations.Annotations
+import org.jetbrains.kotlin.descriptors.impl.LocalVariableDescriptor
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.Scope
 import org.jetbrains.kotlin.ir.declarations.IrConstructor
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
+import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.pureEndOffset
@@ -53,10 +57,17 @@ class BodyGenerator(
     override val scope = Scope(scopeOwnerSymbol)
     private val loopTable = HashMap<KtLoopExpression, IrLoop>()
 
-    fun generateFunctionBody(ktBody: KtExpression): IrBody {
+    fun generateFunctionBody(ktBody: KtExpression, ktFunction: KtFunction?): IrBody {
         val statementGenerator = createStatementGenerator()
 
         val irBlockBody = context.irFactory.createBlockBody(ktBody.startOffsetSkippingComments, ktBody.endOffset)
+        ktFunction?.let {
+            generateVariablesForReceiverExpressions(
+                statementGenerator,
+                irBlockBody,
+                ktFunction
+            )
+        }
         if (ktBody is KtBlockExpression) {
             statementGenerator.generateStatements(ktBody.statements, irBlockBody)
         } else {
@@ -121,6 +132,33 @@ class BodyGenerator(
         }
 
         return irBlockBody
+    }
+
+    private fun generateVariablesForReceiverExpressions(
+        statementGenerator: StatementGenerator,
+        irBlockBody: IrBlockBody,
+        ktFunction: KtFunction
+    ) {
+        val receiverExpressions = ktFunction.receiverExpressionList?.expressions() ?: return
+        val functionDescriptor = getOrFail(BindingContext.FUNCTION, ktFunction)
+        for ((variableIndex, expression) in receiverExpressions.withIndex()) {
+            val descriptor = LocalVariableDescriptor(
+                functionDescriptor,
+                Annotations.EMPTY,
+                Name.identifier("additionalReceiverObject${variableIndex}"),
+                getOrFail(BindingContext.EXPRESSION_TYPE_INFO, expression).type,
+                false, false, false,
+                SourceElement.NO_SOURCE
+            )
+            context.additionalDescriptorStorage.put(expression, descriptor)
+            val irVariable = context.symbolTable.declareVariable(
+                UNDEFINED_OFFSET, UNDEFINED_OFFSET, IrDeclarationOrigin.DEFINED,
+                descriptor,
+                descriptor.type.toIrType(),
+                statementGenerator.generateExpression(expression)
+            )
+            irBlockBody.statements.add(irVariable)
+        }
     }
 
     private fun generateReturnExpression(startOffset: Int, endOffset: Int, returnValue: IrExpression): IrReturnImpl {

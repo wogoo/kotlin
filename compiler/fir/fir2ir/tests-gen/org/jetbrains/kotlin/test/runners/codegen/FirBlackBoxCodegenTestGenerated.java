@@ -14295,6 +14295,28 @@ public class FirBlackBoxCodegenTestGenerated extends AbstractFirBlackBoxCodegenT
                     runTest("compiler/testData/codegen/box/extensionFunctions/contextReceivers/simpleCall.kt");
                 }
             }
+
+            @Nested
+            @TestMetadata("compiler/testData/codegen/box/extensionFunctions/receiverExpressions")
+            @TestDataPath("$PROJECT_ROOT")
+            public class ReceiverExpressions {
+                @Test
+                public void testAllFilesPresentInReceiverExpressions() throws Exception {
+                    KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/receiverExpressions"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+                }
+
+                @Test
+                @TestMetadata("anyContext.kt")
+                public void testAnyContext() throws Exception {
+                    runTest("compiler/testData/codegen/box/extensionFunctions/receiverExpressions/anyContext.kt");
+                }
+
+                @Test
+                @TestMetadata("simple.kt")
+                public void testSimple() throws Exception {
+                    runTest("compiler/testData/codegen/box/extensionFunctions/receiverExpressions/simple.kt");
+                }
+            }
         }
 
         @Nested
