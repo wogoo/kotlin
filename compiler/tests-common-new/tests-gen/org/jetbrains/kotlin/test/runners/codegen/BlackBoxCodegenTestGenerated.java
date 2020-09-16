@@ -14505,6 +14505,16 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
                 KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/contextReceivers"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM, true);
             }
         }
+
+        @Nested
+        @TestMetadata("compiler/testData/codegen/box/extensionFunctions/receiverExpressions")
+        @TestDataPath("$PROJECT_ROOT")
+        public class ReceiverExpressions {
+            @Test
+            public void testAllFilesPresentInReceiverExpressions() throws Exception {
+                KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/extensionFunctions/receiverExpressions"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM, true);
+            }
+        }
     }
 
     @Nested
