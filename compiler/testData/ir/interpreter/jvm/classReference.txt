@@ -1,0 +1,7 @@
+INFO: A::class.simpleName!! at 12 line will be replaced on: A
+
+INFO: A::class.qualifiedName!! at 13 line will be replaced on: test.A
+
+INFO: A::class.members.joinToString() at 14 line will be replaced on: val test.A.a: kotlin.Int, val test.A.b: kotlin.String, val test.A.(kotlin.String.)propertyWithExtension: kotlin.Int, fun test.A.(kotlin.Int.)funWithExtension(kotlin.Int): kotlin.Int, fun test.A.equals(kotlin.Any?): kotlin.Boolean, fun test.A.hashCode(): kotlin.Int, fun test.A.toString(): kotlin.String
+
+INFO: A::class.constructors.joinToString() at 15 line will be replaced on: fun <init>(kotlin.Int, kotlin.String): test.A
