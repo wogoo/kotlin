@@ -9,9 +9,9 @@ package kotlin
 
 @PublishedApi
 internal object _Assertions {
-    @JvmField
+    //@JvmField
     @PublishedApi
-    internal val ENABLED: Boolean = javaClass.desiredAssertionStatus()
+    internal val ENABLED: Boolean = true//javaClass.desiredAssertionStatus()
 }
 
 /**

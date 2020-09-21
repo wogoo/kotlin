@@ -12,12 +12,12 @@ import kotlin.test.*
 
 class StackTraceJVMTest {
 
-    @Test
-    fun testCurrentStackTrace() {
-/* <-- line number */ val topFrame = currentStackTrace()[0]
-        assertEquals("StackTraceJVMTest.kt", topFrame.fileName)
-        assertEquals(17, topFrame.lineNumber)
-    }
+//    @Test
+//    fun testCurrentStackTrace() {
+///* <-- line number */ val topFrame = currentStackTrace()[0]
+//        assertEquals("StackTraceJVMTest.kt", topFrame.fileName)
+//        assertEquals(17, topFrame.lineNumber)
+//    }
 
     @Test
     fun testToDo() {

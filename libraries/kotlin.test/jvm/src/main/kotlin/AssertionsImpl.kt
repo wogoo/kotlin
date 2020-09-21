@@ -17,37 +17,37 @@ internal actual fun <T : Throwable> checkResultIsFailure(exceptionClass: KClass<
     blockResult.fold(
         onSuccess = {
             val msg = messagePrefix(message)
-            asserter.fail(msg + "Expected an exception of ${exceptionClass.java} to be thrown, but was completed successfully.")
+            asserter.fail(msg + "Expected an exception of ${exceptionClass::class} to be thrown, but was completed successfully.")
         },
         onFailure = { e ->
-            if (exceptionClass.java.isInstance(e)) {
+            if (exceptionClass::class.isInstance(e)) {
                 @Suppress("UNCHECKED_CAST")
                 return e as T
             }
 
-            asserter.fail(messagePrefix(message) + "Expected an exception of ${exceptionClass.java} to be thrown, but was $e", e)
+            asserter.fail(messagePrefix(message) + "Expected an exception of ${exceptionClass::class} to be thrown, but was $e", e)
         }
     )
 }
 
 /** @suppress */
 @Deprecated("Provided for binary compatibility", level = DeprecationLevel.HIDDEN)
-@JvmName("assertFails")
+//@JvmName("assertFails")
 fun assertFailsNoInline(block: () -> Unit): Throwable = assertFails(block)
 
 /** @suppress */
 @Deprecated("Provided for binary compatibility", level = DeprecationLevel.HIDDEN)
-@JvmName("assertFails")
+//@JvmName("assertFails")
 fun assertFailsNoInline(message: String?, block: () -> Unit): Throwable = assertFails(message, block)
 
 /** @suppress */
 @Deprecated("Provided for binary compatibility", level = DeprecationLevel.HIDDEN)
-@JvmName("assertFailsWith")
+//@JvmName("assertFailsWith")
 fun <T : Throwable> assertFailsWithNoInline(exceptionClass: KClass<T>, block: () -> Unit): T = assertFailsWith(exceptionClass, block)
 
 /** @suppress */
 @Deprecated("Provided for binary compatibility", level = DeprecationLevel.HIDDEN)
-@JvmName("assertFailsWith")
+//@JvmName("assertFailsWith")
 fun <T : Throwable> assertFailsWithNoInline(exceptionClass: KClass<T>, message: String?, block: () -> Unit): T =
     assertFailsWith(exceptionClass, message, block)
 
@@ -60,22 +60,22 @@ fun <T : Throwable> assertFailsWithNoInline(exceptionClass: KClass<T>, message: 
 @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
 @InlineOnly
 actual inline fun todo(@Suppress("UNUSED_PARAMETER") block: () -> Unit) {
-    println("TODO at " + currentStackTrace()[0])
+    //println("TODO at " + currentStackTrace()[0])
 }
 
 /**
  * Returns an array of stack trace elements, each representing one stack frame.
  * The first element of the array (assuming the array is not empty) represents the top of the
- * stack, which is the place where [currentStackTrace] function was called from.
+ * stack, which is the place where [] function was called from.
  */
-@Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
-@InlineOnly
-inline fun currentStackTrace() = @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") (java.lang.Exception() as java.lang.Throwable).stackTrace
+//@Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+//@InlineOnly
+//inline fun currentStackTrace() = @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") (Exception() as Throwable).stackTrace
 
 
 /** Platform-specific construction of AssertionError with cause */
 internal actual fun AssertionErrorWithCause(message: String?, cause: Throwable?): AssertionError {
     val assertionError = if (message == null) AssertionError() else AssertionError(message)
-    assertionError.initCause(cause)
+    //assertionError.initCause(cause)
     return assertionError
 }

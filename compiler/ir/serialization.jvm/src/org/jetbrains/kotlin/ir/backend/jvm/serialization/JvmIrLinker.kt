@@ -402,13 +402,11 @@ class JvmIrLinker(
             if (this.descriptor.annotations.hasAnnotation(FqName("kotlin.CompileTimeCalculation"))) return true
 
             val packageStr = this.signature?.packageFqName()?.asString() ?: return false
-            val name = this.descriptor.name.asString()
+            //val name = this.descriptor.name.asString()
             if (!packageStr.startsWith("kotlin")) return false
-            return !packageStr.startsWith("kotlin.reflect") &&
-                    !packageStr.startsWith("kotlin.test") &&
-                    !packageStr.startsWith("kotlin.io") &&
-                    !packageStr.startsWith("kotlin.jvm") &&
-                    !(packageStr == "kotlin" && name == "assert")
+            return !packageStr.startsWith("kotlin.io") &&
+                    !packageStr.startsWith("kotlin.jvm") //&&
+                    //!(packageStr == "kotlin" && name == "assert")
         }
     }
 }
