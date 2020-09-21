@@ -524,6 +524,16 @@ public class JvmInterpreterTestCaseGenerated extends AbstractJvmInterpreterTestC
         public void testJavaStatic() throws Exception {
             runTest("compiler/testData/ir/interpreter/jvm/javaStatic.kt");
         }
+
+        @TestMetadata("kProperty2.kt")
+        public void testKProperty2() throws Exception {
+            runTest("compiler/testData/ir/interpreter/jvm/kProperty2.kt");
+        }
+
+        @TestMetadata("parameterReference.kt")
+        public void testParameterReference() throws Exception {
+            runTest("compiler/testData/ir/interpreter/jvm/parameterReference.kt");
+        }
     }
 
     @TestMetadata("compiler/testData/ir/interpreter/proxy")

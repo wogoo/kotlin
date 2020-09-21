@@ -23,3 +23,7 @@ INFO: B::class.members.toList()[3].returnType.toString() at 37 line will be repl
 INFO: (B<Number, Double, Int>(1)::getThis as KFunction<*>).returnType.arguments.joinToString() at 39 line will be replaced on: T, out E, in D
 
 INFO: (arrayOf(1)::iterator as KFunction<*>).returnType.arguments.joinToString() at 40 line will be replaced on: T
+
+INFO: C::class.members.toList()[0].toString() at 48 line will be replaced on: val test.C.(kotlin.String.)getLength: kotlin.Int
+
+INFO: C::class.members.toList()[0].returnType.classifier.toString() at 49 line will be replaced on: class kotlin.Int

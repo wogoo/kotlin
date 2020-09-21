@@ -39,3 +39,12 @@ const val bReturnType2 = B::class.members.toList()[3].returnType.toString()
 
 const val arguments1 = (B<Number, Double, Int>(1)::getThis as KFunction<*>).returnType.arguments.joinToString()
 const val arguments2 = (arrayOf(1)::iterator as KFunction<*>).returnType.arguments.joinToString()
+
+@CompileTimeCalculation
+class C {
+    val String.getLength
+        get() = this.length
+}
+
+const val cMember = C::class.members.toList()[0].toString()
+const val cMemberReturnType = C::class.members.toList()[0].returnType.classifier.toString()
