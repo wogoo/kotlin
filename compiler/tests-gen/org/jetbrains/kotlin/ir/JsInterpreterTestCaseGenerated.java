@@ -49,6 +49,11 @@ public class JsInterpreterTestCaseGenerated extends AbstractJsInterpreterTestCas
         KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true, "jvm");
     }
 
+    @TestMetadata("arrayClassCast.kt")
+    public void testArrayClassCast() throws Exception {
+        runTest("compiler/testData/ir/interpreter/arrayClassCast.kt");
+    }
+
     @TestMetadata("arrayConstructor.kt")
     public void testArrayConstructor() throws Exception {
         runTest("compiler/testData/ir/interpreter/arrayConstructor.kt");
