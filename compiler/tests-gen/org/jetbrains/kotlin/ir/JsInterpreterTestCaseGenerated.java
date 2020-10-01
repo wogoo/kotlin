@@ -563,4 +563,27 @@ public class JsInterpreterTestCaseGenerated extends AbstractJsInterpreterTestCas
             runTest("compiler/testData/ir/interpreter/reference/propertyReference.kt");
         }
     }
+
+    @TestMetadata("compiler/testData/ir/interpreter/useCases")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class UseCases extends AbstractJsInterpreterTestCase {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInUseCases() throws Exception {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter/useCases"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true);
+        }
+
+        @TestMetadata("matrixArray.kt")
+        public void testMatrixArray() throws Exception {
+            runTest("compiler/testData/ir/interpreter/useCases/matrixArray.kt");
+        }
+
+        @TestMetadata("matrixList.kt")
+        public void testMatrixList() throws Exception {
+            runTest("compiler/testData/ir/interpreter/useCases/matrixList.kt");
+        }
+    }
 }

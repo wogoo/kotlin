@@ -1,0 +1,1 @@
+INFO: demo() at 38 line will be replaced on: 10.0
