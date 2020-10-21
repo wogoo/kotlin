@@ -1,11 +1,12 @@
-INFO: tryFinally(0) at 41 line will be replaced on: 0
+INFO: tryFinally(0) at 42 line will be replaced on: 0
 
-INFO: tryFinally(10) at 42 line will be replaced on: 10
+INFO: tryFinally(10) at 43 line will be replaced on: 10
 
-INFO: tryFinally2() at 43 line will be replaced on: Inside try block; Inside finally; Outside try;
+INFO: tryFinally2() at 44 line will be replaced on: Inside try block; Inside finally; Outside try;
 
-EXCEPTION: tryCatchFinally() at 44 line will produce exception:
+EXCEPTION: tryCatchFinally() at 45 line will produce exception:
 Exception kotlin.IllegalArgumentException: In finally
-	at TryFinallyKt.tryCatchFinally(tryFinally.kt:26)
+	at TryFinallyKt.tryCatchFinally(tryFinally.kt:32)
+	at TryFinallyKt.<clinit>(tryFinally.kt:45)
 
-INFO: returnTryFinally() at 45 line will be replaced on: OK
+INFO: returnTryFinally() at 46 line will be replaced on: OK

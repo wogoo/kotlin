@@ -49,6 +49,8 @@ const val c2 = unsafeClassCast<String>()
 const val d1 = A<Int>().unsafeCast()
 const val d2 = A<String>().unsafeCast()
 
-const val stringList = getIntList<List<String>>().let { it[0].length }
+const val stringList = getIntList<List<String>>().let {
+    it[0].length
+}
 const val nullableStringList = getStringNullableList<List<String>>().let { it[0].length }
 const val nullableStringLength = getLength(getStringNullableList<List<String>>()[0])
