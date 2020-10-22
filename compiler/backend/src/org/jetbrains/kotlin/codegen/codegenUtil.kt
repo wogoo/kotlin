@@ -665,7 +665,7 @@ private fun generateLambdaForRunSuspend(
         visitEnd()
     }
 
-    writeSyntheticClassMetadata(lambdaBuilder, state)
+    writeSyntheticClassMetadata(lambdaBuilder, state, false)
 
     lambdaBuilder.done()
     return lambdaBuilder.thisName

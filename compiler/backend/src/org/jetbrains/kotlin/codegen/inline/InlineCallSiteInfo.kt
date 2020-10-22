@@ -5,11 +5,20 @@
 
 package org.jetbrains.kotlin.codegen.inline
 
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+import org.jetbrains.kotlin.descriptors.DescriptorVisibility
+
 class InlineCallSiteInfo(
     val ownerClassName: String,
     val functionName: String?,
     val functionDesc: String?,
-    val isInlineOrInsideInline: Boolean,
+    val inlineScopeVisibility: DescriptorVisibility?,
     val isSuspend: Boolean,
     val lineNumber: Int
-)
+) {
+    val isInlineOrInsideInline: Boolean
+        get() = inlineScopeVisibility != null
+
+    val isInPublicInlineScope: Boolean
+        get() = inlineScopeVisibility != null && !DescriptorVisibilities.isPrivate(inlineScopeVisibility)
+}

@@ -130,6 +130,8 @@ class JvmBackendContext(
 
     internal val continuationClassesVarsCountByType: MutableMap<IrAttributeContainer, Map<Type, Int>> = hashMapOf()
 
+    val publicAbiSymbols = mutableSetOf<IrClassSymbol>()
+
     internal fun referenceClass(descriptor: ClassDescriptor): IrClassSymbol =
         symbolTable.lazyWrapper.referenceClass(descriptor)
 

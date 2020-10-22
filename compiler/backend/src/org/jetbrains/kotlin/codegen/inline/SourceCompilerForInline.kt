@@ -121,7 +121,7 @@ class PsiSourceCompilerForInline(private val codegen: ExpressionCodegen, overrid
                 parentCodegen.className,
                 signature.asmMethod.name,
                 signature.asmMethod.descriptor,
-                compilationContextFunctionDescriptor.isInlineOrInsideInline(),
+                compilationContextFunctionDescriptor.getInlineCallSiteVisibility(),
                 compilationContextFunctionDescriptor.isSuspend,
                 CodegenUtil.getLineNumberForElement(callElement, false) ?: 0
             )
@@ -429,5 +429,8 @@ class PsiSourceCompilerForInline(private val codegen: ExpressionCodegen, overrid
 }
 
 fun DeclarationDescriptor.isInlineOrInsideInline(): Boolean =
-    if (this is FunctionDescriptor && isInline) true
-    else containingDeclaration?.isInlineOrInsideInline() == true
+    getInlineCallSiteVisibility() != null
+
+fun DeclarationDescriptor.getInlineCallSiteVisibility(): DescriptorVisibility? =
+    if (this is FunctionDescriptor && isInline) visibility
+    else containingDeclaration?.getInlineCallSiteVisibility()

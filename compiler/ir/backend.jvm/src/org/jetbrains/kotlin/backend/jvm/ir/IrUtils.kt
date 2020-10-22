@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.codegen.inline.coroutines.FOR_INLINE_SUFFIX
 import org.jetbrains.kotlin.config.JvmDefaultMode
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.deserialization.PLATFORM_DEPENDENT_ANNOTATION_FQ_NAME
 import org.jetbrains.kotlin.ir.IrElement
@@ -47,6 +48,7 @@ import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
 import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.jvm.annotations.JVM_DEFAULT_FQ_NAME
 import org.jetbrains.kotlin.resolve.jvm.annotations.JVM_DEFAULT_NO_COMPATIBILITY_FQ_NAME
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 /**
  * Perform as much type erasure as is significant for JVM signature generation.
@@ -395,3 +397,25 @@ fun IrType.getSingleAbstractMethod(): IrSimpleFunction? =
 
 fun IrClass.getSingleAbstractMethod(): IrSimpleFunction? =
     functions.singleOrNull { it.modality == Modality.ABSTRACT }
+
+// Map declarations to original declarations before lowering.
+private val IrDeclaration.original: IrDeclaration
+    get() = (this as? IrAttributeContainer)?.attributeOwnerId as? IrDeclaration ?: this
+
+// Declarations in the scope of an externally visible inline function are implicitly part of the
+// public ABI of a Kotlin module. This function returns the visibility of a containing inline function
+// (determined *before* lowering), or null if the given declaration is not in the scope of an inline function.
+val IrDeclaration.inlineScopeVisibility: DescriptorVisibility?
+    get() {
+        var owner = original
+        while (true) {
+            if (owner is IrFunction && owner.isInline) {
+                return owner.visibility
+            }
+            owner = owner.parent.safeAs<IrDeclaration>()?.original ?: return null
+        }
+    }
+
+// True for declarations which are in the scope of an externally visible inline function.
+val IrDeclaration.isInPublicInlineScope: Boolean
+    get() = inlineScopeVisibility?.let(DescriptorVisibilities::isPrivate) == false
