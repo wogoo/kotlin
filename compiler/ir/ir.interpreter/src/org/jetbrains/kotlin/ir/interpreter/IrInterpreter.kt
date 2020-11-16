@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.ir.interpreter.intrinsics.IntrinsicEvaluator
 import org.jetbrains.kotlin.ir.interpreter.proxy.CommonProxy.Companion.asProxy
 import org.jetbrains.kotlin.ir.interpreter.proxy.Proxy
 import org.jetbrains.kotlin.ir.interpreter.proxy.wrap
+import org.jetbrains.kotlin.ir.interpreter.stack.Stack
 import org.jetbrains.kotlin.ir.interpreter.stack.StackImpl
 import org.jetbrains.kotlin.ir.interpreter.stack.Variable
 import org.jetbrains.kotlin.ir.interpreter.state.*
@@ -33,10 +34,11 @@ import java.lang.invoke.MethodHandle
 private const val MAX_COMMANDS = 500_000
 private const val MAX_STACK = 500
 
-class IrInterpreter(val irBuiltIns: IrBuiltIns, private val bodyMap: Map<IdSignature, IrBody> = emptyMap()) {
+class IrInterpreter internal constructor(
+    val irBuiltIns: IrBuiltIns, private val bodyMap: Map<IdSignature, IrBody>, private val stack: Stack = StackImpl()
+) {
     private val irExceptions = mutableListOf<IrClass>()
 
-    private val stack = StackImpl()
     private var commandCount = 0
 
     private val mapOfEnums = mutableMapOf<IrSymbol, Complex>()
@@ -50,6 +52,8 @@ class IrInterpreter(val irBuiltIns: IrBuiltIns, private val bodyMap: Map<IdSigna
                 .filter { it.isSubclassOf(irBuiltIns.throwableClass.owner) }
         )
     }
+
+    constructor(irBuiltIns: IrBuiltIns, bodyMap: Map<IdSignature, IrBody> = emptyMap()) : this(irBuiltIns, bodyMap, StackImpl())
 
     private fun Any?.getType(defaultType: IrType): IrType {
         return when (this) {
