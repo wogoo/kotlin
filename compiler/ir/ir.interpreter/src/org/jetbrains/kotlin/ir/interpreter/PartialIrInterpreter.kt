@@ -132,14 +132,14 @@ class PartialIrInterpreter(
 
     override fun visitBody(body: IrBody, data: Nothing?): IrElement? {
         return when (body) {
-            is IrBlockBody -> visitBlockBody(body, data)
+            is IrBlockBody -> visitBlockBody(body, data).removeUnusedStatements()
             is IrExpressionBody -> visitExpressionBody(body, data)
             is IrSyntheticBody -> visitSyntheticBody(body, data)
             else -> null
         }
     }
 
-    override fun visitBlockBody(body: IrBlockBody, data: Nothing?): IrElement {
+    override fun visitBlockBody(body: IrBlockBody, data: Nothing?): IrBlockBody {
         return body.factory.createBlockBody(body.startOffset, body.endOffset) {
             this.statements.addAll(body.statements.map { it.accept(this@PartialIrInterpreter, data) as? IrStatement ?: it })
         }
@@ -164,10 +164,12 @@ class PartialIrInterpreter(
         }
     }
 
-    private fun IrContainerExpression.removeUnusedStatements(): IrStatement {
+    private fun IrStatementContainer.removeUnusedStatements(): IrElement? {
+        if (this !is IrElement) return null
         if (this.statements.isEmpty()) return this
 
         val variablesToUsage = mutableMapOf<IrVariable, Int>()
+        // inline const and count all appearances of IrVariable node
         for (i in 0 until this.statements.size) {
             val statement = this.statements[i]
             if (statement is IrVariable) {
@@ -188,7 +190,9 @@ class PartialIrInterpreter(
 
         for ((variable, usage) in variablesToUsage) {
             when (usage) {
+                // remove if value was inlined
                 0 -> this.statements.remove(variable)
+                // replace single appearance with initializer and remove
                 1 -> {
                     this.accept(object : IrElementTransformerVoid() {
                         override fun visitGetValue(expression: IrGetValue): IrExpression {
@@ -201,9 +205,13 @@ class PartialIrInterpreter(
             }
         }
 
-        if (!this.type.isUnit() && this.statements.size == 1) {
+        if (this is IrBlock && !this.type.isUnit() && this.statements.size == 1) {
             return this.statements.first()
         }
+        // TODO do we need IrBlockBody to IrExpressionBody transformation? Must convert `return` to its expression
+        /*if (this is IrBlockBody && this.statements.singleOrNull() is IrExpression) {
+            return this.factory.createExpressionBody(this.startOffset, this.endOffset, this.statements.single() as IrExpression)
+        }*/
         return this
     }
 
