@@ -7,30 +7,25 @@ package org.jetbrains.kotlin.ir.interpreter
 
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.descriptors.IrBuiltIns
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrBlockImpl
 import org.jetbrains.kotlin.ir.interpreter.checker.EvaluationMode
-import org.jetbrains.kotlin.ir.interpreter.checker.IrCompileTimeChecker
 import org.jetbrains.kotlin.ir.interpreter.stack.StackImpl
 import org.jetbrains.kotlin.ir.interpreter.stack.Variable
 import org.jetbrains.kotlin.ir.interpreter.state.Primitive
-import org.jetbrains.kotlin.ir.interpreter.state.Wrapper
-import org.jetbrains.kotlin.ir.types.classifierOrNull
 import org.jetbrains.kotlin.ir.types.isUnit
 import org.jetbrains.kotlin.ir.util.IdSignature
 import org.jetbrains.kotlin.ir.util.fileOrNull
-import org.jetbrains.kotlin.ir.util.isObject
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
 import kotlin.Exception
 
 // This class is an addition to IrInterpreter. The same logic can be implemented inside IrInterpreter with some kind of flag.
+// Visitor methods will return null if we cannot continue to interpret given statement
 class PartialIrInterpreter(
     val irBuiltIns: IrBuiltIns, bodyMap: Map<IdSignature, IrBody> = emptyMap(), private val mode: EvaluationMode = EvaluationMode.WITH_ANNOTATIONS
 ) : IrElementVisitor<IrElement?, Nothing?> {
@@ -91,34 +86,34 @@ class PartialIrInterpreter(
         }
     }
 
-    override fun visitElement(element: IrElement, data: Nothing?): IrElement? {
+    override fun visitElement(element: IrElement, data: Nothing?): IrElement {
         TODO("${element.javaClass} not supported")
     }
 
-    override fun visitCall(expression: IrCall, data: Nothing?): IrElement? {
+    override fun visitCall(expression: IrCall, data: Nothing?): IrElement {
         if (!mode.canEvaluateFunction(expression.symbol.owner)) return expression
-        expression.dispatchReceiver = expression.dispatchReceiver?.let { it.accept(this, data) as? IrExpression ?: return null }
-        expression.extensionReceiver = expression.extensionReceiver?.let { it.accept(this, data) as? IrExpression ?: return null }
+        expression.dispatchReceiver = expression.dispatchReceiver?.let { it.accept(this, data) as? IrExpression ?: return expression }
+        expression.extensionReceiver = expression.extensionReceiver?.let { it.accept(this, data) as? IrExpression ?: return expression }
         for (i in 0 until expression.valueArgumentsCount) {
             val argument = expression.getValueArgument(i) ?: continue
-            expression.putValueArgument(i, argument.accept(this, data) as? IrExpression ?: return null)
+            expression.putValueArgument(i, argument.accept(this, data) as? IrExpression ?: return expression)
         }
 
         return interpreter.interpret(expression)
     }
 
-    override fun visitConstructorCall(expression: IrConstructorCall, data: Nothing?): IrElement? {
+    override fun visitConstructorCall(expression: IrConstructorCall, data: Nothing?): IrElement {
         if (!mode.canEvaluateFunction(expression.symbol.owner)) return expression
         for (i in 0 until expression.valueArgumentsCount) {
             val argument = expression.getValueArgument(i) ?: continue
-            expression.putValueArgument(i, argument.accept(this, data) as? IrExpression ?: return null)
+            expression.putValueArgument(i, argument.accept(this, data) as? IrExpression ?: return expression)
         }
 
         interpreter.interpret(expression) // interpretation result is stored on stack
         return expression
     }
 
-    override fun visitEnumConstructorCall(expression: IrEnumConstructorCall, data: Nothing?): IrElement? {
+    override fun visitEnumConstructorCall(expression: IrEnumConstructorCall, data: Nothing?): IrElement {
         TODO("Not yet implemented")
     }
 
@@ -183,7 +178,14 @@ class PartialIrInterpreter(
                         }
                     }, null)
                 } else {
-                    variablesToUsage[statement] = variablesToUsage.getOrDefault(statement, 0) + 1
+                    this.accept(object : IrElementTransformerVoid() {
+                        override fun visitGetValue(expression: IrGetValue): IrExpression {
+                            if (expression.symbol == statement.symbol) {
+                                variablesToUsage[statement] = variablesToUsage.getOrDefault(statement, 0) + 1
+                            }
+                            return super.visitGetValue(expression)
+                        }
+                    }, null)
                 }
             }
         }
@@ -220,11 +222,13 @@ class PartialIrInterpreter(
         return expression
     }
 
-    override fun visitSetField(expression: IrSetField, data: Nothing?): IrElement? {
-        TODO("Not yet implemented")
+    override fun visitSetField(expression: IrSetField, data: Nothing?): IrElement {
+        // TODO
+        return expression
     }
 
-    override fun visitGetField(expression: IrGetField, data: Nothing?): IrElement? {
+    override fun visitGetField(expression: IrGetField, data: Nothing?): IrElement {
+        // TODO
         return expression
     }
 
@@ -237,6 +241,8 @@ class PartialIrInterpreter(
         return null // if value isn't present on stack, then we cannot continue interpretation
     }
 
+    override fun <T> visitConst(expression: IrConst<T>, data: Nothing?): IrElement = expression
+
     override fun visitVariable(declaration: IrVariable, data: Nothing?): IrElement? {
         if (declaration.initializer == null) {
             stack.addVar(Variable(declaration.symbol))
@@ -248,20 +254,25 @@ class PartialIrInterpreter(
     }
 
     override fun visitSetVariable(expression: IrSetVariable, data: Nothing?): IrElement? {
-        TODO("Not yet implemented")
-    }
-
-    override fun <T> visitConst(expression: IrConst<T>, data: Nothing?): IrElement = expression
-
-    override fun visitBranch(branch: IrBranch, data: Nothing?): IrElement? {
-        branch.condition = branch.condition.accept(this, data) as? IrExpression ?: return null
-        if (branch.condition.let { it is IrConst<*> && it.value == true }) {
-            return branch.result.accept(this, data) as? IrExpression ?: return null
+        if (stack.contains(expression.symbol)) {
+            expression.accept(this, data) ?: return null
+            return expression
         }
-        return null
+        return expression
     }
 
-    override fun visitWhen(expression: IrWhen, data: Nothing?): IrElement {
-        return expression.branches.firstNotNullResult { it.accept(this, data) } ?: expression
+    override fun visitTypeOperator(expression: IrTypeOperatorCall, data: Nothing?): IrElement {
+        return expression
+    }
+
+    override fun visitWhen(expression: IrWhen, data: Nothing?): IrElement? {
+        return expression.branches.firstNotNullResult { branch ->
+            branch.condition = branch.condition.accept(this, data) as? IrExpression ?: branch.condition
+            if (branch.condition !is IrConst<*>) return null
+            if ((branch.condition as IrConst<*>).value == true) {
+                return@firstNotNullResult branch.result.accept(this, data) as? IrExpression
+            }
+            null
+        }
     }
 }
