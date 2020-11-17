@@ -26,16 +26,15 @@ open class ExecutionExceptionWrapper(val e: Throwable) : ExecutionDiagnostic() {
     }
 }
 
-sealed class ExecutionResult<R, State>(
-    val state: State,
+sealed class ExecutionResult<R>(
     val diagnostics: List<ExecutionDiagnostic>
 ) {
-    class Failure<R, State, T>(val value: T, state: State, diagnostics: List<ExecutionDiagnostic>) :
-        ExecutionResult<R, State>(state, diagnostics)
+    class Failure<R, T>(val value: T, diagnostics: List<ExecutionDiagnostic>) :
+        ExecutionResult<R>(diagnostics)
 
-    open class Success<T, State>(val value: T, state: State, diagnostics: List<ExecutionDiagnostic>) :
-        ExecutionResult<T, State>(state, diagnostics)
+    open class Success<T>(val value: T, diagnostics: List<ExecutionDiagnostic>) :
+        ExecutionResult<T>(diagnostics)
 
-    class Partial<T, State>(value: T, state: State, diagnostics: List<ExecutionDiagnostic>) :
-        Success<T, State>(value, state, diagnostics)
+    class Partial<T>(value: T, diagnostics: List<ExecutionDiagnostic>) :
+        Success<T>(value, diagnostics)
 }

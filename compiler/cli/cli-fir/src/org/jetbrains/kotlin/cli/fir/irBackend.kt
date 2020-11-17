@@ -34,29 +34,18 @@ import org.jetbrains.kotlin.modules.Module
 import org.jetbrains.kotlin.modules.TargetId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.progress.ProgressIndicatorAndCompilationCanceledStatus
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.CompilerEnvironment
 import org.jetbrains.kotlin.resolve.lazy.declarations.FileBasedDeclarationProviderFactory
 import java.io.File
 
-class IrJvmBackendState(
-)
-
-data class IrBackendInputs(
-    val module: Module,
-    val files: List<KtFile>,
-    val configuration: CompilerConfiguration,
-    val frontendIrOutputs: FrontendIrOutputs
-)
-
-class IrJvmBackendBuilder : CompilationStageBuilder<IrBackendInputs, GenerationState, IrJvmBackendState> {
+class IrJvmBackendBuilder : CompilationStageBuilder<FrontendToIrConverterResult, GenerationState> {
     
     lateinit var environment: KotlinCoreEnvironment
     
     var messageCollector: MessageCollector = MessageCollector.NONE
     
-    override fun build(): CompilationStage<IrBackendInputs, GenerationState, IrJvmBackendState> =
-        IrJvmBackend(environment, messageCollector)
+    override fun build(): CompilationStage<FrontendToIrConverterResult, GenerationState> =
+        IrJvmBackend(messageCollector)
 
     operator fun invoke(body: IrJvmBackendBuilder.() -> Unit): IrJvmBackendBuilder {
         this.body()
@@ -65,32 +54,25 @@ class IrJvmBackendBuilder : CompilationStageBuilder<IrBackendInputs, GenerationS
 }
 
 class IrJvmBackend internal constructor(
-    internal val environment: KotlinCoreEnvironment,
-    var messageCollector: MessageCollector = MessageCollector.NONE
-) : CompilationStage<IrBackendInputs, GenerationState, IrJvmBackendState> {
+    val messageCollector: MessageCollector
+) : CompilationStage<FrontendToIrConverterResult, GenerationState> {
 
-    override fun execute(input: IrBackendInputs): ExecutionResult<GenerationState, IrJvmBackendState> =
-        execute(input, IrJvmBackendState())
-
-    override fun execute(
-        input: IrBackendInputs,
-        state: IrJvmBackendState
-    ): ExecutionResult<GenerationState, IrJvmBackendState> {
+    override fun execute(input: FrontendToIrConverterResult): ExecutionResult<GenerationState> {
         val dummyBindingContext = NoScopeRecordCliBindingTrace().bindingContext
 
         val codegenFactory = JvmIrCodegenFactory(input.configuration.get(CLIConfigurationKeys.PHASE_CONFIG) ?: PhaseConfig(jvmPhases))
 
         // Create and initialize the module and its dependencies
         val container = TopDownAnalyzerFacadeForJVM.createContainer(
-            environment.project, input.files, NoScopeRecordCliBindingTrace(), 
-            environment.configuration, environment::createPackagePartProvider,
+            input.project, input.sourceFiles, NoScopeRecordCliBindingTrace(),
+            input.configuration, { input.packagePartProvider ?: error("") },
             ::FileBasedDeclarationProviderFactory, CompilerEnvironment,
-            TopDownAnalyzerFacadeForJVM.newModuleSearchScope(environment.project, input.files), emptyList()
+            TopDownAnalyzerFacadeForJVM.newModuleSearchScope(input.project, input.sourceFiles), emptyList()
         )
 
         val generationState = GenerationState.Builder(
-            environment.project, ClassBuilderFactories.BINARIES,
-            container.get<ModuleDescriptor>(), dummyBindingContext, input.files,
+            input.project, ClassBuilderFactories.BINARIES,
+            container.get<ModuleDescriptor>(), dummyBindingContext, input.sourceFiles,
             input.configuration
         ).codegenFactory(
             codegenFactory
@@ -101,16 +83,16 @@ class IrJvmBackend internal constructor(
         ).isIrBackend(
             true
         ).jvmBackendClassResolver(
-            input.frontendIrOutputs.jvmBackendClassResolver
+            input.jvmBackendClassResolver
         ).build()
 
         ProgressIndicatorAndCompilationCanceledStatus.checkCanceled()
 
         generationState.beforeCompile()
         codegenFactory.generateModuleInFrontendIRMode(
-            generationState, input.frontendIrOutputs.moduleFragment, 
-            input.frontendIrOutputs.symbolTable, input.frontendIrOutputs.sourceManager,
-            input.frontendIrOutputs.metadataSerializerFactory
+            generationState, input.moduleFragment,
+            input.symbolTable, input.sourceManager!!,
+            input.metadataSerializerFactory!!
         ) 
         CodegenFactory.doCheckCancelled(generationState)
         generationState.factory.done()
@@ -128,7 +110,7 @@ class IrJvmBackend internal constructor(
         AnalyzerWithCompilerReport.reportBytecodeVersionErrors(
             generationState.extraJvmDiagnosticsTrace.bindingContext, messageCollector
         )
-        return ExecutionResult.Success(generationState, state, emptyList())
+        return ExecutionResult.Success(generationState, emptyList())
     }
 }
 

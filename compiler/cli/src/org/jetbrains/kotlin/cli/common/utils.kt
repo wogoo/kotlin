@@ -33,6 +33,10 @@ fun checkKotlinPackageUsage(environment: KotlinCoreEnvironment, files: Collectio
         return true
     }
     val messageCollector = environment.configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
+    return checkKotlinPackageUsage(files, messageCollector)
+}
+
+fun checkKotlinPackageUsage(files: Collection<KtFile>, messageCollector: MessageCollector): Boolean {
     val kotlinPackage = FqName("kotlin")
     for (file in files) {
         if (file.packageFqName.isSubpackageOf(kotlinPackage)) {

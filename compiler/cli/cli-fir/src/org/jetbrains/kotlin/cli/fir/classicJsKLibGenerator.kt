@@ -7,27 +7,22 @@ package org.jetbrains.kotlin.cli.fir
 
 import com.intellij.openapi.Disposable
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
-import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.ir.backend.js.expectActualLinker
 import org.jetbrains.kotlin.ir.backend.js.serializeModuleIntoKlib
 import org.jetbrains.kotlin.ir.util.ExpectDeclarationRemover
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 
-class ClassicJsKLibGeneratorState(
-)
-
-class ClassicJsKLibGeneratorResult(
-)
+class ClassicJsKLibGeneratorResult
 
 class ClassicJsKLibGeneratorBuilder(
     val rootDisposable: Disposable,
-) : CompilationStageBuilder<ClassicJsFrontendToIrConverterResult, ClassicJsKLibGeneratorResult, ClassicJsKLibGeneratorState> {
+) : CompilationStageBuilder<FrontendToIrConverterResult, ClassicJsKLibGeneratorResult> {
 
     var outputKlibPath: String? = null
 
     var nopack: Boolean? = null
 
-    override fun build(): CompilationStage<ClassicJsFrontendToIrConverterResult, ClassicJsKLibGeneratorResult, ClassicJsKLibGeneratorState> {
+    override fun build(): CompilationStage<FrontendToIrConverterResult, ClassicJsKLibGeneratorResult> {
         return ClassicJsKLibGenerator(outputKlibPath!!, nopack!!)
     }
 
@@ -40,34 +35,26 @@ class ClassicJsKLibGeneratorBuilder(
 class ClassicJsKLibGenerator internal constructor(
     val outputKlibPath: String,
     val nopack: Boolean
-) : CompilationStage<ClassicJsFrontendToIrConverterResult, ClassicJsKLibGeneratorResult, ClassicJsKLibGeneratorState> {
-
-    fun newState(): ClassicJsKLibGeneratorState {
-        return  ClassicJsKLibGeneratorState()
-    }
-
-    override fun execute(input: ClassicJsFrontendToIrConverterResult): ExecutionResult<ClassicJsKLibGeneratorResult, ClassicJsKLibGeneratorState> =
-        execute(input, newState())
+) : CompilationStage<FrontendToIrConverterResult, ClassicJsKLibGeneratorResult> {
 
     override fun execute(
-        input: ClassicJsFrontendToIrConverterResult,
-        state: ClassicJsKLibGeneratorState
-    ): ExecutionResult<ClassicJsKLibGeneratorResult, ClassicJsKLibGeneratorState> {
+        input: FrontendToIrConverterResult
+    ): ExecutionResult<ClassicJsKLibGeneratorResult> {
         val configuration = input.configuration
 
         val moduleName = configuration[CommonConfigurationKeys.MODULE_NAME]!!
 
-        val (moduleFragment, icData, psi2IrContext, project, files, dependenciesList, expectDescriptorToSymbol, hasErrors) = input
+        val (moduleFragment, icData, symbolTable, bindingContext, project, files, dependenciesList, expectDescriptorToSymbol, hasErrors) = input
 
         if (!configuration.expectActualLinker) {
-            moduleFragment.acceptVoid(ExpectDeclarationRemover(psi2IrContext.symbolTable, false))
+            moduleFragment.acceptVoid(ExpectDeclarationRemover(symbolTable, false))
         }
 
         serializeModuleIntoKlib(
             moduleName,
             project,
             configuration,
-            psi2IrContext.bindingContext,
+            bindingContext ?: error(""),
             files,
             outputKlibPath,
             dependenciesList,
@@ -82,7 +69,7 @@ class ClassicJsKLibGenerator internal constructor(
 
         return ExecutionResult.Success(
             ClassicJsKLibGeneratorResult(),
-            state, emptyList()
+            emptyList()
         )
     }
 }

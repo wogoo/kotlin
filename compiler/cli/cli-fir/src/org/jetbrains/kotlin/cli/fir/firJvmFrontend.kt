@@ -6,15 +6,13 @@
 package org.jetbrains.kotlin.cli.fir
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.ProjectScope
 import org.jetbrains.kotlin.analyzer.ModuleInfo
-import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
-import org.jetbrains.kotlin.backend.jvm.MetadataSerializerFactory
-import org.jetbrains.kotlin.backend.jvm.codegen.MetadataSerializer
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.parseCommandLineArguments
@@ -23,118 +21,90 @@ import org.jetbrains.kotlin.cli.common.messages.AnalyzerWithCompilerReport
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
-import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.TopDownAnalyzerFacadeForJVM
-import org.jetbrains.kotlin.codegen.JvmBackendClassResolver
-import org.jetbrains.kotlin.codegen.serialization.JvmSerializationBindings
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.config.Services
 import org.jetbrains.kotlin.config.languageVersionSettings
 import org.jetbrains.kotlin.diagnostics.*
 import org.jetbrains.kotlin.fir.FirPsiSourceElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.FirAnalyzerFacade
 import org.jetbrains.kotlin.fir.analysis.diagnostics.*
-import org.jetbrains.kotlin.fir.backend.jvm.FirJvmBackendClassResolver
-import org.jetbrains.kotlin.fir.backend.jvm.FirMetadataSerializer
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
 import org.jetbrains.kotlin.fir.session.FirSessionFactory
-import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-import org.jetbrains.kotlin.ir.util.SymbolTable
+import org.jetbrains.kotlin.load.kotlin.PackagePartProvider
 import org.jetbrains.kotlin.modules.Module
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi2ir.PsiSourceManager
 import org.jetbrains.kotlin.resolve.PlatformDependentAnalyzerServices
 import org.jetbrains.kotlin.resolve.diagnostics.SimpleDiagnostics
 import org.jetbrains.kotlin.resolve.jvm.platform.JvmPlatformAnalyzerServices
-import org.jetbrains.org.objectweb.asm.Type
 import java.io.PrintStream
 
-class FirJvmFrontendDirectState(
-    internal val environment: KotlinCoreEnvironment,
-)
-
-data class FirJvmFrontendDirectInputs(
+data class FirJvmFrontendInputs(
     val module: Module,
     val filesToCompile: List<KtFile>,
     val configuration: CompilerConfiguration
 )
 
-data class FrontendIrOutputs(
-    val moduleFragment: IrModuleFragment,
-    val symbolTable: SymbolTable, 
-    val sourceManager: PsiSourceManager, 
-    val jvmBackendClassResolver: JvmBackendClassResolver,
-    val metadataSerializerFactory: MetadataSerializerFactory
+data class FirFrontendOutputs(
+    val firAnalyzerFacade: FirAnalyzerFacade,
+    val session: FirSession,
+    val module: Module,
+    val project: Project,
+    val ktFiles: List<KtFile>,
+    val configuration: CompilerConfiguration,
+    val packagePartProvider: PackagePartProvider?
 )
 
-class FirMetadataSerializerBuilder(val session: FirSession) : MetadataSerializerFactory {
-    override fun invoke(
-        context: JvmBackendContext,
-        irClass: IrClass,
-        type: Type,
-        serializationBindings: JvmSerializationBindings,
-        parent: MetadataSerializer?
-    ): MetadataSerializer =
-        FirMetadataSerializer(session, context, irClass, serializationBindings, parent)
-}
-
-class FirJvmFrontendDirectBuilder(
+class FirJvmFrontendBuilder(
     val rootDisposable: Disposable,
-) : CompilationStageBuilder<FirJvmFrontendDirectInputs, FrontendIrOutputs, FirJvmFrontendDirectState> {
+) : CompilationStageBuilder<FirJvmFrontendInputs, FirFrontendOutputs> {
 
-    var configuration: CompilerConfiguration = CompilerConfiguration()
+    var environment: KotlinCoreEnvironment? = null
 
-    var messageCollector: MessageCollector = MessageCollector.NONE
+    val configuration: CompilerConfiguration? = null
 
-    var services: Services = Services.EMPTY
+    val messageCollector: MessageCollector? = null
 
-    override fun build(): CompilationStage<FirJvmFrontendDirectInputs, FrontendIrOutputs, FirJvmFrontendDirectState> {
-        configuration.apply {
-            put(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, messageCollector)
-        }
-        return FirJvmFrontendDirect(rootDisposable, messageCollector, configuration)
+    override fun build(): CompilationStage<FirJvmFrontendInputs, FirFrontendOutputs> {
+        val actualConfiguration = configuration ?: environment?.configuration ?: error("")
+        val project = environment?.project ?: error("")
+        return FirJvmFrontend(
+            messageCollector ?: actualConfiguration.getNotNull(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY),
+            project,
+            actualConfiguration,
+            environment?.createPackagePartProvider(ProjectScope.getLibrariesScope(project)) ?: error("")
+        )
     }
 
-    operator fun invoke(body: FirJvmFrontendDirectBuilder.() -> Unit): FirJvmFrontendDirectBuilder {
+    operator fun invoke(body: FirJvmFrontendBuilder.() -> Unit): FirJvmFrontendBuilder {
         this.body()
         return this
     }
 }
 
-class FirJvmFrontendDirect internal constructor(
-    val rootDisposable: Disposable,
+class FirJvmFrontend internal constructor(
     val messageCollector: MessageCollector,
-    val configuration: CompilerConfiguration
-) : CompilationStage<FirJvmFrontendDirectInputs, FrontendIrOutputs, FirJvmFrontendDirectState> {
-
-    fun newState(): FirJvmFrontendDirectState {
-        val environment =
-            KotlinCoreEnvironment.createForProduction(
-                rootDisposable, configuration, EnvironmentConfigFiles.JVM_CONFIG_FILES
-            )
-        return  FirJvmFrontendDirectState(environment)
-    }
-
-    override fun execute(input: FirJvmFrontendDirectInputs): ExecutionResult<FrontendIrOutputs, FirJvmFrontendDirectState> =
-        execute(input, newState())
+    val project: Project,
+    val configuration: CompilerConfiguration,
+    val packagePartProvider: PackagePartProvider,
+) : CompilationStage<FirJvmFrontendInputs, FirFrontendOutputs> {
 
     override fun execute(
-        input: FirJvmFrontendDirectInputs,
-        state: FirJvmFrontendDirectState
-    ): ExecutionResult<FrontendIrOutputs, FirJvmFrontendDirectState> {
+        input: FirJvmFrontendInputs
+    ): ExecutionResult<FirFrontendOutputs> {
         val (module, ktFiles, moduleConfiguration) = input
         val localFileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL)
-        if (!checkKotlinPackageUsage(state.environment, ktFiles)) return ExecutionResult.Failure(-1, state, emptyList())
+        if (!configuration.getBoolean(CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE) &&
+            !checkKotlinPackageUsage(ktFiles, messageCollector)
+        ) return ExecutionResult.Failure(-1, emptyList())
 
-        val scope = GlobalSearchScope.filesScope(state.environment.project, ktFiles.map { it.virtualFile })
-            .uniteWith(TopDownAnalyzerFacadeForJVM.AllJavaSourcesInProjectScope(state.environment.project))
-        val provider = FirProjectSessionProvider(state.environment.project)
+        val scope = GlobalSearchScope.filesScope(project, ktFiles.map { it.virtualFile })
+            .uniteWith(TopDownAnalyzerFacadeForJVM.AllJavaSourcesInProjectScope(project))
+        val provider = FirProjectSessionProvider(project)
 
         class FirJvmModuleInfo(override val name: Name) : ModuleInfo {
             constructor(moduleName: String) : this(Name.identifier(moduleName))
@@ -160,11 +130,8 @@ class FirJvmFrontendDirect internal constructor(
         }.also {
             val dependenciesInfo = FirJvmModuleInfo(Name.special("<dependencies>"))
             moduleInfo.dependencies.add(dependenciesInfo)
-            val librariesScope = ProjectScope.getLibrariesScope(state.environment.project)
-            FirSessionFactory.createLibrarySession(
-                dependenciesInfo, provider, librariesScope,
-                state.environment.project, state.environment.createPackagePartProvider(librariesScope)
-            )
+            val librariesScope = ProjectScope.getLibrariesScope(project)
+            FirSessionFactory.createLibrarySession(dependenciesInfo, provider, librariesScope, project, packagePartProvider)
         }
 
         val firAnalyzerFacade = FirAnalyzerFacade(session, moduleConfiguration.languageVersionSettings, ktFiles)
@@ -175,18 +142,20 @@ class FirJvmFrontendDirect internal constructor(
         AnalyzerWithCompilerReport.reportDiagnostics(SimpleDiagnostics(diagnostics), messageCollector)
 
         if (firDiagnostics.any { it.severity == Severity.ERROR }) {
-            return ExecutionResult.Failure(-1, state, emptyList())
+            return ExecutionResult.Failure(-1, emptyList())
         }
 
-        val (moduleFragment, symbolTable, sourceManager, components) = firAnalyzerFacade.convertToIr()
-
-        val outputs = FrontendIrOutputs(
-            moduleFragment, symbolTable, sourceManager,
-            FirJvmBackendClassResolver(components),
-            FirMetadataSerializerBuilder(session)
+        val outputs = FirFrontendOutputs(
+            firAnalyzerFacade,
+            session,
+            module,
+            project,
+            ktFiles,
+            configuration,
+            packagePartProvider
         )
 
-        return ExecutionResult.Success(outputs, state, emptyList())
+        return ExecutionResult.Success(outputs, emptyList())
     }
 }
 
@@ -224,7 +193,7 @@ private fun example(args: List<String>, outStream: PrintStream) {
     parseCommandLineArguments(args, arguments)
     val collector = PrintingMessageCollector(outStream, MessageRenderer.WITHOUT_PATHS, arguments.verbose)
 
-    val frontendBuilder = session.createStage(FirJvmFrontendDirectBuilder::class) as FirJvmFrontendDirectBuilder
+    val frontendBuilder = session.createStage(FirJvmFrontendBuilder::class) as FirJvmFrontendBuilder
     val frontend = frontendBuilder {
         compilerArguments = arguments
         messageCollector = collector

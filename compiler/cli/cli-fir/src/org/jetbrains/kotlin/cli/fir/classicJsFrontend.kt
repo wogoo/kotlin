@@ -38,7 +38,6 @@ import java.io.IOException
 import java.io.PrintStream
 
 class ClassicJsFrontendState(
-    internal val analyzer: AnalyzerWithCompilerReport
 )
 
 data class ClassicJsFrontendResult(
@@ -49,7 +48,7 @@ data class ClassicJsFrontendResult(
 
 class ClassicJsFrontendBuilder(
     val rootDisposable: Disposable,
-) : CompilationStageBuilder<Pair<K2JSCompilerArguments, List<KtFile>>, ClassicJsFrontendResult, ClassicJsFrontendState> {
+) : CompilationStageBuilder<Pair<K2JSCompilerArguments, List<KtFile>>, ClassicJsFrontendResult> {
 
     var environment: KotlinCoreEnvironment? = null
 
@@ -59,8 +58,7 @@ class ClassicJsFrontendBuilder(
 
     val friendDependencies: MutableList<String> = ArrayList()
 
-    override fun build(): CompilationStage<Pair<K2JSCompilerArguments, List<KtFile>>, ClassicJsFrontendResult, ClassicJsFrontendState> {
-
+    override fun build(): CompilationStage<Pair<K2JSCompilerArguments, List<KtFile>>, ClassicJsFrontendResult> {
         val actualConfiguration = configuration ?: environment?.configuration ?: error("")
         return ClassicJsFrontend(
             environment?.project ?: error(""),
@@ -81,20 +79,14 @@ class ClassicJsFrontend internal constructor(
     val messageCollector: MessageCollector,
     val configuration: CompilerConfiguration,
     val friendLibraries: List<String>
-) : CompilationStage<Pair<K2JSCompilerArguments, List<KtFile>>, ClassicJsFrontendResult, ClassicJsFrontendState> {
+) : CompilationStage<Pair<K2JSCompilerArguments, List<KtFile>>, ClassicJsFrontendResult> {
 
-    private fun newState(): ClassicJsFrontendState {
-        val analyzerWithCompilerReport = AnalyzerWithCompilerReport(messageCollector, configuration.languageVersionSettings)
-        return  ClassicJsFrontendState(analyzerWithCompilerReport)
-    }
-
-    override fun execute(input: Pair<K2JSCompilerArguments, List<KtFile>>): ExecutionResult<ClassicJsFrontendResult, ClassicJsFrontendState> =
-        execute(input, newState())
+    internal val analyzer: AnalyzerWithCompilerReport = AnalyzerWithCompilerReport(messageCollector, configuration.languageVersionSettings)
 
     override fun execute(
-        input: Pair<K2JSCompilerArguments, List<KtFile>>,
-        state: ClassicJsFrontendState
-    ): ExecutionResult<ClassicJsFrontendResult, ClassicJsFrontendState> {
+        input: Pair<K2JSCompilerArguments, List<KtFile>>
+    ): ExecutionResult<ClassicJsFrontendResult> {
+
         val (arguments, sourceFiles) = input
         // TODO: Handle non-empty main call arguments
         val mainCallArguments = if (K2JsArgumentConstants.NO_CALL == arguments.main) null else emptyList<String>()
@@ -114,7 +106,7 @@ class ClassicJsFrontend internal constructor(
         val descriptors = ModulesStructure(
             project,
             MainModule.SourceFiles(sourceFiles),
-            state.analyzer,
+            analyzer,
             configuration,
             resolvedLibraries,
             friendDependencies
@@ -124,7 +116,7 @@ class ClassicJsFrontend internal constructor(
 
         return ExecutionResult.Success(
             ClassicJsFrontendResult(analysisResult, descriptors, sourceFiles),
-            state, emptyList()
+            emptyList()
         )
     }
 

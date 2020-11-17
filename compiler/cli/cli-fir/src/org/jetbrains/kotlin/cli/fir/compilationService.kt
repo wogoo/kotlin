@@ -7,18 +7,17 @@ package org.jetbrains.kotlin.cli.fir
 
 import kotlin.reflect.KClass
 
-interface CompilationStage<T, R, S> {
-    fun execute(input: T): ExecutionResult<R, S>
-    fun execute(input: T, state: S): ExecutionResult<R, S>
+interface CompilationStage<T, R> {
+    fun execute(input: T): ExecutionResult<R>
 }
 
-interface CompilationStageBuilder<T, R, S> {
-    fun build(): CompilationStage<T, R, S>
+interface CompilationStageBuilder<T, R> {
+    fun build(): CompilationStage<T, R>
 }
 
 interface CompilationSession {
-    fun <T: CompilationStageBuilder<*, *, *>> createStage(impl: KClass<out T>): CompilationStageBuilder<*, *, *>
-    fun <T: Any, R: Any> createStage(from: KClass<T>, to: KClass<R>): CompilationStageBuilder<T, R, *>
+    fun <T : CompilationStageBuilder<*, *>> createStage(impl: KClass<out T>): CompilationStageBuilder<*, *>
+    fun <T : Any, R : Any> createStage(from: KClass<T>, to: KClass<R>): CompilationStageBuilder<T, R>
     fun close()
 }
 

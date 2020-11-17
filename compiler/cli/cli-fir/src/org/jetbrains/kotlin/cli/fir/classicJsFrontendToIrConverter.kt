@@ -11,6 +11,8 @@ import org.jetbrains.kotlin.backend.common.serialization.ICData
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ManglerChecker
 import org.jetbrains.kotlin.backend.common.serialization.mangle.descriptor.Ir2DescriptorManglerAdapter
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureDescriptor
+import org.jetbrains.kotlin.backend.jvm.MetadataSerializerFactory
+import org.jetbrains.kotlin.codegen.JvmBackendClassResolver
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.languageVersionSettings
@@ -29,32 +31,37 @@ import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.js.config.ErrorTolerancePolicy
 import org.jetbrains.kotlin.js.config.JSConfigurationKeys
 import org.jetbrains.kotlin.library.KotlinLibrary
+import org.jetbrains.kotlin.load.kotlin.PackagePartProvider
+import org.jetbrains.kotlin.modules.Module
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi2ir.Psi2IrConfiguration
 import org.jetbrains.kotlin.psi2ir.Psi2IrTranslator
-import org.jetbrains.kotlin.psi2ir.generators.GeneratorContext
+import org.jetbrains.kotlin.psi2ir.PsiSourceManager
+import org.jetbrains.kotlin.resolve.BindingContext
 
-class ClassicJsFrontendToIrConverterState(
-)
-
-data class ClassicJsFrontendToIrConverterResult(
+data class FrontendToIrConverterResult(
     val moduleFragment: IrModuleFragment,
     val icData: List<KotlinFileSerializedData>,
-    val generatorContext: GeneratorContext,
+    val symbolTable: SymbolTable,
+    val bindingContext: BindingContext?,
     val project: Project,
     val sourceFiles: List<KtFile>,
     val dependenciesList: List<KotlinLibrary>,
     val expectDescriptorToSymbol: MutableMap<DeclarationDescriptor, IrSymbol>,
     val hasErrors: Boolean,
-    val configuration: CompilerConfiguration
+    val configuration: CompilerConfiguration,
+    val module: Module?,
+    val sourceManager: PsiSourceManager?,
+    val jvmBackendClassResolver: JvmBackendClassResolver?,
+    val metadataSerializerFactory: MetadataSerializerFactory?,
+    val packagePartProvider: PackagePartProvider?
 )
 
-class ClassicJsFrontendToIrConverterBuilder(
-) : CompilationStageBuilder<ClassicJsFrontendResult, ClassicJsFrontendToIrConverterResult, ClassicJsFrontendToIrConverterState> {
+class ClassicJsFrontendToIrConverterBuilder : CompilationStageBuilder<ClassicJsFrontendResult, FrontendToIrConverterResult> {
 
     var irFactory: IrFactory = PersistentIrFactory
 
-    override fun build(): CompilationStage<ClassicJsFrontendResult, ClassicJsFrontendToIrConverterResult, ClassicJsFrontendToIrConverterState> {
+    override fun build(): CompilationStage<ClassicJsFrontendResult, FrontendToIrConverterResult> {
         return ClassicJsFrontendToIrConverter(irFactory)
     }
 
@@ -66,16 +73,11 @@ class ClassicJsFrontendToIrConverterBuilder(
 
 class ClassicJsFrontendToIrConverter internal constructor(
     val irFactory: IrFactory
-) : CompilationStage<ClassicJsFrontendResult, ClassicJsFrontendToIrConverterResult, ClassicJsFrontendToIrConverterState> {
-
-    override fun execute(input: ClassicJsFrontendResult): ExecutionResult<ClassicJsFrontendToIrConverterResult, ClassicJsFrontendToIrConverterState> {
-        TODO("Not yet implemented")
-    }
+) : CompilationStage<ClassicJsFrontendResult, FrontendToIrConverterResult> {
 
     override fun execute(
-        input: ClassicJsFrontendResult,
-        state: ClassicJsFrontendToIrConverterState
-    ): ExecutionResult<ClassicJsFrontendToIrConverterResult, ClassicJsFrontendToIrConverterState> {
+        input: ClassicJsFrontendResult
+    ): ExecutionResult<FrontendToIrConverterResult> {
 
         val configuration = input.descriptors.compilerConfiguration
 
@@ -86,7 +88,8 @@ class ClassicJsFrontendToIrConverter internal constructor(
             Psi2IrConfiguration(errorPolicy.allowErrors)
         )
         val symbolTable = SymbolTable(IdSignatureDescriptor(JsManglerDesc), irFactory)
-        val psi2IrContext = psi2Ir.createGeneratorContext(input.analysisResult.moduleDescriptor, input.analysisResult.bindingContext, symbolTable)
+        val psi2IrContext =
+            psi2Ir.createGeneratorContext(input.analysisResult.moduleDescriptor, input.analysisResult.bindingContext, symbolTable)
 
         val irBuiltIns = psi2IrContext.irBuiltIns
         val functionFactory = IrFunctionFactory(irBuiltIns, psi2IrContext.symbolTable)
@@ -118,7 +121,12 @@ class ClassicJsFrontendToIrConverter internal constructor(
         }
 
         val moduleFragment =
-            psi2IrContext.generateModuleFragmentWithPlugins(input.descriptors.project, input.sourceFiles, irLinker, expectDescriptorToSymbol)
+            psi2IrContext.generateModuleFragmentWithPlugins(
+                input.descriptors.project,
+                input.sourceFiles,
+                irLinker,
+                expectDescriptorToSymbol
+            )
 
         moduleFragment.acceptVoid(ManglerChecker(JsManglerIr, Ir2DescriptorManglerAdapter(JsManglerDesc)))
         if (!configuration.getBoolean(JSConfigurationKeys.DISABLE_FAKE_OVERRIDE_VALIDATOR)) {
@@ -127,11 +135,24 @@ class ClassicJsFrontendToIrConverter internal constructor(
         }
 
         return ExecutionResult.Success(
-            ClassicJsFrontendToIrConverterResult(
-                moduleFragment, icData, psi2IrContext, input.descriptors.project, input.sourceFiles,
-                dependenciesList, expectDescriptorToSymbol, input.analysisResult.hasErrors, configuration
+            FrontendToIrConverterResult(
+                moduleFragment = moduleFragment,
+                icData = icData,
+                symbolTable = psi2IrContext.symbolTable,
+                bindingContext = psi2IrContext.bindingContext,
+                project = input.descriptors.project,
+                sourceFiles = input.sourceFiles,
+                dependenciesList = dependenciesList,
+                expectDescriptorToSymbol = expectDescriptorToSymbol,
+                hasErrors = input.analysisResult.hasErrors,
+                configuration = configuration,
+                module = null,
+                sourceManager = null,
+                jvmBackendClassResolver = null,
+                metadataSerializerFactory = null,
+                packagePartProvider = null
             ),
-            state, emptyList()
+            emptyList()
         )
     }
 }
