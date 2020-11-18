@@ -17,6 +17,7 @@ dependencies {
     compile(project(":js:js.serializer"))
     compile(project(":js:js.dce"))
     implementation(project(":compiler:fir:entrypoint"))
+    implementation(project(":compiler:ir.tree.impl"))
 
     compileOnly(intellijCoreDep()) { includeJars("intellij-core") }
 }

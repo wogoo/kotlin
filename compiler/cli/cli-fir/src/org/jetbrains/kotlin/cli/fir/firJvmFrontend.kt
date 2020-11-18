@@ -5,34 +5,39 @@
 
 package org.jetbrains.kotlin.cli.fir
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.ProjectScope
 import org.jetbrains.kotlin.analyzer.ModuleInfo
-import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
+import org.jetbrains.kotlin.backend.jvm.jvmPhases
+import org.jetbrains.kotlin.cli.common.*
+import org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.parseCommandLineArguments
-import org.jetbrains.kotlin.cli.common.checkKotlinPackageUsage
-import org.jetbrains.kotlin.cli.common.messages.AnalyzerWithCompilerReport
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
-import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
+import org.jetbrains.kotlin.cli.common.messages.*
+import org.jetbrains.kotlin.cli.common.modules.ModuleBuilder
+import org.jetbrains.kotlin.cli.jvm.*
+import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.TopDownAnalyzerFacadeForJVM
-import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.config.languageVersionSettings
+import org.jetbrains.kotlin.cli.jvm.plugins.PluginCliParser
+import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
+import org.jetbrains.kotlin.config.*
 import org.jetbrains.kotlin.diagnostics.*
 import org.jetbrains.kotlin.fir.FirPsiSourceElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.FirAnalyzerFacade
 import org.jetbrains.kotlin.fir.analysis.diagnostics.*
+import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
+import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.session.FirSessionFactory
 import org.jetbrains.kotlin.load.kotlin.PackagePartProvider
+import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
 import org.jetbrains.kotlin.modules.Module
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.TargetPlatform
@@ -41,42 +46,45 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.PlatformDependentAnalyzerServices
 import org.jetbrains.kotlin.resolve.diagnostics.SimpleDiagnostics
 import org.jetbrains.kotlin.resolve.jvm.platform.JvmPlatformAnalyzerServices
+import org.jetbrains.kotlin.utils.KotlinPaths
+import org.jetbrains.kotlin.utils.PathUtil
+import java.io.File
 import java.io.PrintStream
+import java.util.*
 
 data class FirJvmFrontendInputs(
     val module: Module,
     val filesToCompile: List<KtFile>,
-    val configuration: CompilerConfiguration
+    val configuration: CompilerConfiguration? = null
 )
 
 data class FirFrontendOutputs(
-    val firAnalyzerFacade: FirAnalyzerFacade,
     val session: FirSession,
     val module: Module,
     val project: Project,
-    val ktFiles: List<KtFile>,
+    val sourceFiles: List<KtFile>,
     val configuration: CompilerConfiguration,
-    val packagePartProvider: PackagePartProvider?
+    val packagePartProvider: PackagePartProvider?,
+    val session1: FirSession,
+    val scopeSession: ScopeSession?,
+    val firFiles: List<FirFile>?
 )
 
-class FirJvmFrontendBuilder(
-    val rootDisposable: Disposable,
-) : CompilationStageBuilder<FirJvmFrontendInputs, FirFrontendOutputs> {
+class FirJvmFrontendBuilder : CompilationStageBuilder<FirJvmFrontendInputs, FirFrontendOutputs> {
+    var configuration: CompilerConfiguration = CompilerConfiguration()
 
-    var environment: KotlinCoreEnvironment? = null
+    var messageCollector: MessageCollector? = null
 
-    val configuration: CompilerConfiguration? = null
+    var project: Project? = null
 
-    val messageCollector: MessageCollector? = null
+    var packagePartProvider: PackagePartProvider? = null
 
     override fun build(): CompilationStage<FirJvmFrontendInputs, FirFrontendOutputs> {
-        val actualConfiguration = configuration ?: environment?.configuration ?: error("")
-        val project = environment?.project ?: error("")
         return FirJvmFrontend(
-            messageCollector ?: actualConfiguration.getNotNull(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY),
-            project,
-            actualConfiguration,
-            environment?.createPackagePartProvider(ProjectScope.getLibrariesScope(project)) ?: error("")
+            messageCollector ?: configuration.getNotNull(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY),
+            project ?: error(""),
+            configuration,
+            packagePartProvider ?: error("")
         )
     }
 
@@ -97,8 +105,9 @@ class FirJvmFrontend internal constructor(
         input: FirJvmFrontendInputs
     ): ExecutionResult<FirFrontendOutputs> {
         val (module, ktFiles, moduleConfiguration) = input
+        val actualConfiguration = moduleConfiguration ?: configuration
         val localFileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL)
-        if (!configuration.getBoolean(CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE) &&
+        if (!actualConfiguration.getBoolean(CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE) &&
             !checkKotlinPackageUsage(ktFiles, messageCollector)
         ) return ExecutionResult.Failure(-1, emptyList())
 
@@ -134,7 +143,7 @@ class FirJvmFrontend internal constructor(
             FirSessionFactory.createLibrarySession(dependenciesInfo, provider, librariesScope, project, packagePartProvider)
         }
 
-        val firAnalyzerFacade = FirAnalyzerFacade(session, moduleConfiguration.languageVersionSettings, ktFiles)
+        val firAnalyzerFacade = FirAnalyzerFacade(session, actualConfiguration.languageVersionSettings, ktFiles)
 
         firAnalyzerFacade.runResolution()
         val firDiagnostics = firAnalyzerFacade.runCheckers()
@@ -146,13 +155,15 @@ class FirJvmFrontend internal constructor(
         }
 
         val outputs = FirFrontendOutputs(
-            firAnalyzerFacade,
             session,
             module,
             project,
             ktFiles,
-            configuration,
-            packagePartProvider
+            actualConfiguration,
+            packagePartProvider,
+            firAnalyzerFacade.session,
+            firAnalyzerFacade.scopeSession,
+            firAnalyzerFacade.firFiles
         )
 
         return ExecutionResult.Success(outputs, emptyList())
@@ -189,22 +200,137 @@ private fun example(args: List<String>, outStream: PrintStream) {
 
     val session = service.createSession("")
 
-    val arguments = K2JVMCompilerArguments()
-    parseCommandLineArguments(args, arguments)
-    val collector = PrintingMessageCollector(outStream, MessageRenderer.WITHOUT_PATHS, arguments.verbose)
+    val rootDisposable = Disposer.newDisposable()
 
-    val frontendBuilder = session.createStage(FirJvmFrontendBuilder::class) as FirJvmFrontendBuilder
-    val frontend = frontendBuilder {
-        compilerArguments = arguments
-        messageCollector = collector
-    }.build()
+    try {
+        val arguments = K2JVMCompilerArguments()
+        parseCommandLineArguments(args, arguments)
+        val collector = GroupingMessageCollector(
+            PrintingMessageCollector(outStream, MessageRenderer.WITHOUT_PATHS, arguments.verbose),
+            arguments.allWarningsAsErrors
+        )
+        val paths = computeKotlinPaths(collector, arguments)
 
-    val backendBuilder = session.createStage(IrJvmBackendBuilder::class) as IrJvmBackendBuilder
-    val backend = backendBuilder {
+        var environment: KotlinCoreEnvironment? = null
 
-        messageCollector = collector
-    }.build()
+        val frontendBuilder = session.createStage(FirJvmFrontendBuilder::class) as FirJvmFrontendBuilder
+        val frontend = frontendBuilder {
 
-    frontend.execute(arguments)
+            configureDefaultJvmFirFrontend(collector, arguments, paths)
+
+            environment = KotlinCoreEnvironment.createForProduction(
+                rootDisposable, configuration, EnvironmentConfigFiles.JVM_CONFIG_FILES
+            ).also {
+                project = it.project
+                packagePartProvider = it.createPackagePartProvider(ProjectScope.getLibrariesScope(project!!))
+            }
+
+        }.build()
+
+        val fir2IrBuilder = session.createStage(FirJvmFrontendToIrConverterBuilder::class) as FirJvmFrontendToIrConverterBuilder
+        val fir2ir = fir2IrBuilder {
+            messageCollector = collector
+        }.build()
+
+        val backendBuilder = session.createStage(IrJvmBackendBuilder::class) as IrJvmBackendBuilder
+        val backend = backendBuilder {
+
+            messageCollector = collector
+        }.build()
+
+        val destination = arguments.destination?.let { File(it) }
+        val moduleName = arguments.moduleName ?: JvmProtoBufUtil.DEFAULT_MODULE_NAME
+        val module = ModuleBuilder(moduleName, destination?.path ?: ".", "java-production")
+
+        val frontendRes = frontend.execute(FirJvmFrontendInputs( module, environment!!.getSourceFiles()))
+        if (frontendRes is ExecutionResult.Success) {
+            val convertorRes = fir2ir.execute(frontendRes.value)
+
+            if (convertorRes is ExecutionResult.Success) {
+                val backendRes = backend.execute(convertorRes.value)
+            }
+        }
+    } finally {
+        // TODO: error handling
+        rootDisposable.dispose()
+        session.close()
+    }
+}
+
+internal fun FirJvmFrontendBuilder.configureDefaultJvmFirFrontend(
+    collector: GroupingMessageCollector,
+    arguments: K2JVMCompilerArguments,
+    paths: KotlinPaths?
+) {
+    configuration.put(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, collector)
+    messageCollector = collector
+
+    val services: Services = Services.EMPTY
+
+    configuration.setupCommonArguments(arguments)
+    configuration.setupJvmSpecificArguments(arguments)
+
+    configuration.putIfNotNull(CLIConfigurationKeys.REPEAT_COMPILE_MODULES, arguments.repeatCompileModules?.toIntOrNull())
+    configuration.put(CLIConfigurationKeys.PHASE_CONFIG, createPhaseConfig(jvmPhases, arguments, collector))
+
+    if (!configuration.configureJdkHome(arguments)) error("") //ExitCode.COMPILATION_ERROR
+
+    configuration.put(JVMConfigurationKeys.DISABLE_STANDARD_SCRIPT_DEFINITION, arguments.disableStandardScript)
+
+    val pluginLoadResult = loadPlugins(paths, arguments, configuration)
+    if (pluginLoadResult != ExitCode.OK) error("") //return pluginLoadResult
+
+    val moduleName = arguments.moduleName ?: JvmProtoBufUtil.DEFAULT_MODULE_NAME
+    configuration.put(CommonConfigurationKeys.MODULE_NAME, moduleName)
+
+    configuration.configureExplicitContentRoots(arguments)
+    configuration.configureStandardLibs(paths, arguments)
+    configuration.configureAdvancedJvmOptions(arguments)
+    configuration.configureKlibPaths(arguments)
+}
+
+private fun <A : CommonCompilerArguments> loadPlugins(paths: KotlinPaths?, arguments: A, configuration: CompilerConfiguration): ExitCode {
+    var pluginClasspaths: Iterable<String> = arguments.pluginClasspaths?.asIterable() ?: emptyList()
+    val pluginOptions = arguments.pluginOptions?.toMutableList() ?: ArrayList()
+
+    if (!arguments.disableDefaultScriptingPlugin) {
+        val explicitOrLoadedScriptingPlugin =
+            pluginClasspaths.any { File(it).name.startsWith(PathUtil.KOTLIN_SCRIPTING_COMPILER_PLUGIN_NAME) } ||
+                    tryLoadScriptingPluginFromCurrentClassLoader(configuration)
+        if (!explicitOrLoadedScriptingPlugin) {
+            val kotlinPaths = paths ?: PathUtil.kotlinPathsForCompiler
+            val libPath = kotlinPaths.libPath.takeIf { it.exists() && it.isDirectory } ?: File(".")
+            val (jars, missingJars) =
+                PathUtil.KOTLIN_SCRIPTING_PLUGIN_CLASSPATH_JARS.map { File(libPath, it) }.partition { it.exists() }
+            if (missingJars.isEmpty()) {
+                pluginClasspaths = jars.map { it.canonicalPath } + pluginClasspaths
+            } else {
+                val messageCollector = configuration.getNotNull(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY)
+                messageCollector.report(
+                    CompilerMessageSeverity.LOGGING,
+                    "Scripting plugin will not be loaded: not all required jars are present in the classpath (missing files: $missingJars)"
+                )
+            }
+        }
+        // TODO: restore
+//        pluginOptions.addPlatformOptions(arguments)
+    } else {
+        pluginOptions.add("plugin:kotlin.scripting:disable=true")
+    }
+    return PluginCliParser.loadPluginsSafe(pluginClasspaths, pluginOptions, configuration)
+}
+
+private fun tryLoadScriptingPluginFromCurrentClassLoader(configuration: CompilerConfiguration): Boolean = try {
+    val pluginRegistrarClass = PluginCliParser::class.java.classLoader.loadClass(
+        "org.jetbrains.kotlin.scripting.compiler.plugin.ScriptingCompilerConfigurationComponentRegistrar"
+    )
+    val pluginRegistrar = pluginRegistrarClass.newInstance() as? ComponentRegistrar
+    if (pluginRegistrar != null) {
+        configuration.add(ComponentRegistrar.PLUGIN_COMPONENT_REGISTRARS, pluginRegistrar)
+        true
+    } else false
+} catch (_: Throwable) {
+    // TODO: add finer error processing and logging
+    false
 }
 

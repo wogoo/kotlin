@@ -40,8 +40,6 @@ import java.io.File
 
 class IrJvmBackendBuilder : CompilationStageBuilder<FrontendToIrConverterResult, GenerationState> {
     
-    lateinit var environment: KotlinCoreEnvironment
-    
     var messageCollector: MessageCollector = MessageCollector.NONE
     
     override fun build(): CompilationStage<FrontendToIrConverterResult, GenerationState> =
