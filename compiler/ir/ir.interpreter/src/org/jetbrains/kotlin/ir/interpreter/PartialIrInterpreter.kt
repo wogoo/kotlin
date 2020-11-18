@@ -30,8 +30,29 @@ import kotlin.Exception
 class PartialIrInterpreter(
     val irBuiltIns: IrBuiltIns, bodyMap: Map<IdSignature, IrBody> = emptyMap(), private val mode: EvaluationMode = EvaluationMode.WITH_ANNOTATIONS
 ) {
-    private val stack = StackImpl()
-    private val interpreter = IrInterpreter(irBuiltIns, bodyMap, stack)
+    private val interpreterStack = StackImpl()
+    private val localStack = Stack()
+    private val interpreter = IrInterpreter(irBuiltIns, bodyMap, interpreterStack)
+
+    private class Stack {
+        private val pool: MutableList<Result> = mutableListOf()
+
+        fun push(result: Result): ExecutionResult {
+            pool.add(result)
+            return Next
+        }
+
+        fun push(element: IrElement?, executionResult: ExecutionResult = Next): ExecutionResult {
+            pool.add(Result(null, element))
+            return executionResult
+        }
+
+        fun pop(): Result? {
+            return pool.removeLastOrNull()
+        }
+
+        fun wasInterpreted() = pool.lastOrNull()?.state != null
+    }
 
     private class Result(val state: State?, val element: IrElement?) {
         fun asExpression() = element as? IrExpression
@@ -42,28 +63,29 @@ class PartialIrInterpreter(
         }
     }
 
-    private fun IrElement.toResult() = Result(null, this)
+    //private fun IrElement.toResult() = Result(null, this)
 
     // This method will evaluate and replace some of function statements
     // TODO how debugger will behave?
     fun interpret(irFunction: IrFunction) {
-        stack.clean(irFunction.fileOrNull)
-        irFunction.body = irFunction.body?.interpret()?.element as? IrBody ?: irFunction.body
+        interpreterStack.clean(irFunction.fileOrNull)
+        irFunction.body?.interpret() // TODO check return result
+        irFunction.body = localStack.pop()?.element as? IrBody ?: irFunction.body
     }
 
-    private fun interpret(irExpression: IrExpression): Result {
+    private fun evaluate(irExpression: IrExpression): ExecutionResult {
         return with(interpreter) {
             when (val returnLabel = irExpression.interpret().returnLabel) {
-                ReturnLabel.REGULAR -> Result(stack.popReturnValue(), irExpression)
+                ReturnLabel.REGULAR -> localStack.push(Result(interpreterStack.popReturnValue(), irExpression))
                 ReturnLabel.EXCEPTION -> TODO()
                 else -> TODO("$returnLabel not supported as result of interpretation")
             }
         }
     }
 
-    private fun IrElement.interpret(): Result {
-        return try {
-            when (this) {
+    private fun IrElement.interpret(): ExecutionResult {
+        try {
+            val executionResult = when (this) {
                 //is IrSimpleFunction -> interpretFunction(this)
                 is IrCall -> visitCall(this, null)
                 is IrConstructorCall -> visitConstructorCall(this, null)
@@ -83,7 +105,7 @@ class PartialIrInterpreter(
                 is IrVariable -> visitVariable(this, null)
                 is IrSetVariable -> visitSetVariable(this, null)
                 is IrTypeOperatorCall -> visitTypeOperator(this, null)
-                //is IrBranch -> visitBranch(this, null)
+                is IrBranch -> visitBranch(this, null)
                 is IrWhileLoop -> visitWhileLoop(this, null)
 //                is IrDoWhileLoop -> visitDoWhileLoop(this, null)
                 is IrWhen -> visitWhen(this, null)
@@ -103,86 +125,111 @@ class PartialIrInterpreter(
 
                 else -> TODO("${this.javaClass} not supported")
             }
+
+            return executionResult.getNextLabel(this) { this@getNextLabel.interpret() }
         } catch (e: Exception) {
             throw e
         }
     }
 
-    private fun visitCall(expression: IrCall, data: Nothing?): Result {
-        if (!mode.canEvaluateFunction(expression.symbol.owner)) return expression.toResult()
-        expression.dispatchReceiver = expression.dispatchReceiver?.let { it.interpret().asExpression() ?: return expression.toResult() }
-        expression.extensionReceiver = expression.extensionReceiver?.let { it.interpret().asExpression() ?: return expression.toResult() }
+    private fun visitCall(expression: IrCall, data: Nothing?): ExecutionResult {
+        var canEvaluate = true
+        expression.dispatchReceiver?.interpret()?.check { return it }
+        if (expression.dispatchReceiver != null && !localStack.wasInterpreted()) canEvaluate = false
+        localStack.pop()?.asExpression()?.let { expression.dispatchReceiver = it }
+
+        expression.extensionReceiver?.interpret()?.check { return it }
+        if (expression.extensionReceiver != null && !localStack.wasInterpreted()) canEvaluate = false
+        localStack.pop()?.asExpression()?.let { expression.extensionReceiver = it }
+
         for (i in 0 until expression.valueArgumentsCount) {
-            val argument = expression.getValueArgument(i) ?: continue
-            expression.putValueArgument(i, argument.interpret().asExpression() ?: return expression.toResult())
+            expression.getValueArgument(i)?.interpret()?.check { return it }
+            if (expression.getValueArgument(i) != null && !localStack.wasInterpreted()) canEvaluate = false
+            localStack.pop()?.asExpression()?.let { expression.putValueArgument(i, it) }
         }
 
-        return interpret(expression)
+        if (!canEvaluate || !mode.canEvaluateFunction(expression.symbol.owner)) return localStack.push(expression)
+        return evaluate(expression)
     }
 
-    private fun visitConstructorCall(expression: IrConstructorCall, data: Nothing?): Result {
-        if (!mode.canEvaluateFunction(expression.symbol.owner)) return expression.toResult()
+    private fun visitConstructorCall(expression: IrConstructorCall, data: Nothing?): ExecutionResult {
+        var canEvaluate = true
         for (i in 0 until expression.valueArgumentsCount) {
-            val argument = expression.getValueArgument(i) ?: continue
-            expression.putValueArgument(i, argument.interpret().asExpression() ?: return expression.toResult())
+            expression.getValueArgument(i)?.interpret()?.check { canEvaluate = false }
+            if (expression.getValueArgument(i) != null && !localStack.wasInterpreted()) canEvaluate = false
+            localStack.pop()?.asExpression()?.let { expression.putValueArgument(i, it) }
         }
 
-        return interpret(expression)
+        if (!canEvaluate || !mode.canEvaluateFunction(expression.symbol.owner)) return localStack.push(expression)
+        return evaluate(expression)
     }
 
-    private fun visitEnumConstructorCall(expression: IrEnumConstructorCall, data: Nothing?): Result {
+    private fun visitEnumConstructorCall(expression: IrEnumConstructorCall, data: Nothing?): ExecutionResult {
         TODO("Not yet implemented")
     }
 
-    private fun visitDelegatingConstructorCall(expression: IrDelegatingConstructorCall, data: Nothing?): Result {
-        return expression.toResult()
+    private fun visitDelegatingConstructorCall(expression: IrDelegatingConstructorCall, data: Nothing?): ExecutionResult {
+        return localStack.push(expression)
     }
 
-    private fun visitInstanceInitializerCall(expression: IrInstanceInitializerCall, data: Nothing?): Result {
-        return expression.toResult()
+    private fun visitInstanceInitializerCall(expression: IrInstanceInitializerCall, data: Nothing?): ExecutionResult {
+        return localStack.push(expression)
     }
 
-    private fun visitBody(body: IrBody, data: Nothing?): Result {
+    private fun visitBody(body: IrBody, data: Nothing?): ExecutionResult {
         return when (body) {
-            is IrBlockBody -> visitBlockBody(body, data).removeUnusedStatements()
+            is IrBlockBody -> visitBlockBody(body, data).apply {
+                (localStack.pop()?.element as IrStatementContainer).removeUnusedStatements()
+            }
             is IrExpressionBody -> visitExpressionBody(body, data)
             is IrSyntheticBody -> visitSyntheticBody(body, data)
-            else -> Result.empty()
+            else -> localStack.push(body)
         }
     }
 
-    private fun visitBlockBody(body: IrBlockBody, data: Nothing?): IrBlockBody {
-        return body.factory.createBlockBody(body.startOffset, body.endOffset) {
-            this.statements.addAll(body.statements.map { it.interpret().asStatement() ?: it })
+    private fun visitBlockBody(body: IrBlockBody, data: Nothing?): ExecutionResult {
+        var executionResult: ExecutionResult = Next
+        val statements = mutableListOf<IrStatement>()
+        for (statement in body.statements) {
+            executionResult = statement.interpret()
+            statements.add(localStack.pop()?.asStatement() ?: statement)
+            if (executionResult.returnLabel != ReturnLabel.REGULAR) break
         }
+        localStack.push(body.factory.createBlockBody(body.startOffset, body.endOffset, statements))
+        return executionResult
     }
 
-    private fun visitExpressionBody(body: IrExpressionBody, data: Nothing?): Result {
-        return body.factory.createExpressionBody(
-            body.startOffset, body.endOffset, body.expression.interpret().asExpression() ?: body.expression
-        ).toResult()
+    private fun visitExpressionBody(body: IrExpressionBody, data: Nothing?): ExecutionResult {
+        body.expression.interpret()
+        localStack.pop()?.asExpression()?.let { body.expression = it }
+        return localStack.push(body)
     }
 
-    private fun visitSyntheticBody(body: IrSyntheticBody, data: Nothing?): Result = body.toResult()
+    private fun visitSyntheticBody(body: IrSyntheticBody, data: Nothing?): ExecutionResult = localStack.push(body)
 
-    private fun visitBlock(expression: IrBlock, data: Nothing?): Result {
+    private fun visitBlock(expression: IrBlock, data: Nothing?): ExecutionResult {
         return when (expression) {
             is IrBlockImpl -> {
+                var executionResult: ExecutionResult = Next
                 val statements = mutableListOf<IrStatement>()
-                stack.newFrame(asSubFrame = true) {
-                    statements.addAll(expression.statements.map { it.interpret().asStatement() ?: it })
+                interpreterStack.newFrame(asSubFrame = true) {
+                    for (statement in expression.statements) {
+                        executionResult = statement.interpret()
+                        statements.add(localStack.pop()?.asStatement() ?: statement)
+                        if (executionResult.returnLabel != ReturnLabel.REGULAR) break
+                    }
                     Next
                 }
                 IrBlockImpl(expression.startOffset, expression.endOffset, expression.type, expression.origin, statements)
                     .removeUnusedStatements()
             }
-            else -> return Result.empty()
+            else -> return localStack.push(expression)
         }
     }
 
-    private fun IrStatementContainer.removeUnusedStatements(): Result {
-        if (this !is IrElement) return Result.empty()
-        if (this.statements.isEmpty()) return this.toResult()
+    private fun IrStatementContainer.removeUnusedStatements(): ExecutionResult {
+        if (this !is IrElement) return localStack.push(Result.empty())
+        if (this.statements.isEmpty()) return localStack.push(this)
 
         val variablesToUsage = mutableMapOf<IrVariable, Int>()
         // inline const and count all appearances of IrVariable node
@@ -229,99 +276,120 @@ class PartialIrInterpreter(
         }
 
         if (this is IrBlock && !this.type.isUnit() && this.statements.size == 1) {
-            return this.statements.first().toResult()
+            return localStack.push(this.statements.first())
         }
         // TODO do we need IrBlockBody to IrExpressionBody transformation? Must convert `return` to its expression
         /*if (this is IrBlockBody && this.statements.singleOrNull() is IrExpression) {
             return this.factory.createExpressionBody(this.startOffset, this.endOffset, this.statements.single() as IrExpression)
         }*/
-        return this.toResult()
+        return localStack.push(this)
     }
 
-    private fun visitReturn(expression: IrReturn, data: Nothing?): Result {
-        expression.value = expression.value.interpret().asExpression() ?: return Result.empty()
-        return expression.toResult()
+    private fun visitReturn(expression: IrReturn, data: Nothing?): ExecutionResult {
+        expression.value.interpret().check { return it }
+        expression.value = localStack.pop()?.asExpression() ?: expression.value
+        return localStack.push(expression, Return)
     }
 
-    private fun visitSetField(expression: IrSetField, data: Nothing?): Result {
+    private fun visitSetField(expression: IrSetField, data: Nothing?): ExecutionResult {
         // TODO
-        return expression.toResult()
+        return localStack.push(expression)
     }
 
-    private fun visitGetField(expression: IrGetField, data: Nothing?): Result {
+    private fun visitGetField(expression: IrGetField, data: Nothing?): ExecutionResult {
         // TODO
-        return expression.toResult()
+        return localStack.push(expression)
     }
 
-    private fun visitGetValue(expression: IrGetValue, data: Nothing?): Result {
-        if (stack.contains(expression.symbol)) {
-            val value = stack.getVariable(expression.symbol).state
-            if (value is Primitive<*> && !value.type.isArray()) return Result(value, value.value.toIrConst(value.type)) // if value on stack is primitive then we can inline it
-            return expression.toResult()   // if value is complex (for example some object) then we still can continue interpretation, but cannot inline
+    private fun visitGetValue(expression: IrGetValue, data: Nothing?): ExecutionResult {
+        if (interpreterStack.contains(expression.symbol)) {
+            val value = interpreterStack.getVariable(expression.symbol).state
+            if (value is Primitive<*> && !value.type.isArray()) return localStack.push(Result(value, value.value.toIrConst(value.type))) // if value on stack is primitive then we can inline it
+            return localStack.push(expression)   // if value is complex (for example some object) then we still can continue interpretation, but cannot inline
         }
-        return Result.empty() // if value isn't present on stack, then we cannot continue interpretation
+        return localStack.push(Result.empty()) // if value isn't present on stack, then we cannot continue interpretation
     }
 
-    private fun <T> visitConst(expression: IrConst<T>, data: Nothing?): Result = interpret(expression)
+    private fun <T> visitConst(expression: IrConst<T>, data: Nothing?): ExecutionResult = evaluate(expression)
 
-    private fun visitVariable(declaration: IrVariable, data: Nothing?): Result {
+    private fun visitVariable(declaration: IrVariable, data: Nothing?): ExecutionResult {
         if (declaration.initializer == null) {
-            stack.addVar(Variable(declaration.symbol))
-            return declaration.toResult()
+            interpreterStack.addVar(Variable(declaration.symbol))
+            return localStack.push(declaration)
         }
-        val result = declaration.initializer?.interpret() ?: return Result.empty()
-        declaration.initializer = result.asExpression()
-        if (result.state != null) stack.addVar(Variable(declaration.symbol, result.state))
-        return declaration.toResult()
+        declaration.initializer?.interpret()?.check { return it }
+        val result = localStack.pop()
+        declaration.initializer = result?.asExpression() ?: declaration.initializer
+        if (result?.state != null) interpreterStack.addVar(Variable(declaration.symbol, result.state))
+        return localStack.push(declaration)
     }
 
-    private fun visitSetVariable(expression: IrSetVariable, data: Nothing?): Result {
-        if (stack.contains(expression.symbol)) {
-            val result = expression.value.interpret()
-            expression.value = result.asExpression() ?: return Result.empty()
-            stack.getVariable(expression.symbol).apply { this.state = result.state ?: return Result.empty() }
-            return expression.toResult()
+    private fun visitSetVariable(expression: IrSetVariable, data: Nothing?): ExecutionResult {
+        if (interpreterStack.contains(expression.symbol)) {
+            expression.value.interpret().check { return it }
+            val result = localStack.pop()?.apply { this.asExpression()?.let { expression.value = it } }
+            interpreterStack.getVariable(expression.symbol).apply { this.state = result?.state ?: return localStack.push(Result.empty()) }
+            //return localStack.push(expression)
         }
-        return expression.toResult()
+        return localStack.push(expression)
     }
 
-    private fun visitTypeOperator(expression: IrTypeOperatorCall, data: Nothing?): Result {
-        return expression.toResult()
+    private fun visitTypeOperator(expression: IrTypeOperatorCall, data: Nothing?): ExecutionResult {
+        return localStack.push(expression)
     }
 
-    private fun visitWhileLoop(loop: IrWhileLoop, data: Nothing?): Result {
+    private fun visitWhileLoop(loop: IrWhileLoop, data: Nothing?): ExecutionResult {
         while (true) {
-            val condition = loop.condition.interpret().state
-            if (condition != null && condition is Primitive<*> && condition.value == false) break
-            else if ((loop.condition as? IrConst<*>)?.value == false) break
+            loop.condition.interpret().check { return it }
+            val condition = localStack.pop()?.state
+            when {
+                condition != null && condition is Primitive<*> && condition.value == false -> break
+                (loop.condition as? IrConst<*>)?.value == false -> break
+            }
             loop.body?.interpret()
         }
         // TODO how to remove loop if it was fold
         // in inline interpreter we must inline loop instead of folding
-        return loop.toResult()
+        return localStack.push(loop)
     }
 
     /*private fun visitDoWhileLoop(loop: IrDoWhileLoop, data: Nothing?): Result? {
         return super.visitDoWhileLoop(loop, data)
     }*/
 
-    private fun visitWhen(expression: IrWhen, data: Nothing?): Result {
-        expression.branches.firstNotNullResult { branch ->
-            branch.condition = branch.condition.interpret().asExpression() ?: branch.condition
-            if (branch.condition !is IrConst<*>) return Result.empty()
+    private fun visitBranch(expression: IrBranch, data: Nothing?): ExecutionResult {
+        val executionResult = expression.condition.interpret().check { return it }
+        val condition = localStack.pop()?.asExpression() as? IrConst<*> ?: return BreakWhen
+        if (condition.value == true) {
+            expression.result.interpret().check { return it }
+            return localStack.push(localStack.pop()?.element, BreakWhen)
+        }
+        return executionResult
+    }
+
+    private fun visitWhen(expression: IrWhen, data: Nothing?): ExecutionResult {
+        /*expression.branches.firstNotNullResult { branch ->
+            branch.condition.interpret()
+            branch.condition = branch.condition.interpret().let { localStack.pop()?.asExpression() } ?: branch.condition
+            if (branch.condition !is IrConst<*>) return localStack.push(Result.empty())
             if ((branch.condition as IrConst<*>).value == true) {
                 return branch.result.interpret()
             }
             null
+        }*/
+        var executionResult: ExecutionResult = Next
+        for (branch in expression.branches) {
+            executionResult = branch.interpret().check { return it }
         }
-        return Result.empty()
+        return localStack.push(expression, executionResult)
     }
 
-    private fun visitVararg(expression: IrVararg, data: Nothing?): Result {
+    private fun visitVararg(expression: IrVararg, data: Nothing?): ExecutionResult {
         expression.elements.forEachIndexed { index, element ->
-            element.interpret().let { expression.putElement(index, it.element as IrVarargElement) }
+            element.interpret().check { return it }
+            expression.putElement(index, localStack.pop()?.element as IrVarargElement)
         }
-        return expression.toResult()
+        return localStack.push(expression)
     }
 
     /*private fun visitSpreadElement(spread: IrSpreadElement, data: Nothing?): Result? {
