@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.ir.interpreter.checker.EvaluationMode
 import org.jetbrains.kotlin.ir.interpreter.stack.StackImpl
 import org.jetbrains.kotlin.ir.interpreter.stack.Variable
 import org.jetbrains.kotlin.ir.interpreter.state.Primitive
+import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.types.isUnit
 import org.jetbrains.kotlin.ir.util.IdSignature
 import org.jetbrains.kotlin.ir.util.fileOrNull
@@ -60,15 +61,15 @@ class PartialIrInterpreter(
                 //--is IrConst<*> -> interpretConst(this)
                 //--is IrVariable -> interpretVariable(this)
                 //--is IrSetVariable -> interpretSetVariable(this)
-//                is IrTypeOperatorCall -> interpretTypeOperatorCall(this)
+                //--is IrTypeOperatorCall -> interpretTypeOperatorCall(this)
                 //--is IrBranch -> interpretBranch(this)
-//                is IrWhileLoop -> interpretWhile(this)
-//                is IrDoWhileLoop -> interpretDoWhile(this)
+                //--is IrWhileLoop -> interpretWhile(this)
+                //--is IrDoWhileLoop -> interpretDoWhile(this)
                 //--is IrWhen -> interpretWhen(this)
 //                is IrBreak -> interpretBreak(this)
 //                is IrContinue -> interpretContinue(this)
-//                is IrVararg -> interpretVararg(this)
-//                is IrSpreadElement -> interpretSpreadElement(this)
+                //--is IrVararg -> interpretVararg(this)
+                //--is IrSpreadElement -> interpretSpreadElement(this)
 //                is IrTry -> interpretTry(this)
 //                is IrCatch -> interpretCatch(this)
 //                is IrThrow -> interpretThrow(this)
@@ -99,7 +100,7 @@ class PartialIrInterpreter(
             expression.putValueArgument(i, argument.accept(this, data) as? IrExpression ?: return expression)
         }
 
-        return interpreter.interpret(expression)
+        return interpreter.interpret(expression, clean = false)
     }
 
     override fun visitConstructorCall(expression: IrConstructorCall, data: Nothing?): IrElement {
@@ -109,7 +110,7 @@ class PartialIrInterpreter(
             expression.putValueArgument(i, argument.accept(this, data) as? IrExpression ?: return expression)
         }
 
-        interpreter.interpret(expression) // interpretation result is stored on stack
+        interpreter.interpret(expression, clean = false) // interpretation result is stored on stack
         return expression
     }
 
@@ -151,7 +152,11 @@ class PartialIrInterpreter(
     override fun visitBlock(expression: IrBlock, data: Nothing?): IrElement? {
         return when (expression) {
             is IrBlockImpl -> {
-                val statements = expression.statements.map { it.accept(this, data) as? IrStatement ?: it }
+                val statements = mutableListOf<IrStatement>()
+                stack.newFrame(asSubFrame = true) {
+                    statements.addAll(expression.statements.map { it.accept(this, data) as? IrStatement ?: it })
+                    Next
+                }
                 IrBlockImpl(expression.startOffset, expression.endOffset, expression.type, expression.origin, statements)
                     .removeUnusedStatements()
             }
@@ -235,13 +240,13 @@ class PartialIrInterpreter(
     override fun visitGetValue(expression: IrGetValue, data: Nothing?): IrElement? {
         if (stack.contains(expression.symbol)) {
             val value = stack.getVariable(expression.symbol).state
-            if (value is Primitive<*>) return value.toIrConst(value.type) // if value on stack is primitive then we can inline it
+            if (value is Primitive<*> && !value.type.isArray()) return value.value.toIrConst(value.type) // if value on stack is primitive then we can inline it
             return expression   // if value is complex (for example some object) then we still can continue interpretation, but cannot inline
         }
         return null // if value isn't present on stack, then we cannot continue interpretation
     }
 
-    override fun <T> visitConst(expression: IrConst<T>, data: Nothing?): IrElement = expression
+    override fun <T> visitConst(expression: IrConst<T>, data: Nothing?): IrElement = expression.apply { interpreter.interpret(this, clean = false) }
 
     override fun visitVariable(declaration: IrVariable, data: Nothing?): IrElement? {
         if (declaration.initializer == null) {
@@ -249,13 +254,13 @@ class PartialIrInterpreter(
             return declaration
         }
         declaration.initializer = declaration.initializer?.accept(this, data) as? IrExpression ?: return null
-        if (stack.hasReturnValue()) stack.addVar(Variable(declaration.symbol, stack.popReturnValue()))
+        if (stack.hasReturnValue()) stack.addVar(Variable(declaration.symbol, stack.popReturnValue())) // TODO
         return declaration
     }
 
     override fun visitSetVariable(expression: IrSetVariable, data: Nothing?): IrElement? {
         if (stack.contains(expression.symbol)) {
-            expression.accept(this, data) ?: return null
+            expression.value = expression.value.accept(this, data) as? IrExpression ?: return null
             return expression
         }
         return expression
@@ -263,6 +268,21 @@ class PartialIrInterpreter(
 
     override fun visitTypeOperator(expression: IrTypeOperatorCall, data: Nothing?): IrElement {
         return expression
+    }
+
+    override fun visitWhileLoop(loop: IrWhileLoop, data: Nothing?): IrElement? {
+        while (true) {
+            val condition = loop.condition.accept(this, data) as? IrExpression ?: loop.condition
+            if ((condition as? IrConst<*>)?.value == false) break
+            loop.body?.accept(this, data)
+        }
+        // TODO how to remove loop if it was fold
+        // in inline interpreter we must inline loop instead of folding
+        return loop
+    }
+
+    override fun visitDoWhileLoop(loop: IrDoWhileLoop, data: Nothing?): IrElement? {
+        return super.visitDoWhileLoop(loop, data)
     }
 
     override fun visitWhen(expression: IrWhen, data: Nothing?): IrElement? {
@@ -274,5 +294,16 @@ class PartialIrInterpreter(
             }
             null
         }
+    }
+
+    override fun visitVararg(expression: IrVararg, data: Nothing?): IrElement? {
+        expression.elements.forEachIndexed { index, element ->
+            element.accept(this, data)?.let { expression.putElement(index, it as IrVarargElement) } ?: return null
+        }
+        return expression
+    }
+
+    override fun visitSpreadElement(spread: IrSpreadElement, data: Nothing?): IrElement? {
+        return super.visitSpreadElement(spread, data)
     }
 }
