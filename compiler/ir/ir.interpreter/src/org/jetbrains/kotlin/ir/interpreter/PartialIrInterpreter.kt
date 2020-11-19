@@ -19,10 +19,8 @@ import org.jetbrains.kotlin.ir.interpreter.state.Primitive
 import org.jetbrains.kotlin.ir.interpreter.state.State
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.types.isUnit
-import org.jetbrains.kotlin.ir.util.IdSignature
-import org.jetbrains.kotlin.ir.util.fileOrNull
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
-import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
 import kotlin.Exception
 
 // This class is an addition to IrInterpreter. The same logic can be implemented inside IrInterpreter with some kind of flag.
@@ -51,16 +49,12 @@ class PartialIrInterpreter(
             return pool.removeLastOrNull()
         }
 
-        fun wasInterpreted() = pool.lastOrNull()?.state != null
+        fun wasEvaluated() = pool.lastOrNull()?.state != null
     }
 
     private class Result(val state: State?, val element: IrElement?) {
         fun asExpression() = element as? IrExpression
         fun asStatement() = element as? IrStatement
-
-        companion object {
-            fun empty() = Result(null, null)
-        }
     }
 
     //private fun IrElement.toResult() = Result(null, this)
@@ -134,21 +128,21 @@ class PartialIrInterpreter(
 
     private fun visitCall(expression: IrCall, data: Nothing?): ExecutionResult {
         var canEvaluate = true
-        expression.dispatchReceiver?.interpret()?.check { return it }
-        if (expression.dispatchReceiver != null && !localStack.wasInterpreted()) canEvaluate = false
+        expression.dispatchReceiver?.interpret()?.check { return it } // if label == CALCULATED || label == EVALUATED => replace
+        if (expression.dispatchReceiver != null && !localStack.wasEvaluated()) canEvaluate = false
         localStack.pop()?.asExpression()?.let { expression.dispatchReceiver = it }
 
         expression.extensionReceiver?.interpret()?.check { return it }
-        if (expression.extensionReceiver != null && !localStack.wasInterpreted()) canEvaluate = false
+        if (expression.extensionReceiver != null && !localStack.wasEvaluated()) canEvaluate = false
         localStack.pop()?.asExpression()?.let { expression.extensionReceiver = it }
 
         for (i in 0 until expression.valueArgumentsCount) {
             expression.getValueArgument(i)?.interpret()?.check { return it }
-            if (expression.getValueArgument(i) != null && !localStack.wasInterpreted()) canEvaluate = false
+            if (expression.getValueArgument(i) != null && !localStack.wasEvaluated()) canEvaluate = false
             localStack.pop()?.asExpression()?.let { expression.putValueArgument(i, it) }
         }
 
-        if (!canEvaluate || !mode.canEvaluateFunction(expression.symbol.owner)) return localStack.push(expression)
+        if (!canEvaluate || !mode.canEvaluateFunction(expression.symbol.owner)) return localStack.push(expression) // return CALCULATED
         return evaluate(expression)
     }
 
@@ -156,7 +150,7 @@ class PartialIrInterpreter(
         var canEvaluate = true
         for (i in 0 until expression.valueArgumentsCount) {
             expression.getValueArgument(i)?.interpret()?.check { canEvaluate = false }
-            if (expression.getValueArgument(i) != null && !localStack.wasInterpreted()) canEvaluate = false
+            if (expression.getValueArgument(i) != null && !localStack.wasEvaluated()) canEvaluate = false
             localStack.pop()?.asExpression()?.let { expression.putValueArgument(i, it) }
         }
 
@@ -192,7 +186,8 @@ class PartialIrInterpreter(
         val statements = mutableListOf<IrStatement>()
         for (statement in body.statements) {
             executionResult = statement.interpret()
-            statements.add(localStack.pop()?.asStatement() ?: statement)
+            //statements.add(localStack.pop()?.asStatement() ?: statement)
+            localStack.pop()?.asStatement()?.let { statements.add(it) } // if label == DROP => drop; if label == NOT_INTERPRETABLE => statement; ...
             if (executionResult.returnLabel != ReturnLabel.REGULAR) break
         }
         localStack.push(body.factory.createBlockBody(body.startOffset, body.endOffset, statements))
@@ -215,7 +210,8 @@ class PartialIrInterpreter(
                 interpreterStack.newFrame(asSubFrame = true) {
                     for (statement in expression.statements) {
                         executionResult = statement.interpret()
-                        statements.add(localStack.pop()?.asStatement() ?: statement)
+                        //statements.add(localStack.pop()?.asStatement() ?: statement)
+                        localStack.pop()?.asStatement()?.let { statements.add(it) } // TODO
                         if (executionResult.returnLabel != ReturnLabel.REGULAR) break
                     }
                     Next
@@ -228,7 +224,7 @@ class PartialIrInterpreter(
     }
 
     private fun IrStatementContainer.removeUnusedStatements(): ExecutionResult {
-        if (this !is IrElement) return localStack.push(Result.empty())
+        if (this !is IrElement) return Next
         if (this.statements.isEmpty()) return localStack.push(this)
 
         val variablesToUsage = mutableMapOf<IrVariable, Int>()
@@ -236,12 +232,13 @@ class PartialIrInterpreter(
         for (i in 0 until this.statements.size) {
             val statement = this.statements[i]
             if (statement is IrVariable) {
-                if (statement.initializer is IrConst<*>) {
+                if (interpreterStack.contains(statement.symbol) && interpreterStack.getVariable(statement.symbol).state is Primitive<*>) {
                     variablesToUsage[statement] = 0
                     // for each statement, find GetValue and replace with IrConst
                     this.accept(object : IrElementTransformerVoid() {
                         override fun visitGetValue(expression: IrGetValue): IrExpression {
-                            if (expression.symbol == statement.symbol) return statement.initializer!!
+                            val value = interpreterStack.getVariable(statement.symbol).state as Primitive<*>
+                            if (!value.type.isArray() && expression.symbol == statement.symbol) return value.value.toIrConst(value.type)
                             return super.visitGetValue(expression)
                         }
                     }, null)
@@ -252,6 +249,13 @@ class PartialIrInterpreter(
                                 variablesToUsage[statement] = variablesToUsage.getOrDefault(statement, 0) + 1
                             }
                             return super.visitGetValue(expression)
+                        }
+
+                        override fun visitSetVariable(expression: IrSetVariable): IrExpression {
+                            if (expression.symbol == statement.symbol) {
+                                variablesToUsage[statement] = variablesToUsage.getOrDefault(statement, 0) + 1
+                            }
+                            return super.visitSetVariable(expression)
                         }
                     }, null)
                 }
@@ -307,12 +311,15 @@ class PartialIrInterpreter(
             if (value is Primitive<*> && !value.type.isArray()) return localStack.push(Result(value, value.value.toIrConst(value.type))) // if value on stack is primitive then we can inline it
             return localStack.push(expression)   // if value is complex (for example some object) then we still can continue interpretation, but cannot inline
         }
-        return localStack.push(Result.empty()) // if value isn't present on stack, then we cannot continue interpretation
+        return localStack.push(Result(null, null)) // if value isn't present on stack, then we cannot continue interpretation
     }
 
     private fun <T> visitConst(expression: IrConst<T>, data: Nothing?): ExecutionResult = evaluate(expression)
 
     private fun visitVariable(declaration: IrVariable, data: Nothing?): ExecutionResult {
+        /*declaration.deepCopyWithSymbols() { it1, it2 ->
+            DeepCopyIrTreeWithSymbols(it1, it2, symbolRenamer = SymbolRenamer.DEFAULT)
+        }*/
         if (declaration.initializer == null) {
             interpreterStack.addVar(Variable(declaration.symbol))
             return localStack.push(declaration)
@@ -328,8 +335,11 @@ class PartialIrInterpreter(
         if (interpreterStack.contains(expression.symbol)) {
             expression.value.interpret().check { return it }
             val result = localStack.pop()?.apply { this.asExpression()?.let { expression.value = it } }
-            interpreterStack.getVariable(expression.symbol).apply { this.state = result?.state ?: return localStack.push(Result.empty()) }
-            //return localStack.push(expression)
+            if (result?.state == null) {
+                interpreterStack.removeVar(expression.symbol)
+                return localStack.push(expression)
+            }
+            interpreterStack.getVariable(expression.symbol).state = result.state
         }
         return localStack.push(expression)
     }
@@ -346,7 +356,7 @@ class PartialIrInterpreter(
                 condition != null && condition is Primitive<*> && condition.value == false -> break
                 (loop.condition as? IrConst<*>)?.value == false -> break
             }
-            loop.body?.interpret()
+            loop.body?.interpret()?.check { return it }
         }
         // TODO how to remove loop if it was fold
         // in inline interpreter we must inline loop instead of folding
@@ -381,7 +391,8 @@ class PartialIrInterpreter(
         for (branch in expression.branches) {
             executionResult = branch.interpret().check { return it }
         }
-        return localStack.push(expression, executionResult)
+        // TODO if all branches returned false, then we must delete `when`
+        return executionResult
     }
 
     private fun visitVararg(expression: IrVararg, data: Nothing?): ExecutionResult {
