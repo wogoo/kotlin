@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.ir.IrLock
 import org.jetbrains.kotlin.ir.builders.declarations.addFunction
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.descriptors.toIrBasedDescriptor
@@ -45,6 +46,7 @@ import org.jetbrains.org.objectweb.asm.*
 import org.jetbrains.org.objectweb.asm.commons.Method
 import org.jetbrains.org.objectweb.asm.tree.MethodNode
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 interface MetadataSerializer {
     fun serialize(metadata: MetadataSource): Pair<MessageLite, JvmStringTable>?
@@ -103,9 +105,16 @@ class ClassCodegen private constructor(
         }
     }
 
+    @Volatile
     private var generated = false
 
     fun generate() {
+        synchronized(this) {
+            doGenerate()
+        }
+    }
+
+    private fun doGenerate() {
         // TODO: reject repeated generate() calls; currently, these can happen for objects in finally
         //       blocks since they are `accept`ed once per each CFG edge out of the try-finally.
         if (generated) return
@@ -312,7 +321,8 @@ class ClassCodegen private constructor(
         }
     }
 
-    private val generatedInlineMethods = mutableMapOf<IrFunction, SMAPAndMethodNode>()
+    private val generatedInlineMethods = ConcurrentHashMap<IrFunction, SMAPAndMethodNode>()
+    private val lock = Any()
 
     fun generateMethodNode(method: IrFunction): SMAPAndMethodNode {
         if (!method.isInline && !method.isSuspendCapturingCrossinline()) {
@@ -323,11 +333,13 @@ class ClassCodegen private constructor(
             //       multiple times if declared in a `finally` block - should they be cached?
             return FunctionCodegen(method, this).generate()
         }
-        val (node, smap) = generatedInlineMethods.getOrPut(method) { FunctionCodegen(method, this).generate() }
-        val copy = with(node) { MethodNode(Opcodes.API_VERSION, access, name, desc, signature, exceptions.toTypedArray()) }
-        node.instructions.resetLabels()
-        node.accept(copy)
-        return SMAPAndMethodNode(copy, smap)
+
+        // Only allow generation of one inline method at a time, to avoid deadlocks when files call inline methods of each other.
+        val (node, smap) =
+            generatedInlineMethods[method] ?: synchronized(lock) {
+                generatedInlineMethods.getOrPut(method) { FunctionCodegen(method, this).generate() }
+            }
+        return SMAPAndMethodNode(cloneMethodNode(node), smap)
     }
 
     private fun generateMethod(method: IrFunction, classSMAP: SourceMapper, delegatedPropertyOptimizer: DelegatedPropertyOptimizer?) {
@@ -359,20 +371,22 @@ class ClassCodegen private constructor(
             val continuationClass = method.continuationClass() // null if `SuspendLambda.invokeSuspend` - `this` is continuation itself
             val continuationClassCodegen = lazy { if (continuationClass != null) getOrCreate(continuationClass, context, method) else this }
 
-            // For suspend lambdas continuation class is null, and we need to use containing class to put L$ fields
-            val attributeContainer = continuationClass?.attributeOwnerId ?: irClass.attributeOwnerId
+            synchronized(continuationClassCodegen) { // TODO: this defeats the purpose of lazy computation for continuationClassCodegen.
+                // For suspend lambdas continuation class is null, and we need to use containing class to put L$ fields
+                val attributeContainer = continuationClass?.attributeOwnerId ?: irClass.attributeOwnerId
 
-            node.acceptWithStateMachine(
-                method,
-                this,
-                smapCopyingVisitor,
-                context.continuationClassesVarsCountByType[attributeContainer] ?: emptyMap()
-            ) {
-                continuationClassCodegen.value.visitor
-            }
+                node.acceptWithStateMachine(
+                    method,
+                    this,
+                    smapCopyingVisitor,
+                    context.continuationClassesVarsCountByType[attributeContainer] ?: emptyMap()
+                ) {
+                    continuationClassCodegen.value.visitor
+                }
 
-            if (continuationClass != null && (continuationClassCodegen.isInitialized() || method.isSuspendCapturingCrossinline())) {
-                continuationClassCodegen.value.generate()
+                if (continuationClass != null && (continuationClassCodegen.isInitialized() || method.isSuspendCapturingCrossinline())) {
+                    continuationClassCodegen.value.generate()
+                }
             }
         } else {
             node.accept(smapCopyingVisitor)
