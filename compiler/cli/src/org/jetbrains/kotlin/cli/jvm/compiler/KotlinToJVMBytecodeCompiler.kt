@@ -60,6 +60,7 @@ import org.jetbrains.kotlin.fir.checkers.registerExtendedCommonCheckers
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
 import org.jetbrains.kotlin.fir.session.FirJvmModuleInfo
 import org.jetbrains.kotlin.fir.session.FirSessionFactory
+import org.jetbrains.kotlin.incremental.components.LookupTracker
 import org.jetbrains.kotlin.ir.backend.jvm.jvmResolveLibraries
 import org.jetbrains.kotlin.javac.JavacWrapper
 import org.jetbrains.kotlin.load.kotlin.ModuleVisibilityManager
@@ -330,7 +331,10 @@ object KotlinToJVMBytecodeCompiler {
             )
 
             val moduleInfo = FirJvmModuleInfo(module, listOf(librariesModuleInfo))
-            val session = FirSessionFactory.createJavaModuleBasedSession(moduleInfo, provider, scope, project) {
+            val session = FirSessionFactory.createJavaModuleBasedSession(
+                moduleInfo, provider, scope, project,
+                lookupTracker = environment.configuration.get(CommonConfigurationKeys.LOOKUP_TRACKER)
+            ) {
                 if (extendedAnalysisMode) {
                     registerExtendedCommonCheckers()
                 }

@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.fir.resolve.providers.impl.FirTypeResolverImpl
 import org.jetbrains.kotlin.fir.resolve.transformers.plugin.GeneratedClassIndex
 import org.jetbrains.kotlin.fir.scopes.impl.FirDeclaredMemberScopeProvider
 import org.jetbrains.kotlin.fir.types.FirCorrespondingSupertypesCache
+import org.jetbrains.kotlin.incremental.components.LookupTracker
 
 // -------------------------- Required components --------------------------
 
@@ -55,10 +56,13 @@ fun FirSession.registerThreadUnsafeCaches() {
  * Resolve components which are same on all platforms
  */
 @OptIn(SessionConfiguration::class)
-fun FirSession.registerResolveComponents() {
+fun FirSession.registerResolveComponents(lookupTracker: LookupTracker? = null) {
     register(FirQualifierResolver::class, FirQualifierResolverImpl(this))
     register(FirTypeResolver::class, FirTypeResolverImpl(this))
     register(CheckersComponent::class, CheckersComponent())
+    if (lookupTracker != null) {
+        register(LookupTrackerComponent::class, LookupTrackerComponent(lookupTracker))
+    }
 }
 
 /*
