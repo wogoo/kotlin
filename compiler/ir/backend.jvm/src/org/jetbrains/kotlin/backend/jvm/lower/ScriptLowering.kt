@@ -75,7 +75,7 @@ private class ScriptsToClassesLowering(val context: JvmBackendContext) {
             visibility = DescriptorVisibilities.PUBLIC
             modality = Modality.FINAL
         }.also { irScriptClass ->
-            irScriptClass.superTypes += context.irBuiltIns.anyType
+            irScriptClass.superTypes += irScript.baseClass
             irScriptClass.parent = irFile
             irScriptClass.metadata = irScript.metadata
         }
@@ -113,12 +113,28 @@ private class ScriptsToClassesLowering(val context: JvmBackendContext) {
                 }
             }
 
-            irScript.explicitCallParameters.forEach { addConstructorParameter(it, true) }
+            irScript.explicitCallParameters.forEach { addConstructorParameter(it, false) }
             irScript.implicitReceiversParameters.forEach { addConstructorParameter(it, false) }
             irScript.providedProperties.forEach { addConstructorParameter(it.first, false) }
 
             irConstructor.body = context.createIrBuilder(irConstructor.symbol).irBlockBody {
-                +irDelegatingConstructorCall(context.irBuiltIns.anyClass.owner.constructors.single())
+                val baseClassCtor = irScript.baseClass.classOrNull?.owner?.constructors?.singleOrNull()
+                if (baseClassCtor == null) {
+                    +irDelegatingConstructorCall(context.irBuiltIns.anyClass.owner.constructors.single())
+                } else {
+                    +irDelegatingConstructorCall(baseClassCtor).also {
+                        irScript.explicitCallParameters.forEachIndexed { idx, valueParameter ->
+                            it.putValueArgument(
+                                idx,
+                                IrGetValueImpl(
+                                    valueParameter.startOffset, valueParameter.endOffset,
+                                    valueParameter.type,
+                                    valueParameter.symbol
+                                )
+                            )
+                        }
+                    }
+                }
                 +IrInstanceInitializerCallImpl(
                     irScript.startOffset, irScript.endOffset,
                     irScriptClass.symbol,
