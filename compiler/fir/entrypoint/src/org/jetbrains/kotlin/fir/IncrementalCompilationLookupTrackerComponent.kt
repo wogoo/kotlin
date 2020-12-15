@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.fir.types.render
 import org.jetbrains.kotlin.incremental.components.LookupTracker
 import org.jetbrains.kotlin.incremental.components.Position
 import org.jetbrains.kotlin.incremental.components.ScopeKind
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -21,22 +22,35 @@ class IncrementalCompilationLookupTrackerComponent(
     private val firFileToPath: (FirSourceElement) -> String
 ) : FirLookupTrackerComponent() {
 
-    val lookupsToTypes = MultiMap.createSet<FirSourceElement, Pair<Name, ConeKotlinType>>()
+    private data class Lookup(
+        val name: Name,
+        val scopeFqName: String,
+        val scopeKind: ScopeKind
+    )
 
-    override fun recordLookup(
-        callInfo: CallInfo,
-        inScope: ConeKotlinType
-    ) {
-        lookupsToTypes.putValue(callInfo.containingFile.source, callInfo.name to inScope)
+    private val lookupsToTypes = MultiMap.createSet<FirSourceElement, Lookup>()
+
+    override fun recordLookup(callInfo: CallInfo, inScope: ConeKotlinType) {
+        lookupsToTypes.putValue(
+            callInfo.containingFile.source,
+            Lookup(callInfo.name, inScope.render() /* TODO: check if correct */, ScopeKind.CLASSIFIER)
+        )
+    }
+
+    override fun recordLookup(callInfo: CallInfo, inScope: FqName, isClassifier: Boolean) {
+        lookupsToTypes.putValue(
+            callInfo.containingFile.source,
+            Lookup(callInfo.name, inScope.asString(), if (isClassifier) ScopeKind.CLASSIFIER else ScopeKind.PACKAGE)
+        )
     }
 
     override fun flushLookups() {
         for (fileSource in lookupsToTypes.keySet()) {
             val path = firFileToPath(fileSource)
-            for ((name, toScope) in lookupsToTypes.get(fileSource)) {
+            for ((name, toScope, scopeKind) in lookupsToTypes.get(fileSource)) {
                 lookupTracker.record(
                     path, Position.NO_POSITION,
-                    toScope.render() /* TODO: check if correct */, ScopeKind.CLASSIFIER,
+                    toScope, scopeKind,
                     name.asString()
                 )
             }
@@ -49,10 +63,10 @@ class DebugIncrementalCompilationLookupTrackerComponent(
     private val firFileToPath: (FirSourceElement) -> String
 ) : FirLookupTrackerComponent() {
 
-    protected class Lookup(
+    private class Lookup(
         val name: Name,
-        val scopeFqName: String?,
-        val inClassifier: ConeKotlinType?,
+        val scopeFqName: String,
+        val scopeKind: ScopeKind,
         val from: FirSourceElement?,
         val fromFile: FirSourceElement?
     )
@@ -63,14 +77,21 @@ class DebugIncrementalCompilationLookupTrackerComponent(
         callInfo: CallInfo,
         inScope: ConeKotlinType
     ) {
-        lookups.add(Lookup(callInfo.name, null, inScope, callInfo.callSite.source, callInfo.containingFile.source))
+        lookups.add(Lookup(callInfo.name, inScope.render(), ScopeKind.CLASSIFIER, callInfo.callSite.source, callInfo.containingFile.source))
+    }
+
+    override fun recordLookup(callInfo: CallInfo, inScope: FqName, isClassifier: Boolean) {
+        lookups.add(
+            Lookup(
+                callInfo.name, inScope.asString(), if (isClassifier) ScopeKind.CLASSIFIER else ScopeKind.PACKAGE,
+                callInfo.callSite.source, callInfo.containingFile.source
+            )
+        )
     }
 
     override fun flushLookups() {
         val filesToPaths = HashMap<FirSourceElement, String>()
         for (lookup in lookups) {
-            val scopeFqName = lookup.scopeFqName ?: lookup.inClassifier?.render() ?: error("lookup without target")
-
             val path = filesToPaths.getOrPut(lookup.fromFile!!) {
                 firFileToPath(lookup.fromFile)
             }
@@ -83,7 +104,7 @@ class DebugIncrementalCompilationLookupTrackerComponent(
 
             lookupTracker.record(
                 path, position,
-                scopeFqName, ScopeKind.CLASSIFIER,
+                lookup.scopeFqName, lookup.scopeKind,
                 lookup.name.asString()
             )
         }

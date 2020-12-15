@@ -56,4 +56,7 @@ class FirPackageMemberScope(val fqName: FqName, val session: FirSession) : FirSc
             processor(symbol)
         }
     }
+
+    override val scopeLookupName: FqName
+        get() = fqName
 }

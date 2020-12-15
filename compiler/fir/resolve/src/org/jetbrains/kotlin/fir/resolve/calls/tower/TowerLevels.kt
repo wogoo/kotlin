@@ -51,7 +51,7 @@ abstract class TowerScopeLevel {
 
     abstract fun processPropertiesByName(info: CallInfo, processor: TowerScopeLevelProcessor<FirVariableSymbol<*>>): ProcessResult
 
-    abstract fun processObjectsByName(name: Name, processor: TowerScopeLevelProcessor<AbstractFirBasedSymbol<*>>): ProcessResult
+    abstract fun processObjectsByName(info: CallInfo, processor: TowerScopeLevelProcessor<AbstractFirBasedSymbol<*>>): ProcessResult
 
     interface TowerScopeLevelProcessor<in T : AbstractFirBasedSymbol<*>> {
         fun consumeCandidate(
@@ -142,7 +142,7 @@ class MemberScopeTowerLevel(
         return processMembers(processor) { consumer ->
             session.firLookupTracker?.recordLookup(info, dispatchReceiverValue.type)
             this.processFunctionsAndConstructorsByName(
-                info, session, bodyResolveComponents,
+                info.name, session, bodyResolveComponents,
                 includeInnerConstructors = true,
                 processor = {
                     // WARNING, DO NOT CAST FUNCTIONAL TYPE ITSELF
@@ -159,7 +159,7 @@ class MemberScopeTowerLevel(
     ): ProcessResult {
         return processMembers(processor) { consumer ->
             session.firLookupTracker?.recordLookup(info, dispatchReceiverValue.type)
-            this.processPropertiesByName(info) {
+            this.processPropertiesByName(info.name) {
                 // WARNING, DO NOT CAST FUNCTIONAL TYPE ITSELF
                 @Suppress("UNCHECKED_CAST")
                 consumer(it)
@@ -276,6 +276,7 @@ class ScopeTowerLevel(
         processor: TowerScopeLevelProcessor<FirFunctionSymbol<*>>
     ): ProcessResult {
         var empty = true
+        session.firLookupTracker?.recordLookupIfNeeded(info, scope, false)
         scope.processFunctionsAndConstructorsByName(
             info.name,
             session,
@@ -293,6 +294,7 @@ class ScopeTowerLevel(
         processor: TowerScopeLevelProcessor<FirVariableSymbol<*>>
     ): ProcessResult {
         var empty = true
+        session.firLookupTracker?.recordLookupIfNeeded(info, scope, false)
         scope.processPropertiesByName(info.name) { candidate ->
             empty = false
             consumeCallableCandidate(candidate, processor)
@@ -305,6 +307,7 @@ class ScopeTowerLevel(
         processor: TowerScopeLevelProcessor<AbstractFirBasedSymbol<*>>
     ): ProcessResult {
         var empty = true
+        session.firLookupTracker?.recordLookupIfNeeded(info, scope, false)
         scope.processClassifiersByName(info.name) {
             empty = false
             processor.consumeCandidate(

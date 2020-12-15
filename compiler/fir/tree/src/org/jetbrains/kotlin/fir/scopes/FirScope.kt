@@ -7,6 +7,8 @@ package org.jetbrains.kotlin.fir.scopes
 
 import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
 import org.jetbrains.kotlin.fir.symbols.impl.*
+import org.jetbrains.kotlin.fir.types.ConeKotlinType
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
 abstract class FirScope {
@@ -34,6 +36,9 @@ abstract class FirScope {
     }
 
     open fun mayContainName(name: Name) = true
+
+    open val scopeLookupName: FqName? get() = null
+    open val scopeLookupType: ConeKotlinType? get() = null
 }
 
 fun FirScope.getSingleClassifier(name: Name): FirClassifierSymbol<*>? = mutableListOf<FirClassifierSymbol<*>>().apply {
