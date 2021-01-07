@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
 import org.jetbrains.kotlin.ir.expressions.IrDelegatingConstructorCall
+import org.jetbrains.kotlin.ir.symbols.IrScriptSymbol
 import org.jetbrains.kotlin.ir.util.StubGeneratorExtensions
 import org.jetbrains.kotlin.psi.KtPureClassOrObject
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
@@ -37,4 +38,6 @@ open class GeneratorExtensions : StubGeneratorExtensions() {
         descriptor: ClassDescriptor,
         context: GeneratorContext,
     ): IrDelegatingConstructorCall? = null
+
+    open fun getPreviousScripts(): List<IrScriptSymbol> = emptyList()
 }
