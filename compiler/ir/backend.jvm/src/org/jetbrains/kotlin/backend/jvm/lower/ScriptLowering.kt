@@ -78,6 +78,7 @@ private class ScriptsToClassesLowering(val context: JvmBackendContext) {
             irScriptClass.superTypes += irScript.baseClass
             irScriptClass.parent = irFile
             irScriptClass.metadata = irScript.metadata
+            irScript.targetClass = irScriptClass.symbol
         }
     }
 
@@ -113,6 +114,51 @@ private class ScriptsToClassesLowering(val context: JvmBackendContext) {
                 }
             }
 
+            irScript.earlierScriptsParameter?.let {
+                addConstructorParameter(it, false)
+//                irScript.earlierScripts!!.forEach { earlierScriptSymbol ->
+//                    val earlierScript = earlierScriptSymbol.owner
+//                    val earlierScriptClass = earlierScript.targetClass!!.owner
+//                    val earlierScriptClassType = earlierScriptClass.defaultType
+//                    irScriptClass.addProperty {
+//                        startOffset = UNDEFINED_OFFSET
+//                        endOffset = UNDEFINED_OFFSET
+//                        origin = IrDeclarationOrigin.SCRIPT_EARLIER_SCRIPTS
+//                        visibility = DescriptorVisibilities.PROTECTED
+//                        isVar = false
+//                        isConst = false
+//                        isLateinit = false
+//                        isDelegated = false
+//                        isExternal = false
+//                        isExpect = false
+//                        isFakeOverride = false
+//                        name = earlierScript.name
+//                    }.also { property ->
+//                        property.backingField = context.irFactory.buildField {
+//                            name = earlierScript.name
+//                            type = earlierScriptClassType
+//                            visibility = DescriptorVisibilities.PROTECTED
+//                        }.also { field ->
+//                            field.parent = irScriptClass
+//                            field.initializer = IrExpressionBodyImpl(
+//                                IrCallImpl(
+//                                    UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+//                                    context.builtIns.anyType,
+//                                    context.irBuiltIns
+//
+//                                )
+//                                IrGetValueImpl(
+//                                    UNDEFINED_OFFSET, UNDEFINED_OFFSET,
+//                                    earlierScriptClassType,
+//                                    earlierScriptClass.symbol,
+//                                    IrStatementOrigin.INITIALIZE_PROPERTY_FROM_PARAMETER
+//                                )
+//                            )
+//                            property.addSimpleFieldGetter(from.type, irScriptClass, field)
+//                        }
+//                    }
+//                }
+            }
             irScript.explicitCallParameters.forEach { addConstructorParameter(it, false) }
             irScript.implicitReceiversParameters.forEach { addConstructorParameter(it, false) }
             irScript.providedProperties.forEach { addConstructorParameter(it.first, false) }

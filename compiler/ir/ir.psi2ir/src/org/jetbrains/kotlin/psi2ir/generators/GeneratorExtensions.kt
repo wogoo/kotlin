@@ -39,5 +39,5 @@ open class GeneratorExtensions : StubGeneratorExtensions() {
         context: GeneratorContext,
     ): IrDelegatingConstructorCall? = null
 
-    open fun getPreviousScripts(): List<IrScriptSymbol> = emptyList()
+    open fun getPreviousScripts(): List<IrScriptSymbol>? = null
 }
