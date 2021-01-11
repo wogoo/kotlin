@@ -13,8 +13,6 @@ import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder.buildValueParameter
 import org.jetbrains.kotlin.ir.builders.declarations.buildTypeParameter
 import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.declarations.*
-import org.jetbrains.kotlin.ir.descriptors.WrappedClassDescriptor
-import org.jetbrains.kotlin.ir.descriptors.WrappedTypeParameterDescriptor
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.IrClassSymbolImpl
@@ -179,8 +177,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
     private fun IrType.wrapClassTypeDescriptor(typeArguments: List<IrTypeArgument>): IrType {
         val typeParameter = classifierOrNull?.owner
         return if (this is IrSimpleType && typeParameter is IrClass) {
-            val classDesc = WrappedClassDescriptor().apply { bind(typeParameter) }
-            val classifier = IrClassSymbolImpl(classDesc).apply { bind(typeParameter) }
+            val classifier = IrClassSymbolImpl().apply { bind(typeParameter) }
             IrSimpleTypeImpl(classifier, hasQuestionMark, typeArguments, annotations, abbreviation)
         } else this
     }
@@ -188,8 +185,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
     private fun IrType.wrapTypeParameterDescriptor(): IrType {
         val typeParameter = classifierOrNull?.owner
         return if (this is IrSimpleType && typeParameter is IrTypeParameter) {
-            val typeParameterDescriptor = WrappedTypeParameterDescriptor().apply { bind(typeParameter) }
-            val classifier = IrTypeParameterSymbolImpl(typeParameterDescriptor).apply { bind(typeParameter) }
+            val classifier = IrTypeParameterSymbolImpl().apply { bind(typeParameter) }
             IrSimpleTypeImpl(classifier, hasQuestionMark, arguments, annotations, abbreviation)
         } else this
     }

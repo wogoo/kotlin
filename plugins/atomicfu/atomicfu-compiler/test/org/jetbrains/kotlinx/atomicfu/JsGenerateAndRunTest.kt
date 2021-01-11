@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.js.test.BasicBoxTest
 import org.jetbrains.kotlin.js.test.BasicIrBoxTest
 import org.jetbrains.kotlin.serialization.js.ModuleKind
 import org.jetbrains.kotlin.test.KotlinTestUtils
-import org.jetbrains.kotlin.test.TargetBackend
 import org.jetbrains.kotlinx.atomicfu.compiler.extensions.AtomicfuComponentRegistrar
 import org.junit.Test
 import java.io.File
