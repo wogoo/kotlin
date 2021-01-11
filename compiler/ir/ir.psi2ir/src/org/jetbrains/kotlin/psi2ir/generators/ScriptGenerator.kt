@@ -97,7 +97,7 @@ class ScriptGenerator(declarationGenerator: DeclarationGenerator) : DeclarationG
                     Name.special("<earlierScripts>"), parametersIndex++,
                     arrayType, null,
                     false, false, false, false
-                )
+                ).also { it.parent = irScript }
             }
 
             irScript.explicitCallParameters = descriptor.explicitConstructorParameters.map { valueParameterDescriptor ->

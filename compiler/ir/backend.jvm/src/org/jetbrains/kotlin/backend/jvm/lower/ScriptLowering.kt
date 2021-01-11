@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
+import org.jetbrains.kotlin.ir.interpreter.toIrConst
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.IrAnonymousInitializerSymbolImpl
 import org.jetbrains.kotlin.ir.transformStatement
@@ -30,6 +31,7 @@ import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.util.OperatorNameConventions
 
 internal val scriptsToClassesPhase = makeCustomPhase<JvmBackendContext, IrModuleFragment>(
     name = "ScriptsToClasses",
@@ -84,7 +86,7 @@ private class ScriptsToClassesLowering(val context: JvmBackendContext) {
 
     private fun finalizeScriptClass(irScriptClass: IrClass, irScript: IrScript, symbolRemapper: ScriptsToClassesSymbolRemapper) {
         val typeRemapper = SimpleTypeRemapper(symbolRemapper)
-        val scriptTransformer = ScriptToClassTransformer(irScript, irScriptClass, symbolRemapper, typeRemapper)
+        val scriptTransformer = ScriptToClassTransformer(irScript, irScriptClass, symbolRemapper, typeRemapper, context)
         irScriptClass.thisReceiver = irScript.thisReceiver.run {
             transform(scriptTransformer, null)
         }
@@ -114,50 +116,8 @@ private class ScriptsToClassesLowering(val context: JvmBackendContext) {
                 }
             }
 
-            irScript.earlierScriptsParameter?.let {
-                addConstructorParameter(it, false)
-//                irScript.earlierScripts!!.forEach { earlierScriptSymbol ->
-//                    val earlierScript = earlierScriptSymbol.owner
-//                    val earlierScriptClass = earlierScript.targetClass!!.owner
-//                    val earlierScriptClassType = earlierScriptClass.defaultType
-//                    irScriptClass.addProperty {
-//                        startOffset = UNDEFINED_OFFSET
-//                        endOffset = UNDEFINED_OFFSET
-//                        origin = IrDeclarationOrigin.SCRIPT_EARLIER_SCRIPTS
-//                        visibility = DescriptorVisibilities.PROTECTED
-//                        isVar = false
-//                        isConst = false
-//                        isLateinit = false
-//                        isDelegated = false
-//                        isExternal = false
-//                        isExpect = false
-//                        isFakeOverride = false
-//                        name = earlierScript.name
-//                    }.also { property ->
-//                        property.backingField = context.irFactory.buildField {
-//                            name = earlierScript.name
-//                            type = earlierScriptClassType
-//                            visibility = DescriptorVisibilities.PROTECTED
-//                        }.also { field ->
-//                            field.parent = irScriptClass
-//                            field.initializer = IrExpressionBodyImpl(
-//                                IrCallImpl(
-//                                    UNDEFINED_OFFSET, UNDEFINED_OFFSET,
-//                                    context.builtIns.anyType,
-//                                    context.irBuiltIns
-//
-//                                )
-//                                IrGetValueImpl(
-//                                    UNDEFINED_OFFSET, UNDEFINED_OFFSET,
-//                                    earlierScriptClassType,
-//                                    earlierScriptClass.symbol,
-//                                    IrStatementOrigin.INITIALIZE_PROPERTY_FROM_PARAMETER
-//                                )
-//                            )
-//                            property.addSimpleFieldGetter(from.type, irScriptClass, field)
-//                        }
-//                    }
-//                }
+            irScript.earlierScriptsParameter?.let { earlierScriptdParameter ->
+                addConstructorParameter(earlierScriptdParameter, false)
             }
             irScript.explicitCallParameters.forEach { addConstructorParameter(it, false) }
             irScript.implicitReceiversParameters.forEach { addConstructorParameter(it, false) }
@@ -346,7 +306,8 @@ private class ScriptToClassTransformer(
     val irScript: IrScript,
     val irScriptClass: IrClass,
     val symbolRemapper: SymbolRemapper,
-    val typeRemapper: TypeRemapper
+    val typeRemapper: TypeRemapper,
+    val context: JvmBackendContext
 ) : IrElementTransformerVoid() {
 
     private fun IrType.remapType() = typeRemapper.remapType(this)
@@ -471,6 +432,38 @@ private class ScriptToClassTransformer(
         }
         visitExpression(expression)
     }
+
+    override fun visitCall(expression: IrCall): IrExpression {
+        if (irScript.earlierScripts != null) {
+            val target = expression.symbol.owner
+            val receiver = target.dispatchReceiverParameter
+            if (target.origin == IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR && receiver?.name == Name.special("<this>")) {
+                val earlierScriptIndex =
+                    receiver.type.classifierOrNull
+                        ?.takeIf { (it.owner as? IrClass)?.origin == IrDeclarationOrigin.SCRIPT_CLASS }
+                        ?.let { originalSymbol ->
+                            irScript.earlierScripts!!.indexOfFirst { it.owner.targetClass == originalSymbol }
+                        }
+                if (earlierScriptIndex != -1) {
+                    val objArray = context.irBuiltIns.arrayClass
+                    val objArrayGet = objArray.functions.single { it.owner.name == OperatorNameConventions.GET }
+                    val builder = context.createIrBuilder(expression.symbol)
+                    val newReceiver = builder.irCall(objArrayGet).apply {
+                        dispatchReceiver = builder.irGet(objArray.defaultType, irScript.earlierScriptsParameter!!.symbol)
+                        putValueArgument(0, earlierScriptIndex.toIrConst(objArrayGet.owner.valueParameters.first().type))
+                    }
+                    val newCall = builder.irCall(expression.symbol, target.returnType, origin = expression.origin).also {
+                        it.copyTypeAndValueArgumentsFrom(expression)
+                        it.dispatchReceiver = newReceiver
+                    }
+                    return super.visitCall(newCall)
+                }
+            }
+        }
+        return super.visitCall(expression)
+    }
+
+
 }
 
 private class ScriptsToClassesSymbolRemapper(
