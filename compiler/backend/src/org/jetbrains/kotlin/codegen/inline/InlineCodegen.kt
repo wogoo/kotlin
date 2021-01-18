@@ -725,9 +725,9 @@ abstract class InlineCodegen<out T : BaseExpressionCodegen>(
             val result = HashSet<String>()
 
             if (lambdaOrFun != null) {
-                val label = LabelResolver.getLabelNameIfAny(lambdaOrFun)
-                if (label != null) {
-                    result.add(label.asString())
+                val labels = LabelResolver.getLabelNamesIfAny(lambdaOrFun, addContextReceiverNames = false)
+                if (labels.singleOrNull() != null) {
+                    result.add(labels.single().asString())
                 }
             }
 

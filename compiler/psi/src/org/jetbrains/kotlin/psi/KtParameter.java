@@ -164,7 +164,7 @@ public class KtParameter extends KtNamedDeclarationStub<KotlinParameterStub> imp
 
     @NotNull
     @Override
-    public List<KtTypeReference> getContextReceiverTypeReferences() {
+    public List<KtContextReceiver> getContextReceivers() {
         return Collections.emptyList();
     }
 

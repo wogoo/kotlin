@@ -51,10 +51,7 @@ import org.jetbrains.kotlin.storage.StorageManager;
 import org.jetbrains.kotlin.types.*;
 import org.jetbrains.kotlin.types.checker.KotlinTypeRefiner;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static kotlin.collections.CollectionsKt.firstOrNull;
@@ -288,13 +285,17 @@ public class LazyClassDescriptor extends ClassDescriptorBase implements ClassDes
             if (classOrObject == null) {
                 return CollectionsKt.emptyList();
             }
-            return classOrObject.getContextReceiverTypeReferences().stream().map(typeReference -> {
-                KotlinType kotlinType = c.getTypeResolver().resolveType(getScopeForClassHeaderResolution(), typeReference, c.getTrace(), true);
-                return new ReceiverParameterDescriptorImpl(
-                        this,
-                        new ExtensionClassReceiver(this, kotlinType, null),
-                        Annotations.Companion.getEMPTY()
-                );
+            return classOrObject.getContextReceivers().stream()
+                    .map(KtContextReceiver::typeReference)
+                    .filter(Objects::nonNull)
+                    .map(typeReference -> {
+                        KotlinType kotlinType =
+                                c.getTypeResolver().resolveType(getScopeForClassHeaderResolution(), typeReference, c.getTrace(), true);
+                        return new ReceiverParameterDescriptorImpl(
+                                this,
+                                new ExtensionClassReceiver(this, kotlinType, null),
+                                Annotations.Companion.getEMPTY()
+                        );
             }).collect(Collectors.toList());
         });
     }

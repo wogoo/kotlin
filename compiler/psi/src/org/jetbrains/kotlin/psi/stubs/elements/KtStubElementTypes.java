@@ -141,6 +141,8 @@ public interface KtStubElementTypes {
 
     KtPlaceHolderStubElementType<KtContextReceiver> CONTEXT_RECEIVER =
             new KtPlaceHolderStubElementType<>("CONTEXT_RECEIVER", KtContextReceiver.class);
+    KtPlaceHolderStubElementType<KtContextReceiverList> CONTEXT_RECEIVER_LIST =
+            new KtPlaceHolderStubElementType<>("CONTEXT_RECEIVER_LIST", KtContextReceiverList.class);
     KtPlaceHolderStubElementType<KtReceiverExpressionList> RECEIVER_EXPRESSION_LIST =
             new KtPlaceHolderStubElementType<>("RECEIVER_EXPRESSION_LIST", KtReceiverExpressionList.class);
 
