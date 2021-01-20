@@ -30,4 +30,4 @@ abstract class FirLookupTrackerComponent : FirSessionComponent {
     abstract fun flushLookups()
 }
 
-val FirSession.firLookupTracker: FirLookupTrackerComponent? by FirSession.sessionComponentAccessor()
+val FirSession.firLookupTracker: FirLookupTrackerComponent? by FirSession.nullableSessionComponentAccessor()
