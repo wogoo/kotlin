@@ -281,6 +281,13 @@ val compileTimeEvaluationPhase = makeIrModulePhase(
     prerequisite = setOf(expectDeclarationsRemovingPhase)
 )
 
+val partialCompileTimeEvaluationPhase = makeIrModulePhase(
+    ::PartialCompileTimeCalculationLowering,
+    name = "PartialCompileTimeEvaluation",
+    description = "Evaluate and optimize function statements",
+    prerequisite = setOf(expectDeclarationsRemovingPhase, compileTimeEvaluationPhase)
+)
+
 private val jvmFilePhases = listOf(
     typeAliasAnnotationMethodsPhase,
     stripTypeAliasDeclarationsPhase,
@@ -396,6 +403,7 @@ val jvmPhases = NamedCompilerPhase(
             processOptionalAnnotationsPhase then
             expectDeclarationsRemovingPhase then
             //compileTimeEvaluationPhase then
+            //partialCompileTimeEvaluationPhase then
             scriptsToClassesPhase then
             fileClassPhase then
             jvmStaticInObjectPhase then

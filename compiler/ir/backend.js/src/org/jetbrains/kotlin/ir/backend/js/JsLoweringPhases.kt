@@ -715,6 +715,12 @@ val compileTimeEvaluationPhase = makeJsModulePhase(
     description = "Evaluate calls that are marked with @CompileTimeCalculation annotation",
 ).toModuleLowering()
 
+val partialCompileTimeEvaluationPhase = makeJsModulePhase(
+    ::PartialCompileTimeCalculationLowering,
+    name = "PartialCompileTimeEvaluation",
+    description = "Evaluate and optimize function statements",
+).toModuleLowering()
+
 private val cleanupLoweringPhase = makeBodyLoweringPhase(
     { CleanupLowering() },
     name = "CleanupLowering",
@@ -726,6 +732,7 @@ private val loweringList = listOf<Lowering>(
     validateIrBeforeLowering,
     expectDeclarationsRemovingPhase,
     compileTimeEvaluationPhase,
+    partialCompileTimeEvaluationPhase,
     stripTypeAliasDeclarationsPhase,
     jsCodeOutliningPhase,
     arrayConstructorPhase,

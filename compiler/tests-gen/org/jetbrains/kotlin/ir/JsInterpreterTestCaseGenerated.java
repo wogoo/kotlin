@@ -508,6 +508,39 @@ public class JsInterpreterTestCaseGenerated extends AbstractJsInterpreterTestCas
         }
     }
 
+    @TestMetadata("compiler/testData/ir/interpreter/partial")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class Partial extends AbstractJsInterpreterTestCase {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInPartial() throws Exception {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/interpreter/partial"), Pattern.compile("^(.+)\\.kt(s)?$"), null, true);
+        }
+
+        @TestMetadata("forLoop.kt")
+        public void testForLoop() throws Exception {
+            runTest("compiler/testData/ir/interpreter/partial/forLoop.kt");
+        }
+
+        @TestMetadata("ifTrueElse.kt")
+        public void testIfTrueElse() throws Exception {
+            runTest("compiler/testData/ir/interpreter/partial/ifTrueElse.kt");
+        }
+
+        @TestMetadata("ifWithVariables.kt")
+        public void testIfWithVariables() throws Exception {
+            runTest("compiler/testData/ir/interpreter/partial/ifWithVariables.kt");
+        }
+
+        @TestMetadata("inlineVariablesInBody.kt")
+        public void testInlineVariablesInBody() throws Exception {
+            runTest("compiler/testData/ir/interpreter/partial/inlineVariablesInBody.kt");
+        }
+    }
+
     @TestMetadata("compiler/testData/ir/interpreter/proxy")
     @TestDataPath("$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners.class)
