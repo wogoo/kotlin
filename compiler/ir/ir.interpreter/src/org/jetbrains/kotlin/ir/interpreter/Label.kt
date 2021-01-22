@@ -22,12 +22,28 @@ import org.jetbrains.kotlin.ir.types.classifierOrNull
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.render
 
-enum class ReturnLabel {
+interface Label
+
+enum class ReturnLabel : Label {
     REGULAR, RETURN, BREAK_LOOP, BREAK_WHEN, CONTINUE, EXCEPTION
 }
 
-open class ExecutionResult(val returnLabel: ReturnLabel, private val owner: IrElement? = null) {
-    fun getNextLabel(irElement: IrElement, interpret: IrElement.() -> ExecutionResult): ExecutionResult {
+enum class PartialReturnLabel : Label {
+    CALCULATED, // expression != null && state == null; возникает когда call нельзя выполнить или когда переменной нет на стэке
+    EVALUATED, // expression != null && state != null
+    NOT_INTERPRETABLE, // expression == null && state == null; надо оставить то что было
+    //DROP, // localStack.isEmpty(); надо выбросить весь statement; проверяется только в body и block
+    RETURN, BREAK_LOOP, BREAK_WHEN, CONTINUE, EXCEPTION
+}
+
+abstract class Result<T> {
+    abstract val returnLabel: Label
+
+    abstract fun getNextLabel(irElement: IrElement, interpret: IrElement.() -> T): T
+}
+
+open class ExecutionResult(override val returnLabel: ReturnLabel, private val owner: IrElement? = null) : Result<ExecutionResult>() {
+    override fun getNextLabel(irElement: IrElement, interpret: IrElement.() -> ExecutionResult): ExecutionResult {
         return when (returnLabel) {
             ReturnLabel.RETURN -> when (irElement) {
                 is IrCall, is IrReturnableBlock, is IrSimpleFunction -> if (owner == irElement) Next else this
@@ -53,6 +69,36 @@ open class ExecutionResult(val returnLabel: ReturnLabel, private val owner: IrEl
     fun addOwnerInfo(owner: IrElement): ExecutionResult {
         return ExecutionResult(returnLabel, owner)
     }
+}
+
+open class PartialResult(override val returnLabel: PartialReturnLabel, private val owner: IrElement? = null) : Result<PartialResult>() {
+    override fun getNextLabel(irElement: IrElement, interpret: IrElement.() -> PartialResult): PartialResult {
+//        return when (returnLabel) {
+//            ReturnLabel.RETURN -> when (irElement) {
+//                is IrCall, is IrReturnableBlock, is IrSimpleFunction -> if (owner == irElement) Next else this
+//                else -> this
+//            }
+//            ReturnLabel.BREAK_WHEN -> when (irElement) {
+//                is IrWhen -> Next
+//                else -> this
+//            }
+//            ReturnLabel.BREAK_LOOP -> when (irElement) {
+//                is IrWhileLoop -> if (owner == irElement) Next else this
+//                else -> this
+//            }
+//            ReturnLabel.CONTINUE -> when (irElement) {
+//                is IrWhileLoop -> if (owner == irElement) irElement.interpret() else this
+//                else -> this
+//            }
+//            ReturnLabel.EXCEPTION -> Exception
+//            ReturnLabel.REGULAR -> Next
+//        }
+        TODO()
+    }
+
+//    fun addOwnerInfo(owner: IrElement): ExecutionResult {
+//        return ExecutionResult(returnLabel, owner)
+//    }
 }
 
 inline fun ExecutionResult.check(toCheckLabel: ReturnLabel = ReturnLabel.REGULAR, returnBlock: (ExecutionResult) -> Unit): ExecutionResult {

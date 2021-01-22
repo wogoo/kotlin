@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 
 internal interface Frame {
     fun addVar(variable: Variable)
+    fun removeVar(symbol: IrSymbol)
     fun addAll(variables: List<Variable>)
     fun getVariable(symbol: IrSymbol): Variable?
     fun getAll(): List<Variable>
@@ -32,6 +33,10 @@ internal class InterpreterFrame(
 
     override fun addVar(variable: Variable) {
         pool.add(variable)
+    }
+
+    override fun removeVar(symbol: IrSymbol) {
+        pool.removeIf { it.symbol == symbol }
     }
 
     override fun addAll(variables: List<Variable>) {

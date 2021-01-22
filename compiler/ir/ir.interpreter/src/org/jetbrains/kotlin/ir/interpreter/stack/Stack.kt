@@ -31,6 +31,7 @@ internal interface Stack {
 
     fun clean(rootFile: IrFile?)
     fun addVar(variable: Variable)
+    fun removeVar(symbol: IrSymbol)
     fun addAll(variables: List<Variable>)
     fun getVariable(symbol: IrSymbol): Variable
     fun getAll(): List<Variable>
@@ -111,11 +112,15 @@ internal class StackImpl : Stack {
     override fun clean(rootFile: IrFile?) {
         stackCount = 0
         frameList.clear()
-        rootFile?.let { frameList.add(FrameContainer(rootFile)) }
+        frameList.add(FrameContainer(rootFile))
     }
 
     override fun addVar(variable: Variable) {
         getCurrentFrame().addVar(variable)
+    }
+
+    override fun removeVar(symbol: IrSymbol) {
+        getCurrentFrame().removeVar(symbol)
     }
 
     override fun addAll(variables: List<Variable>) {
@@ -166,6 +171,7 @@ private class FrameContainer(val irFile: IrFile? = null, private val entryPoint:
     }
 
     fun addVar(variable: Variable) = getTopFrame().addVar(variable)
+    fun removeVar(symbol: IrSymbol) = getTopFrame().removeVar(symbol)
     fun addAll(variables: List<Variable>) = getTopFrame().addAll(variables)
     fun getAll() = innerStack.flatMap { it.getAll() }
     fun getVariable(symbol: IrSymbol): Variable {
