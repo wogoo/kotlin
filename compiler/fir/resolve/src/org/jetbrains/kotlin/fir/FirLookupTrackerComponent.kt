@@ -7,24 +7,57 @@ package org.jetbrains.kotlin.fir
 
 import org.jetbrains.kotlin.fir.resolve.calls.CallInfo
 import org.jetbrains.kotlin.fir.scopes.FirScope
-import org.jetbrains.kotlin.fir.types.ConeKotlinType
-import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.fir.types.FirTypeRef
+import org.jetbrains.kotlin.fir.types.FirUserTypeRef
+import org.jetbrains.kotlin.name.Name
 
 abstract class FirLookupTrackerComponent : FirSessionComponent {
 
-    abstract fun recordLookup(callInfo: CallInfo, inScope: ConeKotlinType)
-    abstract fun recordLookup(callInfo: CallInfo, inScope: FqName, isClassifier: Boolean)
+    abstract fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement, inScopes: Array<String>)
+    open fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement, inScope: String) =
+        recordLookup(name, source, fileSource, arrayOf(inScope))
 
-    open fun recordLookupIfNeeded(callInfo: CallInfo, inScope: FirScope, isClassifier: Boolean = false) {
-        val lookupName = inScope.scopeLookupName
-        if (lookupName != null) {
-            recordLookup(callInfo, lookupName, isClassifier)
-        } else {
-            val lookupType = inScope.scopeLookupType
-            if (lookupType != null) {
-                recordLookup(callInfo, lookupType)
-            }
+    open fun recordLookup(callInfo: CallInfo, inScope: String) {
+        recordLookup(callInfo.name, callInfo.callSite.source, callInfo.containingFile.source!!, inScope)
+    }
+
+    open fun recordLookup(callInfo: CallInfo, inScopes: Array<String>) {
+        recordLookup(callInfo.name, callInfo.callSite.source, callInfo.containingFile.source!!, inScopes)
+    }
+
+    open fun recordLookup(callInfo: CallInfo, inScope: FirScope) {
+        inScope.scopeLookupNames.takeIf { it.isNotEmpty() }?.let {
+            recordLookup(callInfo, it)
         }
+    }
+
+    open fun recordLookup(typeRefs: Iterable<FirTypeRef>, fileSource: FirSourceElement, scopes: Iterable<FirScope>) {
+        for (typeRef in typeRefs) {
+            recordLookup(typeRef, fileSource, scopes)
+        }
+    }
+
+    open fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement, scopes: Iterable<FirScope>) {
+        val name = when (typeRef) {
+//            is FirResolvedTypeRef -> typeRef.type.let {
+//                when (it) {
+//
+//                }
+//            }
+            is FirUserTypeRef -> typeRef.qualifier.first().name
+            else -> null
+        }
+        if (name != null) {
+            val scopesLookupNames = ArrayList<String>()
+            for (scope in scopes) {
+                scopesLookupNames.addAll(scope.scopeLookupNames)
+            }
+            recordLookup(name, typeRef.source, fileSource, scopesLookupNames.toTypedArray())
+        }
+    }
+
+    open fun recordLookup(typeRefs: Iterable<FirTypeRef>, fileSource: FirSourceElement, scope: FirScope) {
+        recordLookup(typeRefs, fileSource, listOf(scope))
     }
 
     abstract fun flushLookups()

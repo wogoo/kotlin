@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.extensions.extensionService
 import org.jetbrains.kotlin.fir.extensions.predicateBasedProvider
 import org.jetbrains.kotlin.fir.extensions.supertypeGenerators
+import org.jetbrains.kotlin.fir.firLookupTracker
 import org.jetbrains.kotlin.fir.render
 import org.jetbrains.kotlin.fir.resolve.*
 import org.jetbrains.kotlin.fir.resolve.diagnostics.ConeTypeParameterSupertype
@@ -284,6 +285,11 @@ private class FirSupertypeResolverVisitor(
         supertypeRefs: List<FirTypeRef>
     ): List<FirTypeRef> {
         return resolveSpecificClassLikeSupertypes(classLikeDeclaration) { transformer, scope ->
+            session.firLookupTracker?.recordLookup(
+                supertypeRefs,
+                session.firProvider.getFirClassifierContainerFile(classLikeDeclaration.symbol).source!!,
+                scope
+            )
             supertypeRefs.mapTo(mutableListOf()) {
                 val superTypeRef = transformer.transformTypeRef(it, scope).single
                 val typeParameterType = superTypeRef.coneTypeSafe<ConeTypeParameterType>()
