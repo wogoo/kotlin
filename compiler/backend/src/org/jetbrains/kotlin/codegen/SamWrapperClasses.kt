@@ -36,8 +36,7 @@ class SamWrapperClasses(private val state: GenerationState) {
         expressionCodegen: ExpressionCodegen,
         contextDescriptor: CallableMemberDescriptor
     ): Type {
-        val isInsideInline = InlineUtil.isInlineOrContainingInline(expressionCodegen.context.contextDescriptor) ||
-                isInsideInlineLambdaContext(expressionCodegen.context, state)
+        val isInsideInline = InlineUtil.isInPublicInlineScope(expressionCodegen.context.contextDescriptor)
         return samInterfaceToWrapperClass.getOrPut(WrapperKey(samType, file, isInsideInline)) {
             SamWrapperCodegen(state, samType, expressionCodegen.parentCodegen, isInsideInline).genWrapper(file, contextDescriptor)
         }

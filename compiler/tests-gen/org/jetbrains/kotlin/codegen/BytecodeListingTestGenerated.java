@@ -1623,6 +1623,11 @@ public class BytecodeListingTestGenerated extends AbstractBytecodeListingTest {
             runTest("compiler/testData/codegen/bytecodeListing/sam/lambdaSpecializedSamInterface.kt");
         }
 
+        @TestMetadata("privateInlineSamAdapter.kt")
+        public void testPrivateInlineSamAdapter() throws Exception {
+            runTest("compiler/testData/codegen/bytecodeListing/sam/privateInlineSamAdapter.kt");
+        }
+
         @TestMetadata("reusedSamWrapperClasses.kt")
         public void testReusedSamWrapperClasses() throws Exception {
             runTest("compiler/testData/codegen/bytecodeListing/sam/reusedSamWrapperClasses.kt");
@@ -1631,6 +1636,11 @@ public class BytecodeListingTestGenerated extends AbstractBytecodeListingTest {
         @TestMetadata("samAdapterAndInlinedOne.kt")
         public void testSamAdapterAndInlinedOne() throws Exception {
             runTest("compiler/testData/codegen/bytecodeListing/sam/samAdapterAndInlinedOne.kt");
+        }
+
+        @TestMetadata("samAdapterInInlineLambda.kt")
+        public void testSamAdapterInInlineLambda() throws Exception {
+            runTest("compiler/testData/codegen/bytecodeListing/sam/samAdapterInInlineLambda.kt");
         }
 
         @TestMetadata("specializedFunInterface.kt")
