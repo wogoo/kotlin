@@ -44,4 +44,5 @@ class Some {
 // EXIST:  typealias
 // EXIST:  expect
 // EXIST:  actual
+// EXIST:  context
 // NOTHING_ELSE
