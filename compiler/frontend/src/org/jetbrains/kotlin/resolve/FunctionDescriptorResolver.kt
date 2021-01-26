@@ -186,6 +186,9 @@ class FunctionDescriptorResolver(
                 if (function is KtFunctionLiteral) expectedFunctionType.getReceiverType() else null
             }
 
+        function.contextReceiverTypeReferences.onEach {
+            typeResolver.resolveType(headerScope, it, trace, true)
+        }
 
         val valueParameterDescriptors =
             createValueParameterDescriptors(function, functionDescriptor, headerScope, trace, expectedFunctionType)
