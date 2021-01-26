@@ -62,11 +62,16 @@ fun FirSession.registerResolveComponents(lookupTracker: LookupTracker? = null) {
     register(FirTypeResolver::class, FirTypeResolverImpl(this))
     register(CheckersComponent::class, CheckersComponent())
     if (lookupTracker != null) {
+        val firFileToPath: (FirSourceElement) -> String = {
+            val psiSource = (it as? FirPsiSourceElement<*>) ?: TODO("Not implemented for non-FirPsiSourceElement")
+            ((psiSource.psi as? PsiFile) ?: psiSource.psi.containingFile).virtualFile.path
+        }
         register(
             FirLookupTrackerComponent::class,
-            IncrementalCompilationLookupTrackerComponent(lookupTracker) {
-                val psiSource = (it as? FirPsiSourceElement<*>) ?: TODO("Not implemented for non-FirPsiSourceElement")
-                ((psiSource.psi as? PsiFile) ?: psiSource.psi.containingFile).virtualFile.path
+            if (lookupTracker.requiresPosition) {
+                DebugIncrementalCompilationLookupTrackerComponent(lookupTracker, firFileToPath)
+            } else {
+                IncrementalCompilationLookupTrackerComponent(lookupTracker, firFileToPath)
             }
         )
     }
