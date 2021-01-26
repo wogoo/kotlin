@@ -53,6 +53,7 @@ class FirTypeResolveTransformer(
 
     override fun transformFile(file: FirFile, data: Nothing?): CompositeTransformResult<FirFile> {
         checkSessionConsistency(file)
+        typeResolverTransformer.currentFile = file
         return withScopeCleanup {
             scopes.addAll(createImportingScopes(file, session, scopeSession))
             super.transformFile(file, data)

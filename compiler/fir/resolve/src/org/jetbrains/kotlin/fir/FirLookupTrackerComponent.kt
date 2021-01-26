@@ -60,6 +60,10 @@ abstract class FirLookupTrackerComponent : FirSessionComponent {
         recordLookup(typeRefs, fileSource, listOf(scope))
     }
 
+    open fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement, scope: FirScope) {
+        recordLookup(typeRef, fileSource, listOf(scope))
+    }
+
     abstract fun flushLookups()
 }
 
