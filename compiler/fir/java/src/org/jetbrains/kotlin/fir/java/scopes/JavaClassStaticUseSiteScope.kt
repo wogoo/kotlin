@@ -104,4 +104,7 @@ class JavaClassStaticUseSiteScope internal constructor(
     override fun mayContainName(name: Name): Boolean {
         return declaredMemberScope.mayContainName(name) || superTypesScopes.any { it.mayContainName(name) }
     }
+
+    override val scopeLookupNames: Array<String>
+        get() = declaredMemberScope.scopeLookupNames
 }
