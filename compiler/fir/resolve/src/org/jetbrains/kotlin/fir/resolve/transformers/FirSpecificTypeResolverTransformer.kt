@@ -39,8 +39,22 @@ class FirSpecificTypeResolverTransformer(
         }
     }
 
-    internal var currentFile: FirFile? = null
+    @PrivateForInline
+    @JvmField
+    var currentFile: FirFile? = null
 
+    @OptIn(PrivateForInline::class)
+    inline fun <R> withFile(file: FirFile?, block: FirSpecificTypeResolverTransformer.() -> R): R {
+        val oldValue = currentFile
+        currentFile = file
+        return try {
+            block()
+        } finally {
+            currentFile = oldValue
+        }
+    }
+
+    @OptIn(PrivateForInline::class)
     override fun transformTypeRef(typeRef: FirTypeRef, data: FirScope): CompositeTransformResult<FirResolvedTypeRef> {
         currentFile?.let {
             session.firLookupTracker?.recordLookup(typeRef, it.source!!, data)
