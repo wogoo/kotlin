@@ -11,11 +11,12 @@ import org.jetbrains.kotlin.incremental.components.LookupTracker
 import org.jetbrains.kotlin.incremental.components.Position
 import org.jetbrains.kotlin.incremental.components.ScopeKind
 import org.jetbrains.kotlin.name.Name
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class IncrementalCompilationLookupTrackerComponent(
     private val lookupTracker: LookupTracker,
-    private val firFileToPath: (FirSourceElement) -> String
+    private val sourceToFilePath: (FirSourceElement) -> String
 ) : FirLookupTrackerComponent() {
 
     private class Lookup(
@@ -41,19 +42,26 @@ class IncrementalCompilationLookupTrackerComponent(
         }
     }
 
-    private val lookupsToTypes = MultiMap.createSet<FirSourceElement, Lookup>()
+    private val lock = ReentrantLock()
+    private var lookupsToTypes = MultiMap.createSet<FirSourceElement, Lookup>()
 
-    override fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement, inScopes: Array<String>) {
-        lookupsToTypes.putValue(
-            fileSource,
-            Lookup(name, inScopes /* TODO: check if correct */)
-        )
+    override fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement?, inScopes: Array<String>) {
+        val definedSource = fileSource ?: source ?: throw AssertionError("Cannot record lookup for \"$name\" without a source")
+        val lookup = Lookup(name, inScopes)
+        lock.withLock {
+            lookupsToTypes.putValue(definedSource, lookup)
+        }
     }
 
     override fun flushLookups() {
-        for (fileSource in lookupsToTypes.keySet()) {
-            val path = firFileToPath(fileSource)
-            for (record in lookupsToTypes.get(fileSource)) {
+        val lookups = lock.withLock {
+            val temp = lookupsToTypes
+            lookupsToTypes = MultiMap.createSet()
+            temp
+        }
+        for (source in lookups.keySet()) {
+            val path = sourceToFilePath(source)
+            for (record in lookups.get(source)) {
                 for (toScope in record.scopeFqNames) {
                     lookupTracker.record(
                         path, Position.NO_POSITION,
@@ -68,7 +76,7 @@ class IncrementalCompilationLookupTrackerComponent(
 
 class DebugIncrementalCompilationLookupTrackerComponent(
     private val lookupTracker: LookupTracker,
-    private val firFileToPath: (FirSourceElement) -> String
+    private val sourceToFilePath: (FirSourceElement) -> String
 ) : FirLookupTrackerComponent() {
 
     private class Lookup(
@@ -100,17 +108,29 @@ class DebugIncrementalCompilationLookupTrackerComponent(
         }
     }
 
-    private val lookups = ConcurrentLinkedQueue<Lookup>()
+    private val lock = ReentrantLock()
+    private var lookups = ArrayList<Lookup>()
 
-    override fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement, inScopes: Array<String>) {
-        lookups.add(Lookup(name, inScopes, source, fileSource))
+    override fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement?, inScopes: Array<String>) {
+        if (fileSource == null && source == null) throw AssertionError("Cannot record lookup for \"$name\" without a source")
+        val lookup = Lookup(name, inScopes, source, fileSource)
+        lock.withLock {
+            lookups.add(lookup)
+        }
     }
 
     override fun flushLookups() {
+        if (lookups.isEmpty()) return
         val filesToPaths = HashMap<FirSourceElement, String>()
-        for (lookup in lookups) {
-            val path = filesToPaths.getOrPut(lookup.fromFile!!) {
-                firFileToPath(lookup.fromFile)
+        val movedLookups = lock.withLock {
+            val temp = lookups
+            lookups = ArrayList()
+            temp
+        }
+        for (lookup in movedLookups) {
+            val maybeFileSource = lookup.fromFile ?: lookup.from!!
+            val path = filesToPaths.getOrPut(maybeFileSource) {
+                sourceToFilePath(maybeFileSource)
             }
 
             val position = lookup.from?.let {

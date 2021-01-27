@@ -13,8 +13,8 @@ import org.jetbrains.kotlin.name.Name
 
 abstract class FirLookupTrackerComponent : FirSessionComponent {
 
-    abstract fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement, inScopes: Array<String>)
-    open fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement, inScope: String) =
+    abstract fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement?, inScopes: Array<String>)
+    open fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement?, inScope: String) =
         recordLookup(name, source, fileSource, arrayOf(inScope))
 
     open fun recordLookup(callInfo: CallInfo, inScope: String) {
@@ -31,13 +31,13 @@ abstract class FirLookupTrackerComponent : FirSessionComponent {
         }
     }
 
-    open fun recordLookup(typeRefs: Iterable<FirTypeRef>, fileSource: FirSourceElement, scopes: Iterable<FirScope>) {
+    open fun recordLookup(typeRefs: Iterable<FirTypeRef>, fileSource: FirSourceElement?, scopes: Iterable<FirScope>) {
         for (typeRef in typeRefs) {
             recordLookup(typeRef, fileSource, scopes)
         }
     }
 
-    open fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement, scopes: Iterable<FirScope>) {
+    open fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement?, scopes: Iterable<FirScope>) {
         val name = when (typeRef) {
 //            is FirResolvedTypeRef -> typeRef.type.let {
 //                when (it) {
@@ -56,11 +56,11 @@ abstract class FirLookupTrackerComponent : FirSessionComponent {
         }
     }
 
-    open fun recordLookup(typeRefs: Iterable<FirTypeRef>, fileSource: FirSourceElement, scope: FirScope) {
+    open fun recordLookup(typeRefs: Iterable<FirTypeRef>, fileSource: FirSourceElement?, scope: FirScope) {
         recordLookup(typeRefs, fileSource, listOf(scope))
     }
 
-    open fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement, scope: FirScope) {
+    open fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement?, scope: FirScope) {
         recordLookup(typeRef, fileSource, listOf(scope))
     }
 
