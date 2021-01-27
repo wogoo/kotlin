@@ -85,7 +85,10 @@ class GenerateIrRuntime {
                 LanguageFeature.MultiPlatformProjects to LanguageFeature.State.ENABLED
             ),
             analysisFlags = mapOf(
-                AnalysisFlags.useExperimental to listOf("kotlin.contracts.ExperimentalContracts", "kotlin.Experimental", "kotlin.ExperimentalMultiplatform"),
+                AnalysisFlags.useExperimental to listOf(
+                    "kotlin.ExperimentalStdlibApi", "kotlin.contracts.ExperimentalContracts",
+                    "kotlin.Experimental", "kotlin.ExperimentalMultiplatform"
+                ),
                 AnalysisFlags.allowResultReturnType to true
             )
         )
@@ -298,7 +301,9 @@ class GenerateIrRuntime {
             irOnly = true
             irModuleName = "kotlin"
             allowKotlinPackage = true
-            useExperimental = arrayOf("kotlin.contracts.ExperimentalContracts", "kotlin.Experimental", "kotlin.ExperimentalMultiplatform")
+            useExperimental = arrayOf(
+                "kotlin.ExperimentalStdlibApi", "kotlin.contracts.ExperimentalContracts", "kotlin.Experimental", "kotlin.ExperimentalMultiplatform"
+            )
             allowResultReturnType = true
             multiPlatform = true
             languageVersion = "1.4"
@@ -590,5 +595,40 @@ class GenerateIrRuntime {
         val jsProgram = doBackEnd(module, symbolTable, irBuiltIns, linker)
 
         return jsProgram.toString()
+    }
+
+    @Test
+    fun buildKlib() {
+        val commonPath = listOf(
+            "libraries/kotlin.test/common/src/main/",
+            "libraries/kotlin.test/jvm/src/main",
+            "libraries/stdlib/jvm/src/kotlin/util/AssertionsJVM.kt",
+            "libraries/stdlib/jvm/runtime/kotlin/KotlinNullPointerException.kt",
+            "libraries/stdlib/jvm/src/kotlin/reflect/KAnnotatedElement.kt",
+            "libraries/stdlib/jvm/src/kotlin/reflect/KParameter.kt",
+            "libraries/stdlib/jvm/src/kotlin/reflect/KVisibility.kt",
+            "libraries/stdlib/jvm/src/kotlin/reflect/KDeclarationContainer.kt"
+        )
+        val commonPsis = commonPath.map { File(it) }.flatMap { it.listAllFiles() }.mapNotNull { createPsiFile(it.path, true) }
+
+        val files = fullRuntimeSourceSet + commonPsis
+        val analysisResult = doFrontEnd(files)
+        val rawModuleFragment = doPsi2Ir(files, analysisResult)
+
+        serializeModuleIntoKlib(
+            moduleName,
+            project,
+            configuration,
+            IrMessageLogger.None,
+            analysisResult.bindingContext,
+            files,
+            "build/js-ir-runtime/klib",
+            emptyList(),
+            rawModuleFragment,
+            mutableMapOf(),
+            emptyList(),
+            nopack = true,
+            perFile = false
+        )
     }
 }

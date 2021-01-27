@@ -1231,7 +1231,7 @@ open class IrFileSerializer(
 
     open fun backendSpecificExplicitRoot(node: IrAnnotationContainer): Boolean = false
     open fun keepOrderOfProperties(property: IrProperty): Boolean = !property.isConst
-    open fun backendSpecificSerializeAllMembers(irClass: IrClass) = false
+    open fun backendSpecificSerializeAllMembers(irClass: IrClass) = true
 
     fun memberNeedsSerialization(member: IrDeclaration): Boolean {
         assert(member.parent is IrClass)

@@ -1073,7 +1073,7 @@ abstract class IrFileDeserializer(
 
                 thisReceiver = deserializeIrValueParameter(proto.thisReceiver, -1)
 
-                fakeOverrideBuilder.enqueueClass(this, signature)
+                //fakeOverrideBuilder.enqueueClass(this, signature)
             }
         }
 
@@ -1439,8 +1439,8 @@ abstract class IrFileDeserializer(
         if (!symbol.signature.isPublic) return false
 
         return when (proto.declaratorCase!!) {
-            IR_FUNCTION -> FunctionFlags.decode(proto.irFunction.base.base.flags).isFakeOverride
-            IR_PROPERTY -> PropertyFlags.decode(proto.irProperty.base.flags).isFakeOverride
+//            IR_FUNCTION -> FunctionFlags.decode(proto.irFunction.base.base.flags).isFakeOverride
+//            IR_PROPERTY -> PropertyFlags.decode(proto.irProperty.base.flags).isFakeOverride
             // Don't consider IR_FIELDS here.
             else -> false
         }
