@@ -286,13 +286,14 @@ private class FirSupertypeResolverVisitor(
         supertypeRefs: List<FirTypeRef>
     ): List<FirTypeRef> {
         return resolveSpecificClassLikeSupertypes(classLikeDeclaration) { transformer, scope ->
-            session.firLookupTracker?.recordLookup(
-                supertypeRefs,
-                if (classLikeDeclaration.isLocalClassOrAnonymousObject()) classLikeDeclaration.source
-                else session.firProvider.getFirClassifierContainerFile(classLikeDeclaration.symbol).source!!,
-                scope
-            )
-            supertypeRefs.mapTo(mutableListOf()) {
+            if (!classLikeDeclaration.isLocalClassOrAnonymousObject()) {
+                session.firLookupTracker?.recordLookup(
+                    supertypeRefs,
+                    session.firProvider.getFirClassifierContainerFile (classLikeDeclaration.symbol).source,
+                    scope
+                )
+            }
+            ArrayList(supertypeRefs).mapTo(mutableListOf()) {
                 val superTypeRef = transformer.transformTypeRef(it, scope).single
                 val typeParameterType = superTypeRef.coneTypeSafe<ConeTypeParameterType>()
                 when {
