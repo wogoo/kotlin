@@ -6,6 +6,7 @@
 package generators.unicode.ranges
 
 import generators.unicode.UnicodeDataGenerator
+import generators.unicode.UnicodeDataLine
 import generators.unicode.ranges.writers.writeHeader
 import java.io.File
 import java.io.FileWriter
@@ -19,7 +20,7 @@ internal class CharCategoryTestGenerator(private val outputFile: File) : Unicode
         outputFile.parentFile.mkdirs()
     }
 
-    override fun appendChar(char: String, name: String, categoryCode: String) {
+    override fun appendLine(line: UnicodeDataLine) {
         if (arraySize == 0) {
             writer?.appendLine(")")
             writer?.close()
@@ -27,9 +28,9 @@ internal class CharCategoryTestGenerator(private val outputFile: File) : Unicode
             generateUnicodeDataHeader(arrayIndex)
         }
 
-        val isStart = name.endsWith(", First>")
+        val isStart = line.name.endsWith(", First>")
 
-        writer?.appendLine("    CharProperties(char = '\\u$char', isStartOfARange = $isStart, categoryCode = \"$categoryCode\"),")
+        writer?.appendLine("    CharProperties(char = '\\u${line.char}', isStartOfARange = $isStart, categoryCode = \"${line.categoryCode}\"),")
 
         arraySize++
         if (arraySize == 2048) {

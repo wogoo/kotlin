@@ -5,6 +5,7 @@
 
 package generators.unicode
 
+import generators.unicode.mappings.MappingsGenerator
 import generators.unicode.ranges.CharCategoryTestGenerator
 import generators.unicode.ranges.RangesGenerator
 import templates.COPYRIGHT_NOTICE
@@ -16,7 +17,9 @@ import kotlin.system.exitProcess
 
 
 // Go to https://www.unicode.org/versions/latest/ to find out the latest public version of the Unicode Character Database files.
-private const val unicodeDataUrl = "https://www.unicode.org/Public/13.0.0/ucd/UnicodeData.txt"
+private const val unicodeVersion = "13.0.0"
+private const val unicodeDataUrl = "https://www.unicode.org/Public/$unicodeVersion/ucd/UnicodeData.txt"
+private const val specialCasingUrl = "https://www.unicode.org/Public/$unicodeVersion/ucd/SpecialCasing.txt"
 
 /**
  * This program generates sources related to UnicodeData.txt.
@@ -30,6 +33,7 @@ private const val unicodeDataUrl = "https://www.unicode.org/Public/13.0.0/ucd/Un
 fun main(args: Array<String>) {
 
     val unicodeDataLines = URL(unicodeDataUrl).openStream().reader().readLines()
+    val specialCasingLines = URL(specialCasingUrl).openStream().reader().readLines()
 
     val generators = mutableListOf<UnicodeDataGenerator>()
 
@@ -44,6 +48,15 @@ fun main(args: Array<String>) {
         generators.add(whitespaceRangesGenerator)
     }
 
+    fun addMappingsGenerators(generatedDir: File, target: KotlinTarget) {
+        val uppercaseMappingsGenerator = MappingsGenerator.forUppercase(generatedDir.resolve("_UppercaseMappings.kt"), target)
+        val lowercaseMappingsGenerator = MappingsGenerator.forLowercase(generatedDir.resolve("_LowercaseMappings.kt"), target)
+        val titlecaseMappingsGenerator = MappingsGenerator.forTitlecase(generatedDir.resolve("_TitlecaseMappings.kt"))
+        generators.add(uppercaseMappingsGenerator)
+        generators.add(lowercaseMappingsGenerator)
+        generators.add(titlecaseMappingsGenerator)
+    }
+
     when (args.size) {
         1 -> {
             val baseDir = File(args.first())
@@ -54,6 +67,7 @@ fun main(args: Array<String>) {
 
             val jsGeneratedDir = baseDir.resolve("libraries/stdlib/js/src/generated/")
             addRangesGenerators(jsGeneratedDir, KotlinTarget.JS)
+            addMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
 
             val jsIrGeneratedDir = baseDir.resolve("libraries/stdlib/js-ir/src/generated/")
             addRangesGenerators(jsIrGeneratedDir, KotlinTarget.JS_IR)
@@ -61,6 +75,10 @@ fun main(args: Array<String>) {
             // For debugging. To see the file content
             val unicodeDataFile = baseDir.resolve("libraries/tools/kotlin-stdlib-gen/src/generators/unicode/UnicodeData.txt")
             unicodeDataFile.writeText(unicodeDataLines.joinToString(separator = "\n"))
+
+            // For debugging. To see the file content
+            val specialCasingFile = baseDir.resolve("libraries/tools/kotlin-stdlib-gen/src/generators/unicode/SpecialCasing.txt")
+            specialCasingFile.writeText(specialCasingLines.joinToString(separator = "\n"))
         }
         2 -> {
             val (targetName, targetDir) = args
@@ -85,15 +103,72 @@ fun main(args: Array<String>) {
         readCopyrightNoticeFromProfile { Thread.currentThread().contextClassLoader.getResourceAsStream("apache.xml").reader() }
 
     unicodeDataLines.forEach { line ->
-        val parts = line.split(";")
-        if (parts[0].length <= 4) {
-            generators.forEach { it.appendChar(parts[0], parts[1], parts[2]) }
+        val dataLine = UnicodeDataLine(line.split(";"))
+        if (dataLine.char.length <= 4) {
+            // Basic Multilingual Plane (BMP)
+            generators.forEach { it.appendLine(dataLine) }
         }
     }
     generators.forEach { it.close() }
+
+    specialCasingLines.forEach { line ->
+        if (line.isEmpty() || line.startsWith("#")) {
+            return@forEach
+        }
+        val casingLine = SpecialCasingLine(line.split("; "))
+
+        println(casingLine)
+    }
+}
+
+internal class UnicodeDataLine(properties: List<String>) {
+    init {
+        require(properties.size == 15)
+    }
+
+    val char: String = properties[0]
+    val name: String = properties[1]
+    val categoryCode: String = properties[2]
+    val uppercaseMapping: String = properties[12]
+    val lowercaseMapping: String = properties[13]
+    val titlecaseMapping: String = properties[14]
+
+    override fun toString(): String {
+        return "UnicodeDataLine{char=$char" +
+                ", categoryCode=$categoryCode" +
+                ", uppercaseMapping=$uppercaseMapping" +
+                ", lowercaseMapping=$lowercaseMapping" +
+                ", titlecaseMapping=$titlecaseMapping" +
+                ", name=$name" +
+                "}"
+    }
 }
 
 internal interface UnicodeDataGenerator {
-    fun appendChar(char: String, name: String, categoryCode: String)
+    fun appendLine(line: UnicodeDataLine)
+    fun close()
+}
+
+
+internal class SpecialCasingLine(properties: List<String>) {
+
+    val char: String = properties[0]
+    val lowercaseMapping: List<String> = properties[1].split(" ")
+    val titlecaseMapping: List<String> = properties[2].split(" ")
+    val uppercaseMapping: List<String> = properties[3].split(" ")
+    val conditionList: List<String> = if (properties.size == 6) properties[4].split(" ") else emptyList()
+
+    override fun toString(): String {
+        return "SpecialCasingLine{char=$char" +
+                ", lowercaseMapping=$lowercaseMapping" +
+                ", uppercaseMapping=$uppercaseMapping" +
+                ", titlecaseMapping=$titlecaseMapping" +
+                ", conditionList=$conditionList" +
+                "}"
+    }
+}
+
+internal interface SpecialCasingGenerator {
+    fun appendLine(line: SpecialCasingLine)
     fun close()
 }

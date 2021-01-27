@@ -7,6 +7,7 @@ package generators.unicode.ranges
 
 import generators.requireExistingDir
 import generators.unicode.UnicodeDataGenerator
+import generators.unicode.UnicodeDataLine
 import generators.unicode.ranges.builders.*
 import generators.unicode.ranges.writers.*
 import templates.KotlinTarget
@@ -24,8 +25,8 @@ internal class RangesGenerator private constructor(
         outputFile.parentFile.requireExistingDir()
     }
 
-    override fun appendChar(char: String, name: String, categoryCode: String) {
-        rangesBuilder.append(char, name, categoryCode)
+    override fun appendLine(line: UnicodeDataLine) {
+        rangesBuilder.append(line.char, line.name, line.categoryCode)
     }
 
     override fun close() {
