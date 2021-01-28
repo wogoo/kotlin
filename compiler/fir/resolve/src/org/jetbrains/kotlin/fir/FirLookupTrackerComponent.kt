@@ -12,10 +12,7 @@ import org.jetbrains.kotlin.fir.declarations.FirVariable
 import org.jetbrains.kotlin.fir.resolve.calls.CallInfo
 import org.jetbrains.kotlin.fir.scopes.FirScope
 import org.jetbrains.kotlin.fir.symbols.FirBasedSymbol
-import org.jetbrains.kotlin.fir.types.ConeKotlinType
-import org.jetbrains.kotlin.fir.types.FirTypeRef
-import org.jetbrains.kotlin.fir.types.FirUserTypeRef
-import org.jetbrains.kotlin.fir.types.render
+import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.name.Name
 
 abstract class FirLookupTrackerComponent : FirSessionComponent {
@@ -43,7 +40,11 @@ abstract class FirLookupTrackerComponent : FirSessionComponent {
     }
 
     fun recordLookup(callInfo: CallInfo, type: ConeKotlinType) {
+        if (type.classId?.isLocal == true) return
         recordLookup(callInfo.name, callInfo.callSite.source, callInfo.containingFile.source, type.render().replace('/', '.'))
+        if (type.classId?.shortClassName?.asString() == "Companion") {
+            recordLookup(callInfo.name, callInfo.callSite.source, callInfo.containingFile.source, type.classId!!.outerClassId!!.asString().replace('/', '.'))
+        }
     }
 
     fun recordLookup(callInfo: CallInfo, inScope: FirScope) {

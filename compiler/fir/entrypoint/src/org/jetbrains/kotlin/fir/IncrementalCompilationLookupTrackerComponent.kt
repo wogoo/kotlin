@@ -46,6 +46,7 @@ class IncrementalCompilationLookupTrackerComponent(
     private var lookupsToTypes = MultiMap.createSet<FirSourceElement, Lookup>()
 
     override fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement?, inScopes: Array<String>) {
+        if (inScopes.isEmpty()) return
         val definedSource = fileSource ?: source ?: throw AssertionError("Cannot record lookup for \"$name\" without a source")
         val lookup = Lookup(name, inScopes)
         lock.withLock {
@@ -65,7 +66,7 @@ class IncrementalCompilationLookupTrackerComponent(
                 for (toScope in record.scopeFqNames) {
                     lookupTracker.record(
                         path, Position.NO_POSITION,
-                        toScope, ScopeKind.CLASSIFIER,
+                        toScope, ScopeKind.PACKAGE,
                         record.name.asString()
                     )
                 }
@@ -143,7 +144,7 @@ class DebugIncrementalCompilationLookupTrackerComponent(
             for (toScope in lookup.scopeFqNames) {
                 lookupTracker.record(
                     path, position,
-                    toScope, ScopeKind.CLASSIFIER,
+                    toScope, ScopeKind.PACKAGE,
                     lookup.name.asString()
                 )
             }
