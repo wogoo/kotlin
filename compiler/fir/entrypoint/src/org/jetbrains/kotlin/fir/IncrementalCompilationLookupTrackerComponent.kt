@@ -112,6 +112,7 @@ class DebugIncrementalCompilationLookupTrackerComponent(
     private var lookups = ArrayList<Lookup>()
 
     override fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement?, inScopes: Array<String>) {
+        if (inScopes.isEmpty()) return
         if (fileSource == null && source == null) throw AssertionError("Cannot record lookup for \"$name\" without a source")
         val lookup = Lookup(name, inScopes, source, fileSource)
         lock.withLock {

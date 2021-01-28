@@ -136,7 +136,7 @@ class MemberScopeTowerLevel(
             return ProcessResult.FOUND
         }
         return processMembers(processor) { consumer ->
-            session.firLookupTracker?.recordLookup(info, dispatchReceiverValue.type.render())
+            session.firLookupTracker?.recordLookup(info, dispatchReceiverValue.type)
             this.processFunctionsAndConstructorsByName(
                 info.name, session, bodyResolveComponents,
                 includeInnerConstructors = true,
@@ -154,7 +154,7 @@ class MemberScopeTowerLevel(
         processor: TowerScopeLevelProcessor<FirVariableSymbol<*>>
     ): ProcessResult {
         return processMembers(processor) { consumer ->
-            session.firLookupTracker?.recordLookup(info, dispatchReceiverValue.type.render())
+            session.firLookupTracker?.recordLookup(info, dispatchReceiverValue.type)
             this.processPropertiesByName(info.name) {
                 // WARNING, DO NOT CAST FUNCTIONAL TYPE ITSELF
                 @Suppress("UNCHECKED_CAST")
