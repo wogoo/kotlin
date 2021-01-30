@@ -37,7 +37,6 @@ internal class MappingsGenerator private constructor(
     }
 
     override fun close() {
-        mappingsBuilder.build()
         val mappings = mappingsBuilder.build()
 
         FileWriter(outputFile).use { writer ->

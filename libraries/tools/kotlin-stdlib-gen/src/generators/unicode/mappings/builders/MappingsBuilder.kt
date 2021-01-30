@@ -35,7 +35,7 @@ internal abstract class MappingsBuilder {
 
     fun build(): List<MappingPattern> {
 //        println(patterns.joinToString(separator = "\n"))
-        println("${this.javaClass} # ${patterns.size}")
+//        println("${this.javaClass} # ${patterns.size}")
         return patterns
     }
 

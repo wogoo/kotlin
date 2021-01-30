@@ -12,7 +12,7 @@ internal class LowercaseMappingsBuilder : MappingsBuilder() {
         if (line.lowercaseMapping.isEmpty()) return null
 
         val lower = line.lowercaseMapping.toInt(radix = 16)
-        require(charCode != lower) { "UnicodeData.txt format has changed!" }
+        check(charCode != lower) { "UnicodeData.txt format has changed!" }
 
         return lower - charCode
     }

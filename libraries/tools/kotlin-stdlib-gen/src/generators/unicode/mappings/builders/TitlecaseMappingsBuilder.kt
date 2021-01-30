@@ -14,7 +14,7 @@ internal class TitlecaseMappingsBuilder : MappingsBuilder() {
     override fun mapping(charCode: Int, line: UnicodeDataLine): Int? {
         if (line.titlecaseMapping == line.uppercaseMapping) return null
 
-        require(line.titlecaseMapping.isNotEmpty()) { "UnicodeData.txt format has changed!" }
+        check(line.titlecaseMapping.isNotEmpty()) { "UnicodeData.txt format has changed!" }
 
         val title = line.titlecaseMapping.toInt(radix = 16)
         return title - charCode

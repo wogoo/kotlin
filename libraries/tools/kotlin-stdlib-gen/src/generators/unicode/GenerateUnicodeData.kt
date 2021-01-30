@@ -6,6 +6,7 @@
 package generators.unicode
 
 import generators.unicode.mappings.MappingsGenerator
+import generators.unicode.mappings.special.SpecialMappingsGenerator
 import generators.unicode.ranges.CharCategoryTestGenerator
 import generators.unicode.ranges.RangesGenerator
 import templates.COPYRIGHT_NOTICE
@@ -35,26 +36,38 @@ fun main(args: Array<String>) {
     val unicodeDataLines = URL(unicodeDataUrl).openStream().reader().readLines()
     val specialCasingLines = URL(specialCasingUrl).openStream().reader().readLines()
 
-    val generators = mutableListOf<UnicodeDataGenerator>()
+    val unicodeDataGenerators = mutableListOf<UnicodeDataGenerator>()
 
     fun addRangesGenerators(generatedDir: File, target: KotlinTarget) {
         val categoryRangesGenerator = RangesGenerator.forCharCategory(generatedDir.resolve("_CharCategories.kt"), target)
         val digitRangesGenerator = RangesGenerator.forDigit(generatedDir.resolve("_DigitChars.kt"), target)
         val letterRangesGenerator = RangesGenerator.forLetter(generatedDir.resolve("_LetterChars.kt"), target)
         val whitespaceRangesGenerator = RangesGenerator.forWhitespace(generatedDir.resolve("_WhitespaceChars.kt"))
-        generators.add(categoryRangesGenerator)
-        generators.add(digitRangesGenerator)
-        generators.add(letterRangesGenerator)
-        generators.add(whitespaceRangesGenerator)
+        unicodeDataGenerators.add(categoryRangesGenerator)
+        unicodeDataGenerators.add(digitRangesGenerator)
+        unicodeDataGenerators.add(letterRangesGenerator)
+        unicodeDataGenerators.add(whitespaceRangesGenerator)
     }
 
     fun addMappingsGenerators(generatedDir: File, target: KotlinTarget) {
         val uppercaseMappingsGenerator = MappingsGenerator.forUppercase(generatedDir.resolve("_UppercaseMappings.kt"), target)
         val lowercaseMappingsGenerator = MappingsGenerator.forLowercase(generatedDir.resolve("_LowercaseMappings.kt"), target)
         val titlecaseMappingsGenerator = MappingsGenerator.forTitlecase(generatedDir.resolve("_TitlecaseMappings.kt"))
-        generators.add(uppercaseMappingsGenerator)
-        generators.add(lowercaseMappingsGenerator)
-        generators.add(titlecaseMappingsGenerator)
+        unicodeDataGenerators.add(uppercaseMappingsGenerator)
+        unicodeDataGenerators.add(lowercaseMappingsGenerator)
+        unicodeDataGenerators.add(titlecaseMappingsGenerator)
+    }
+
+    val specialCasingGenerators = mutableListOf<SpecialCasingGenerator>()
+    val filtered = unicodeDataLines.map { line -> UnicodeDataLine(line.split(";")) }.filter { it.char.length <= 4 } // Basic Multilingual Plane (BMP)
+
+    fun addSpecialMappingsGenerators(generatedDir: File, target: KotlinTarget) {
+        val uppercaseMappingsGenerator = SpecialMappingsGenerator.forUppercase(generatedDir.resolve("_UppercaseSpecialMappings.kt"), target, filtered)
+        val lowercaseMappingsGenerator = SpecialMappingsGenerator.forLowercase(generatedDir.resolve("_LowercaseSpecialMappings.kt"), target, filtered)
+        val titlecaseMappingsGenerator = SpecialMappingsGenerator.forTitlecase(generatedDir.resolve("_TitlecaseSpecialMappings.kt"), target, filtered)
+        specialCasingGenerators.add(uppercaseMappingsGenerator)
+        specialCasingGenerators.add(lowercaseMappingsGenerator)
+        specialCasingGenerators.add(titlecaseMappingsGenerator)
     }
 
     when (args.size) {
@@ -63,11 +76,12 @@ fun main(args: Array<String>) {
 
             val categoryTestFile = baseDir.resolve("libraries/stdlib/js/test/text/unicodeData/_CharCategoryTest.kt")
             val categoryTestGenerator = CharCategoryTestGenerator(categoryTestFile)
-            generators.add(categoryTestGenerator)
+            unicodeDataGenerators.add(categoryTestGenerator)
 
             val jsGeneratedDir = baseDir.resolve("libraries/stdlib/js/src/generated/")
             addRangesGenerators(jsGeneratedDir, KotlinTarget.JS)
             addMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
+            addSpecialMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
 
             val jsIrGeneratedDir = baseDir.resolve("libraries/stdlib/js-ir/src/generated/")
             addRangesGenerators(jsIrGeneratedDir, KotlinTarget.JS_IR)
@@ -102,14 +116,10 @@ fun main(args: Array<String>) {
     COPYRIGHT_NOTICE =
         readCopyrightNoticeFromProfile { Thread.currentThread().contextClassLoader.getResourceAsStream("apache.xml").reader() }
 
-    unicodeDataLines.forEach { line ->
-        val dataLine = UnicodeDataLine(line.split(";"))
-        if (dataLine.char.length <= 4) {
-            // Basic Multilingual Plane (BMP)
-            generators.forEach { it.appendLine(dataLine) }
-        }
+    filtered.forEach { line ->
+        unicodeDataGenerators.forEach { it.appendLine(line) }
     }
-    generators.forEach { it.close() }
+    unicodeDataGenerators.forEach { it.close() }
 
     specialCasingLines.forEach { line ->
         if (line.isEmpty() || line.startsWith("#")) {
@@ -117,8 +127,10 @@ fun main(args: Array<String>) {
         }
         val casingLine = SpecialCasingLine(line.split("; "))
 
-        println(casingLine)
+//        println(casingLine)
+        specialCasingGenerators.forEach { it.appendLine(casingLine) }
     }
+    specialCasingGenerators.forEach { it.close() }
 }
 
 internal class UnicodeDataLine(properties: List<String>) {

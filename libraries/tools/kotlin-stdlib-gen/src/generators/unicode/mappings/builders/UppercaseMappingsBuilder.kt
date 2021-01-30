@@ -12,7 +12,7 @@ internal class UppercaseMappingsBuilder : MappingsBuilder() {
         if (line.uppercaseMapping.isEmpty()) return null
 
         val upper = line.uppercaseMapping.toInt(radix = 16)
-        require(charCode != upper) { "UnicodeData.txt format has changed!" }
+        check(charCode != upper) { "UnicodeData.txt format has changed!" }
 
         return upper - charCode
     }
