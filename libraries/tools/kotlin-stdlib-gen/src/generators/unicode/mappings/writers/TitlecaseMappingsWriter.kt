@@ -8,7 +8,7 @@ package generators.unicode.mappings.writers
 import generators.unicode.mappings.patterns.EqualDistanceMappingPattern
 import generators.unicode.mappings.patterns.LuLtLlMappingPattern
 import generators.unicode.mappings.patterns.MappingPattern
-import generators.unicode.ranges.writers.hex
+import generators.unicode.ranges.writers.toHexIntLiteral
 import java.io.FileWriter
 
 internal class TitlecaseMappingsWriter : MappingsWriter {
@@ -37,6 +37,6 @@ internal class TitlecaseMappingsWriter : MappingsWriter {
     }
 
     private fun rangeChecks(mappings: List<MappingPattern>, code: String): String {
-        return mappings.joinToString(separator = " || ") { "$code in ${it.start.hex()}..${it.end.hex()}" }
+        return mappings.joinToString(separator = " || ") { "$code in ${it.start.toHexIntLiteral()}..${it.end.toHexIntLiteral()}" }
     }
 }

@@ -36,7 +36,7 @@ internal fun FileWriter.writeIntArray(
             appendLine()
             appendWithIndentation("    ")
         }
-        append(elements[i].hex() + ", ")
+        append(elements[i].toHexIntLiteral() + ", ")
     }
     appendLine()
     appendWithIndentation(")")
@@ -88,7 +88,7 @@ private fun Int.to6Bits(): List<Int> {
     return result
 }
 
-internal fun Int.hex(): String {
+internal fun Int.toHexIntLiteral(): String {
     val result = toString(radix = 16)
     if (result.first() == '-') {
         return "-0x" + result.substring(startIndex = 1).padStart(4, '0')

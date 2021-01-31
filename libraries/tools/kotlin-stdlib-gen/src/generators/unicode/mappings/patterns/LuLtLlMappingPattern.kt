@@ -5,7 +5,7 @@
 
 package generators.unicode.mappings.patterns
 
-import generators.unicode.ranges.writers.hex
+import generators.unicode.ranges.writers.toHexIntLiteral
 
 internal class LuLtLlMappingPattern private constructor(
     charCode: Int,
@@ -55,8 +55,8 @@ internal class LuLtLlMappingPattern private constructor(
 
     override fun toString(): String {
         return "LuLtLlMappingPattern{" +
-                "start=" + start.hex() +
-                ", end=" + end.hex() +
+                "start=" + start.toHexIntLiteral() +
+                ", end=" + end.toHexIntLiteral() +
                 ", length=" + length +
                 ", distance=" + distance +
                 ", count=" + ((length + distance - 1) / distance) +
