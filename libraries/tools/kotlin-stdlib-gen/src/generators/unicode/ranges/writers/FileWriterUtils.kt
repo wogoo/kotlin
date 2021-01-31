@@ -100,6 +100,10 @@ internal fun Int.toHexCharLiteral(): String {
     return "'\\u${toString(radix = 16).padStart(4, '0')}'"
 }
 
+internal fun String.hexToInt(): Int {
+    return toInt(radix = 16)
+}
+
 internal fun List<String>.hexCharsToStringLiteral(): String {
     return "\"${joinToString(separator = "") { "\\u$it" }}\""
 }

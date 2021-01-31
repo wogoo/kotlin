@@ -6,12 +6,13 @@
 package generators.unicode.mappings.builders
 
 import generators.unicode.UnicodeDataLine
+import generators.unicode.ranges.writers.hexToInt
 
 internal class LowercaseMappingsBuilder : MappingsBuilder() {
     override fun mapping(charCode: Int, line: UnicodeDataLine): Int? {
         if (line.lowercaseMapping.isEmpty()) return null
 
-        val lower = line.lowercaseMapping.toInt(radix = 16)
+        val lower = line.lowercaseMapping.hexToInt()
         check(charCode != lower) { "UnicodeData.txt format has changed!" }
 
         return lower - charCode

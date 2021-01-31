@@ -7,9 +7,10 @@ package generators.unicode.specialMappings.builders
 
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
+import generators.unicode.ranges.writers.hexToInt
 
 internal abstract class SpecialMappingsBuilder(unicodeDataLines: List<UnicodeDataLine>) {
-    private val unicodeDataLines = unicodeDataLines.associateBy { it.char.toInt(radix = 16) }
+    private val unicodeDataLines = unicodeDataLines.associateBy { it.char.hexToInt() }
     private val mappings = mutableMapOf<Int, List<String>>()
 
     fun append(line: SpecialCasingLine) {
@@ -26,7 +27,7 @@ internal abstract class SpecialMappingsBuilder(unicodeDataLines: List<UnicodeDat
             return
         }
 
-        val charCode = line.char.toInt(radix = 16)
+        val charCode = line.char.hexToInt()
         val mapping = mapping(charCode, line) ?: return
 
         mappings[charCode] = mapping

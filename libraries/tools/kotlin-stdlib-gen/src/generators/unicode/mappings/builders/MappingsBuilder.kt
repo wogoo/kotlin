@@ -8,12 +8,13 @@ package generators.unicode.mappings.builders
 import generators.unicode.UnicodeDataLine
 import generators.unicode.mappings.patterns.EqualDistanceMappingPattern
 import generators.unicode.mappings.patterns.MappingPattern
+import generators.unicode.ranges.writers.hexToInt
 
 internal abstract class MappingsBuilder {
     private val patterns = mutableListOf<MappingPattern>()
 
     fun append(line: UnicodeDataLine) {
-        val charCode = line.char.toInt(radix = 16)
+        val charCode = line.char.hexToInt()
         val mapping = mapping(charCode, line) ?: return
 
         if (patterns.isEmpty()) {

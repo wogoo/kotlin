@@ -8,6 +8,7 @@ package generators.unicode.ranges.builders
 import generators.unicode.ranges.patterns.PeriodicRangePattern
 import generators.unicode.ranges.patterns.RangePattern
 import generators.unicode.ranges.patterns.rangeLength
+import generators.unicode.ranges.writers.hexToInt
 
 /**
  * The base class of character ranges builders.
@@ -20,7 +21,7 @@ internal abstract class RangesBuilder {
      * Appends a line from the UnicodeData.txt file.
      */
     fun append(char: String, name: String, categoryCode: String) {
-        val charCode = char.toInt(radix = 16)
+        val charCode = char.hexToInt()
         val categoryId = categoryId(categoryCode)
 
         when {

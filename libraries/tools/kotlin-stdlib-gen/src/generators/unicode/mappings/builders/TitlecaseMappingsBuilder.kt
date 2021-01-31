@@ -8,6 +8,7 @@ package generators.unicode.mappings.builders
 import generators.unicode.UnicodeDataLine
 import generators.unicode.mappings.patterns.LuLtLlMappingPattern
 import generators.unicode.mappings.patterns.MappingPattern
+import generators.unicode.ranges.writers.hexToInt
 
 internal class TitlecaseMappingsBuilder : MappingsBuilder() {
 
@@ -16,7 +17,7 @@ internal class TitlecaseMappingsBuilder : MappingsBuilder() {
 
         check(line.titlecaseMapping.isNotEmpty()) { "UnicodeData.txt format has changed!" }
 
-        val title = line.titlecaseMapping.toInt(radix = 16)
+        val title = line.titlecaseMapping.hexToInt()
         return title - charCode
     }
 
