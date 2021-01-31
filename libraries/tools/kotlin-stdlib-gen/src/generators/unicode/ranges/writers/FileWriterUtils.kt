@@ -55,7 +55,7 @@ internal fun FileWriter.writeMappings(
     append(strategy.rangesAnnotation)
     appendWithIndentation("${strategy.rangesVisibilityModifier} val $name = hashMapOf<Char, String>(").appendLine()
     for ((key, value) in mappings) {
-        val char = key.hexCharLiteral()
+        val char = key.toHexCharLiteral()
         val string = value.hexCharsToStringLiteral()
 
         appendWithIndentation("    $char to $string,").appendLine()
@@ -96,7 +96,7 @@ internal fun Int.toHexIntLiteral(): String {
     return "0x" + result.padStart(4, '0')
 }
 
-internal fun Int.hexCharLiteral(): String {
+internal fun Int.toHexCharLiteral(): String {
     return "'\\u${toString(radix = 16).padStart(4, '0')}'"
 }
 

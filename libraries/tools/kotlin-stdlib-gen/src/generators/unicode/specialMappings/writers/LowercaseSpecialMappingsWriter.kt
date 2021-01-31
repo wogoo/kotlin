@@ -6,7 +6,7 @@
 package generators.unicode.specialMappings.writers
 
 import generators.unicode.ranges.RangesWritingStrategy
-import generators.unicode.ranges.writers.hexCharLiteral
+import generators.unicode.ranges.writers.toHexCharLiteral
 import generators.unicode.ranges.writers.hexCharsToStringLiteral
 import java.io.FileWriter
 
@@ -20,7 +20,7 @@ internal class LowercaseSpecialMappingsWriter(private val strategy: RangesWritin
         writer.appendLine(
             """
             internal fun Char.lowercaseImpl(): String {
-                if (this == ${key.hexCharLiteral()}) {
+                if (this == ${key.toHexCharLiteral()}) {
                     return ${value.hexCharsToStringLiteral()}
                 }
                 return lowercaseCharImpl().toString()
