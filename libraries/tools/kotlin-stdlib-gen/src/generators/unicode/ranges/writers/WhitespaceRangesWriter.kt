@@ -5,6 +5,7 @@
 
 package generators.unicode.ranges.writers
 
+import generators.unicode.toHexIntLiteral
 import java.io.FileWriter
 
 internal class WhitespaceRangesWriter : RangesWriter {

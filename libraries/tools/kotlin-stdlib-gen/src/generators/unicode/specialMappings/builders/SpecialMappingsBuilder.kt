@@ -7,7 +7,7 @@ package generators.unicode.specialMappings.builders
 
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
-import generators.unicode.ranges.writers.hexToInt
+import generators.unicode.hexToInt
 
 internal abstract class SpecialMappingsBuilder(unicodeDataLines: List<UnicodeDataLine>) {
     private val unicodeDataLines = unicodeDataLines.associateBy { it.char.hexToInt() }

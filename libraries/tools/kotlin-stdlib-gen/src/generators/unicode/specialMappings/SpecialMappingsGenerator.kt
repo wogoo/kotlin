@@ -17,7 +17,7 @@ import generators.unicode.specialMappings.writers.SpecialMappingsWriter
 import generators.unicode.specialMappings.writers.TitlecaseSpecialMappingsWriter
 import generators.unicode.specialMappings.writers.UppercaseSpecialMappingsWriter
 import generators.unicode.ranges.RangesWritingStrategy
-import generators.unicode.ranges.writers.writeHeader
+import generators.unicode.writeHeader
 import templates.KotlinTarget
 import java.io.File
 import java.io.FileWriter

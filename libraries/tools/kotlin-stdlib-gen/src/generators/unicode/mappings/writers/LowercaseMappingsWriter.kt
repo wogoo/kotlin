@@ -8,7 +8,7 @@ package generators.unicode.mappings.writers
 import generators.unicode.mappings.patterns.EqualDistanceMappingPattern
 import generators.unicode.mappings.patterns.MappingPattern
 import generators.unicode.ranges.RangesWritingStrategy
-import generators.unicode.ranges.writers.writeIntArray
+import generators.unicode.writeIntArray
 import java.io.FileWriter
 
 internal class LowercaseMappingsWriter(private val strategy: RangesWritingStrategy) : MappingsWriter {

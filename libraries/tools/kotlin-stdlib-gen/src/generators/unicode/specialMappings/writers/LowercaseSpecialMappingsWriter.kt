@@ -6,8 +6,8 @@
 package generators.unicode.specialMappings.writers
 
 import generators.unicode.ranges.RangesWritingStrategy
-import generators.unicode.ranges.writers.toHexCharLiteral
-import generators.unicode.ranges.writers.hexCharsToStringLiteral
+import generators.unicode.toHexCharLiteral
+import generators.unicode.hexCharsToStringLiteral
 import java.io.FileWriter
 
 internal class LowercaseSpecialMappingsWriter(private val strategy: RangesWritingStrategy) : SpecialMappingsWriter {

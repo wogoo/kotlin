@@ -5,7 +5,7 @@
 
 package generators.unicode.ranges.patterns
 
-import generators.unicode.ranges.writers.toHexIntLiteral
+import generators.unicode.toHexIntLiteral
 
 /**
  * A range of consequent chars that starts with a letter and ends with a letter, and contains multiple ranges of consequent not-letter chars.

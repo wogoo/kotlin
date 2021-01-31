@@ -8,7 +8,7 @@ package generators.unicode.ranges.builders
 import generators.unicode.ranges.patterns.PeriodicRangePattern
 import generators.unicode.ranges.patterns.RangePattern
 import generators.unicode.ranges.patterns.rangeLength
-import generators.unicode.ranges.writers.hexToInt
+import generators.unicode.hexToInt
 
 /**
  * The base class of character ranges builders.

@@ -6,7 +6,7 @@
 package generators.unicode.mappings.builders
 
 import generators.unicode.UnicodeDataLine
-import generators.unicode.ranges.writers.hexToInt
+import generators.unicode.hexToInt
 
 internal class LowercaseMappingsBuilder : MappingsBuilder() {
     override fun mapping(charCode: Int, line: UnicodeDataLine): Int? {

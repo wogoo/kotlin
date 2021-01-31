@@ -5,7 +5,7 @@
 
 package generators.unicode.ranges.patterns
 
-import generators.unicode.ranges.writers.toHexIntLiteral
+import generators.unicode.toHexIntLiteral
 
 /**
  * A range of consequent chars.

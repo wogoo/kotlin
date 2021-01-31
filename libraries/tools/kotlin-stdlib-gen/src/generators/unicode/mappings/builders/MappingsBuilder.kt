@@ -8,7 +8,7 @@ package generators.unicode.mappings.builders
 import generators.unicode.UnicodeDataLine
 import generators.unicode.mappings.patterns.EqualDistanceMappingPattern
 import generators.unicode.mappings.patterns.MappingPattern
-import generators.unicode.ranges.writers.hexToInt
+import generators.unicode.hexToInt
 
 internal abstract class MappingsBuilder {
     private val patterns = mutableListOf<MappingPattern>()

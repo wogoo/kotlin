@@ -5,7 +5,7 @@
 
 package generators.unicode.mappings.patterns
 
-import generators.unicode.ranges.writers.toHexIntLiteral
+import generators.unicode.toHexIntLiteral
 
 internal class EqualDistanceMappingPattern private constructor(
     charCode: Int,

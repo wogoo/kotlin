@@ -7,7 +7,7 @@ package generators.unicode.ranges
 
 import generators.unicode.UnicodeDataGenerator
 import generators.unicode.UnicodeDataLine
-import generators.unicode.ranges.writers.writeHeader
+import generators.unicode.writeHeader
 import java.io.File
 import java.io.FileWriter
 

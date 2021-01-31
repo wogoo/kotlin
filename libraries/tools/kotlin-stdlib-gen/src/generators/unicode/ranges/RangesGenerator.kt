@@ -10,6 +10,7 @@ import generators.unicode.UnicodeDataGenerator
 import generators.unicode.UnicodeDataLine
 import generators.unicode.ranges.builders.*
 import generators.unicode.ranges.writers.*
+import generators.unicode.writeHeader
 import templates.KotlinTarget
 import templates.Platform
 import java.io.File

@@ -8,7 +8,7 @@ package generators.unicode.mappings.writers
 import generators.unicode.mappings.patterns.EqualDistanceMappingPattern
 import generators.unicode.mappings.patterns.LuLtLlMappingPattern
 import generators.unicode.mappings.patterns.MappingPattern
-import generators.unicode.ranges.writers.toHexIntLiteral
+import generators.unicode.toHexIntLiteral
 import java.io.FileWriter
 
 internal class TitlecaseMappingsWriter : MappingsWriter {

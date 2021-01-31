@@ -6,7 +6,7 @@
 package generators.unicode.specialMappings.writers
 
 import generators.unicode.ranges.RangesWritingStrategy
-import generators.unicode.ranges.writers.writeMappings
+import generators.unicode.writeMappings
 import java.io.FileWriter
 
 internal class UppercaseSpecialMappingsWriter(private val strategy: RangesWritingStrategy) : SpecialMappingsWriter {
