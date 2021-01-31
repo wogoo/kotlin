@@ -6,7 +6,7 @@
 package generators.unicode
 
 import generators.unicode.mappings.MappingsGenerator
-import generators.unicode.mappings.special.SpecialMappingsGenerator
+import generators.unicode.specialMappings.SpecialMappingsGenerator
 import generators.unicode.ranges.CharCategoryTestGenerator
 import generators.unicode.ranges.RangesGenerator
 import templates.COPYRIGHT_NOTICE

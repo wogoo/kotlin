@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.mappings.special.builders
+package generators.unicode.specialMappings.builders
 
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine

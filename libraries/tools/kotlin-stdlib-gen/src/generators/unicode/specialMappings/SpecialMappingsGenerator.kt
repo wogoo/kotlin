@@ -3,19 +3,19 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.mappings.special
+package generators.unicode.specialMappings
 
 import generators.unicode.SpecialCasingGenerator
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
-import generators.unicode.mappings.special.builders.LowercaseSpecialMappingsBuilder
-import generators.unicode.mappings.special.builders.SpecialMappingsBuilder
-import generators.unicode.mappings.special.builders.TitlecaseSpecialMappingsBuilder
-import generators.unicode.mappings.special.builders.UppercaseSpecialMappingsBuilder
-import generators.unicode.mappings.special.writers.LowercaseSpecialMappingsWriter
-import generators.unicode.mappings.special.writers.SpecialMappingsWriter
-import generators.unicode.mappings.special.writers.TitlecaseSpecialMappingsWriter
-import generators.unicode.mappings.special.writers.UppercaseSpecialMappingsWriter
+import generators.unicode.specialMappings.builders.LowercaseSpecialMappingsBuilder
+import generators.unicode.specialMappings.builders.SpecialMappingsBuilder
+import generators.unicode.specialMappings.builders.TitlecaseSpecialMappingsBuilder
+import generators.unicode.specialMappings.builders.UppercaseSpecialMappingsBuilder
+import generators.unicode.specialMappings.writers.LowercaseSpecialMappingsWriter
+import generators.unicode.specialMappings.writers.SpecialMappingsWriter
+import generators.unicode.specialMappings.writers.TitlecaseSpecialMappingsWriter
+import generators.unicode.specialMappings.writers.UppercaseSpecialMappingsWriter
 import generators.unicode.ranges.RangesWritingStrategy
 import generators.unicode.ranges.writers.writeHeader
 import templates.KotlinTarget

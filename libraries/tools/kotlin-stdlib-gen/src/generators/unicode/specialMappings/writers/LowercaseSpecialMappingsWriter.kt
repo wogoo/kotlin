@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.mappings.special.writers
+package generators.unicode.specialMappings.writers
 
 import generators.unicode.ranges.RangesWritingStrategy
 import generators.unicode.ranges.writers.hexCharLiteral
