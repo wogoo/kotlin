@@ -8,14 +8,8 @@ package generators.unicode.specialMappings
 import generators.unicode.SpecialCasingGenerator
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
-import generators.unicode.specialMappings.builders.LowercaseSpecialMappingsBuilder
-import generators.unicode.specialMappings.builders.SpecialMappingsBuilder
-import generators.unicode.specialMappings.builders.TitlecaseSpecialMappingsBuilder
-import generators.unicode.specialMappings.builders.UppercaseSpecialMappingsBuilder
-import generators.unicode.specialMappings.writers.LowercaseSpecialMappingsWriter
-import generators.unicode.specialMappings.writers.SpecialMappingsWriter
-import generators.unicode.specialMappings.writers.TitlecaseSpecialMappingsWriter
-import generators.unicode.specialMappings.writers.UppercaseSpecialMappingsWriter
+import generators.unicode.specialMappings.builders.*
+import generators.unicode.specialMappings.writers.*
 import generators.unicode.ranges.RangesWritingStrategy
 import generators.unicode.writeHeader
 import templates.KotlinTarget
@@ -47,19 +41,19 @@ internal class SpecialMappingsGenerator private constructor(
     companion object {
         fun forUppercase(outputFile: File, target: KotlinTarget, unicodeDataLines: List<UnicodeDataLine>): SpecialMappingsGenerator {
             val builder = UppercaseSpecialMappingsBuilder(unicodeDataLines)
-            val writer = UppercaseSpecialMappingsWriter(RangesWritingStrategy.of(target, "Uppercase"))
+            val writer = UppercaseSpecialMappingsWriter(RangesWritingStrategy.of(target, "UppercaseSpecial"))
             return SpecialMappingsGenerator(outputFile, builder, writer)
         }
 
         fun forLowercase(outputFile: File, target: KotlinTarget, unicodeDataLines: List<UnicodeDataLine>): SpecialMappingsGenerator {
             val builder = LowercaseSpecialMappingsBuilder(unicodeDataLines)
-            val writer = LowercaseSpecialMappingsWriter(RangesWritingStrategy.of(target, "Lowercase"))
+            val writer = LowercaseSpecialMappingsWriter(RangesWritingStrategy.of(target, "LowercaseSpecial"))
             return SpecialMappingsGenerator(outputFile, builder, writer)
         }
 
         fun forTitlecase(outputFile: File, target: KotlinTarget, unicodeDataLines: List<UnicodeDataLine>): SpecialMappingsGenerator {
             val builder = TitlecaseSpecialMappingsBuilder(unicodeDataLines)
-            val writer = TitlecaseSpecialMappingsWriter(RangesWritingStrategy.of(target, "Titlecase"))
+            val writer = TitlecaseSpecialMappingsWriter(RangesWritingStrategy.of(target, "TitlecaseSpecial"))
             return SpecialMappingsGenerator(outputFile, builder, writer)
         }
     }

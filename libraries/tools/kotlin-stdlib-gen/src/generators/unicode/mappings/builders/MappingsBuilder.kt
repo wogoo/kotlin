@@ -10,15 +10,22 @@ import generators.unicode.mappings.patterns.EqualDistanceMappingPattern
 import generators.unicode.mappings.patterns.MappingPattern
 import generators.unicode.hexToInt
 
+/**
+ * The base class of character mappings builders.
+ */
 internal abstract class MappingsBuilder {
     private val patterns = mutableListOf<MappingPattern>()
 
+    /**
+     * Appends a line from the UnicodeData.txt file.
+     */
     fun append(line: UnicodeDataLine) {
         val charCode = line.char.hexToInt()
-        val mapping = mapping(charCode, line) ?: return
+        val equivalent = mappingEquivalent(line) ?: return
+        val mapping = equivalent.hexToInt() - charCode
 
         if (patterns.isEmpty()) {
-            patterns.add(createMapping(charCode, line.categoryCode, mapping))
+            patterns.add(createPattern(charCode, line.categoryCode, mapping))
             return
         }
 
@@ -29,24 +36,35 @@ internal abstract class MappingsBuilder {
             if (newLastPattern != null) {
                 patterns[patterns.lastIndex] = newLastPattern
             } else {
-                patterns.add(createMapping(charCode, line.categoryCode, mapping))
+                patterns.add(createPattern(charCode, line.categoryCode, mapping))
             }
         }
     }
 
+    /**
+     * Returns the resulting mapping patterns.
+     */
     fun build(): List<MappingPattern> {
 //        println(patterns.joinToString(separator = "\n"))
 //        println("${this.javaClass} # ${patterns.size}")
         return patterns
     }
 
-    abstract fun mapping(charCode: Int, line: UnicodeDataLine): Int?
+    /**
+     * Returns the mapping equivalent this builder is responsible for.
+     */
+    abstract fun mappingEquivalent(line: UnicodeDataLine): String?
 
-    open fun evolveLastPattern(lastPattern: MappingPattern, charCode: Int, categoryCode: String, mapping: Int): MappingPattern? {
+    /**
+     * Appends the [charCode] with the specified [categoryCode] and [mapping] to the [lastPattern] and returns the resulting pattern,
+     * or returns `null` if the [charCode] can't be appended to the [lastPattern].
+     * The [lastPattern] can be transformed to another pattern type to accommodate the [charCode].
+     */
+    protected open fun evolveLastPattern(lastPattern: MappingPattern, charCode: Int, categoryCode: String, mapping: Int): MappingPattern? {
         return null
     }
 
-    private fun createMapping(charCode: Int, categoryCode: String, mapping: Int): MappingPattern {
+    private fun createPattern(charCode: Int, categoryCode: String, mapping: Int): MappingPattern {
         return EqualDistanceMappingPattern.from(charCode, categoryCode, mapping)
     }
 }

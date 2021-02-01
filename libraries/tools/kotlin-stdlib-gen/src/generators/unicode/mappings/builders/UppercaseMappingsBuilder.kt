@@ -6,15 +6,11 @@
 package generators.unicode.mappings.builders
 
 import generators.unicode.UnicodeDataLine
-import generators.unicode.hexToInt
 
 internal class UppercaseMappingsBuilder : MappingsBuilder() {
-    override fun mapping(charCode: Int, line: UnicodeDataLine): Int? {
+    override fun mappingEquivalent(line: UnicodeDataLine): String? {
         if (line.uppercaseMapping.isEmpty()) return null
-
-        val upper = line.uppercaseMapping.hexToInt()
-        check(charCode != upper) { "UnicodeData.txt format has changed!" }
-
-        return upper - charCode
+        check(line.char != line.uppercaseMapping) { "UnicodeData.txt format has changed!" }
+        return line.uppercaseMapping
     }
 }

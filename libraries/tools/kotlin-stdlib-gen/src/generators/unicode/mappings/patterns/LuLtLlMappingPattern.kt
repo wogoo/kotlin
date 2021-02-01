@@ -7,6 +7,13 @@ package generators.unicode.mappings.patterns
 
 import generators.unicode.toHexIntLiteral
 
+/**
+ * A range of consequent chars that repeat <Lu, Lt, Ll> sequence of `categoryCode` and <1, 0, -1> sequence of `mapping`.
+ *
+ * @param charCode the start of this range
+ * @param categoryCode the category code of the char with the specified [charCode]
+ * @param mapping the difference between the [charCode] and the char it converts to.
+ */
 internal class LuLtLlMappingPattern private constructor(
     charCode: Int,
     categoryCode: String,
@@ -33,10 +40,6 @@ internal class LuLtLlMappingPattern private constructor(
             return true
         }
         return false
-    }
-
-    override fun prepend(charCode: Int, categoryCode: String, mapping: Int): Boolean {
-        TODO("Not yet implemented")
     }
 
     private fun expectedModThree(categoryCode: String): Int = when (categoryCode) {

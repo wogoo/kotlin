@@ -8,14 +8,8 @@ package generators.unicode.mappings
 import generators.requireExistingDir
 import generators.unicode.UnicodeDataGenerator
 import generators.unicode.UnicodeDataLine
-import generators.unicode.mappings.builders.LowercaseMappingsBuilder
-import generators.unicode.mappings.builders.MappingsBuilder
-import generators.unicode.mappings.builders.TitlecaseMappingsBuilder
-import generators.unicode.mappings.builders.UppercaseMappingsBuilder
-import generators.unicode.mappings.writers.LowercaseMappingsWriter
-import generators.unicode.mappings.writers.MappingsWriter
-import generators.unicode.mappings.writers.TitlecaseMappingsWriter
-import generators.unicode.mappings.writers.UppercaseMappingsWriter
+import generators.unicode.mappings.builders.*
+import generators.unicode.mappings.writers.*
 import generators.unicode.ranges.RangesWritingStrategy
 import generators.unicode.writeHeader
 import templates.KotlinTarget

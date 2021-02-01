@@ -7,6 +7,13 @@ package generators.unicode.mappings.patterns
 
 import generators.unicode.toHexIntLiteral
 
+/**
+ * A range of consequent chars where all chars with code `start + k * distance` have the same [mapping] for case conversion.
+ *
+ * @param charCode the start of this range
+ * @param categoryCode the category code of the char with the specified [charCode]
+ * @param mapping the difference between [charCode] and the char it converts to.
+ */
 internal class EqualDistanceMappingPattern private constructor(
     charCode: Int,
     val categoryCode: String,
@@ -33,10 +40,6 @@ internal class EqualDistanceMappingPattern private constructor(
             return true
         }
         return false
-    }
-
-    override fun prepend(charCode: Int, categoryCode: String, mapping: Int): Boolean {
-        TODO("Not yet implemented")
     }
 
     override fun toString(): String {

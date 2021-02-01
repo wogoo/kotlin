@@ -8,17 +8,13 @@ package generators.unicode.mappings.builders
 import generators.unicode.UnicodeDataLine
 import generators.unicode.mappings.patterns.LuLtLlMappingPattern
 import generators.unicode.mappings.patterns.MappingPattern
-import generators.unicode.hexToInt
 
 internal class TitlecaseMappingsBuilder : MappingsBuilder() {
 
-    override fun mapping(charCode: Int, line: UnicodeDataLine): Int? {
+    override fun mappingEquivalent(line: UnicodeDataLine): String? {
         if (line.titlecaseMapping == line.uppercaseMapping) return null
-
         check(line.titlecaseMapping.isNotEmpty()) { "UnicodeData.txt format has changed!" }
-
-        val title = line.titlecaseMapping.hexToInt()
-        return title - charCode
+        return line.titlecaseMapping
     }
 
     override fun evolveLastPattern(lastPattern: MappingPattern, charCode: Int, categoryCode: String, mapping: Int): MappingPattern? {
