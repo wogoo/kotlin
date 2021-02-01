@@ -85,8 +85,6 @@ fun main(args: Array<String>) {
 
             val jsGeneratedDir = baseDir.resolve("libraries/stdlib/js/src/generated/")
             addRangesGenerators(jsGeneratedDir, KotlinTarget.JS)
-            addMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
-            addSpecialMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
 
             val jsIrGeneratedDir = baseDir.resolve("libraries/stdlib/js-ir/src/generated/")
             addRangesGenerators(jsIrGeneratedDir, KotlinTarget.JS_IR)
@@ -105,7 +103,13 @@ fun main(args: Array<String>) {
             val target = KotlinTarget.values.singleOrNull { it.name.equals(targetName, ignoreCase = true) }
                 ?: error("Invalid target: $targetName")
 
-            addRangesGenerators(File(targetDir), target)
+            val generatedDir = File(targetDir)
+            addRangesGenerators(generatedDir, target)
+
+            if (target == KotlinTarget.Native) {
+                addMappingsGenerators(generatedDir, target)
+                addSpecialMappingsGenerators(generatedDir, target)
+            }
         }
         else -> {
             println(
