@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.ir.util
 
 import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.ir.IrLock
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.IrExternalPackageFragmentImpl
@@ -76,7 +77,7 @@ class SymbolTable(
         abstract fun get(sig: IdSignature): S?
 
         inline fun declare(d: D, createSymbol: () -> S, createOwner: (S) -> B): B {
-            synchronized(this) {
+            synchronized(IrLock) {
                 @Suppress("UNCHECKED_CAST")
                 val d0 = d.original as D
                 assert(d0 === d) {
@@ -97,7 +98,7 @@ class SymbolTable(
 
         @OptIn(ObsoleteDescriptorBasedAPI::class)
         inline fun declare(sig: IdSignature, createSymbol: () -> S, createOwner: (S) -> B): B {
-            synchronized(this) {
+            synchronized(IrLock) {
                 val existing = get(sig)
                 val symbol = if (existing == null) {
                     createSymbol()
@@ -113,7 +114,7 @@ class SymbolTable(
         }
 
         inline fun declareIfNotExists(d: D, createSymbol: () -> S, createOwner: (S) -> B): B {
-            synchronized(this) {
+            synchronized(IrLock) {
                 @Suppress("UNCHECKED_CAST")
                 val d0 = d.original as D
                 assert(d0 === d) {
@@ -133,7 +134,7 @@ class SymbolTable(
         }
 
         inline fun declare(sig: IdSignature, d: D?, createSymbol: () -> S, createOwner: (S) -> B): B {
-            synchronized(this) {
+            synchronized(IrLock) {
                 @Suppress("UNCHECKED_CAST")
                 val d0 = d?.original as D
                 assert(d0 === d) {
@@ -153,7 +154,7 @@ class SymbolTable(
         }
 
         inline fun referenced(d: D, orElse: () -> S): S {
-            synchronized(this) {
+            synchronized(IrLock) {
                 @Suppress("UNCHECKED_CAST")
                 val d0 = d.original as D
                 assert(d0 === d) {
@@ -174,7 +175,7 @@ class SymbolTable(
 
         @OptIn(ObsoleteDescriptorBasedAPI::class)
         inline fun referenced(sig: IdSignature, orElse: () -> S): S {
-            synchronized(this) {
+            synchronized(IrLock) {
                 return get(sig) ?: run {
                     val new = orElse()
                     assert(unboundSymbols.add(new)) {
