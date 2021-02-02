@@ -155,12 +155,19 @@ var FirProperty.isFromVararg: Boolean? by FirDeclarationDataRegistry.data(IsFrom
 private object IsReferredViaField : FirDeclarationDataKey()
 var FirProperty.isReferredViaField: Boolean? by FirDeclarationDataRegistry.data(IsReferredViaField)
 
+// See [BindingContext.BACKING_FIELD_REQUIRED]
 val FirProperty.hasBackingField: Boolean
-    get() = initializer != null ||
-            getter is FirDefaultPropertyGetter ||
-            isVar && setter is FirDefaultPropertySetter ||
-            delegate != null ||
-            isReferredViaField == true
+    get() {
+        if (isAbstract) return false
+        if (delegate != null) return false
+
+        val getter = getter ?: return true
+        if (isVar && setter == null) return true
+        if (setter?.hasBody == false) return true
+        if (!getter.hasBody) return true
+
+        return isReferredViaField == true
+    }
 
 inline val FirDeclaration.isFromLibrary: Boolean
     get() = origin == FirDeclarationOrigin.Library
