@@ -64,6 +64,7 @@ import org.jetbrains.kotlin.fir.session.FirSessionFactory
 import org.jetbrains.kotlin.ir.backend.jvm.jvmResolveLibraries
 import org.jetbrains.kotlin.javac.JavacWrapper
 import org.jetbrains.kotlin.load.kotlin.ModuleVisibilityManager
+import org.jetbrains.kotlin.load.kotlin.incremental.IncrementalPackagePartProvider
 import org.jetbrains.kotlin.modules.Module
 import org.jetbrains.kotlin.modules.TargetId
 import org.jetbrains.kotlin.name.FqName
@@ -311,6 +312,8 @@ object KotlinToJVMBytecodeCompiler {
         val projectConfiguration = environment.configuration
         val localFileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL)
         val outputs = newLinkedHashMapWithExpectedSize<Module, GenerationState>(chunk.size)
+        val targetIds = environment.configuration.get(JVMConfigurationKeys.MODULES)?.map(::TargetId)
+        val incrementalComponents = environment.configuration.get(JVMConfigurationKeys.INCREMENTAL_COMPILATION_COMPONENTS)
         for (module in chunk) {
             performanceManager?.notifyAnalysisStarted()
             ProgressIndicatorAndCompilationCanceledStatus.checkCanceled()
@@ -325,9 +328,13 @@ object KotlinToJVMBytecodeCompiler {
 
             val librariesModuleInfo = FirJvmModuleInfo.createForLibraries()
             val librariesScope = ProjectScope.getLibrariesScope(project)
+            val packagePartProvider = environment.createPackagePartProvider(librariesScope).let { fragment ->
+                if (targetIds == null || incrementalComponents == null) fragment
+                else IncrementalPackagePartProvider(fragment, targetIds.map(incrementalComponents::getIncrementalCache))
+            }
             FirSessionFactory.createLibrarySession(
                 librariesModuleInfo, provider, librariesScope,
-                project, environment.createPackagePartProvider(librariesScope)
+                project, packagePartProvider
             )
 
             val moduleInfo = FirJvmModuleInfo(module, listOf(librariesModuleInfo))
