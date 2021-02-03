@@ -107,9 +107,9 @@ class ExportedDefaultParameterStub(val context: JsIrBackendContext) : Declaratio
 
         context.additionalExportedDeclarations.add(exportedDefaultStubFun)
 
-        exportedDefaultStubFun.returnType = declaration.returnType.remapTypeParameters(declaration, exportedDefaultStubFun)
         exportedDefaultStubFun.parent = declaration.parent
-        exportedDefaultStubFun.copyParameterDeclarationsFrom(declaration)
+        exportedDefaultStubFun.copyParameterDeclarationsFrom(declaration) // todo type parameters should be copied first, otherwise returnType remapping fails
+        exportedDefaultStubFun.returnType = declaration.returnType.remapTypeParameters(declaration, exportedDefaultStubFun)
         exportedDefaultStubFun.valueParameters.forEach { it.defaultValue = null }
 
         declaration.origin = JsLoweredDeclarationOrigin.JS_SHADOWED_EXPORT
