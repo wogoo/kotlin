@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirResolvable
 import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.fakeElement
+import org.jetbrains.kotlin.fir.firLookupTracker
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
 import org.jetbrains.kotlin.fir.resolve.calls.Candidate
 import org.jetbrains.kotlin.fir.resolve.calls.FirNamedReferenceWithCandidate
@@ -62,7 +63,9 @@ class FirCallCompleter(
         val initialType = components.initialTypeOfCandidate(candidate, call)
 
         if (call is FirExpression) {
-            call.resultType = typeRef.resolvedTypeFromPrototype(initialType)
+            val resolvedTypeRef = typeRef.resolvedTypeFromPrototype(initialType)
+            call.resultType = resolvedTypeRef
+            session.firLookupTracker?.recordLookup(resolvedTypeRef, call.source, null)
         }
 
         if (expectedTypeRef is FirResolvedTypeRef) {
@@ -209,13 +212,17 @@ class FirCallCompleter(
             )
 
             lambdaArgument.valueParameters.forEachIndexed { index, parameter ->
-                parameter.replaceReturnTypeRef(
-                    parameter.returnTypeRef.resolvedTypeFromPrototype(parameters[index].approximateLambdaInputType())
-                )
+                val newReturnTypeRef = parameter.returnTypeRef.resolvedTypeFromPrototype(parameters[index].approximateLambdaInputType())
+                parameter.replaceReturnTypeRef(newReturnTypeRef)
+                session.firLookupTracker?.recordLookup(newReturnTypeRef, parameter.source, null)
             }
 
             lambdaArgument.replaceValueParameters(lambdaArgument.valueParameters + listOfNotNull(itParam))
-            lambdaArgument.replaceReturnTypeRef(expectedReturnTypeRef ?: components.noExpectedType)
+            lambdaArgument.replaceReturnTypeRef(
+                expectedReturnTypeRef?.also {
+                    session.firLookupTracker?.recordLookup(it, lambdaArgument.source, null)
+                } ?: components.noExpectedType
+            )
 
             val builderInferenceSession = runIf(stubsForPostponedVariables.isNotEmpty()) {
                 @Suppress("UNCHECKED_CAST")

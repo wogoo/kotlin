@@ -18,6 +18,9 @@ import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.synthetic.FirSyntheticProperty
 import org.jetbrains.kotlin.fir.declarations.synthetic.buildSyntheticProperty
+import org.jetbrains.kotlin.fir.expressions.FirExpression
+import org.jetbrains.kotlin.fir.expressions.builder.buildConstExpression
+import org.jetbrains.kotlin.fir.firLookupTracker
 import org.jetbrains.kotlin.fir.initialSignatureAttr
 import org.jetbrains.kotlin.fir.java.JavaTypeParameterStack
 import org.jetbrains.kotlin.fir.java.declarations.*
@@ -85,7 +88,10 @@ class FirSignatureEnhancement(
                     )
 
                 val newReturnTypeRef = enhanceReturnType(firElement, emptyList(), memberContext, predefinedInfo)
-                return firElement.symbol.apply { this.fir.replaceReturnTypeRef(newReturnTypeRef) }
+                return firElement.symbol.apply {
+                    this.fir.replaceReturnTypeRef(newReturnTypeRef)
+                    session.firLookupTracker?.recordLookup(newReturnTypeRef, this.fir.source, null)
+                }
             }
             is FirField -> {
                 if (firElement.returnTypeRef !is FirJavaTypeRef) return original

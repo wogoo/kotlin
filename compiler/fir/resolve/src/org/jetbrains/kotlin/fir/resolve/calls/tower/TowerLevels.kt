@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.fir.resolve.*
 import org.jetbrains.kotlin.fir.resolve.calls.*
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.resultType
 import org.jetbrains.kotlin.fir.scopes.FirScope
-import org.jetbrains.kotlin.fir.scopes.ProcessorAction
 import org.jetbrains.kotlin.fir.scopes.impl.FirDefaultStarImportingScope
 import org.jetbrains.kotlin.fir.scopes.impl.importedFromObjectData
 import org.jetbrains.kotlin.fir.scopes.processClassifiersByName
@@ -272,7 +271,7 @@ class ScopeTowerLevel(
         processor: TowerScopeLevelProcessor<FirFunctionSymbol<*>>
     ): ProcessResult {
         var empty = true
-        session.firLookupTracker?.recordLookup(info, scope)
+        session.firLookupTracker?.recordLookup(info, scope.scopeLookupNames)
         scope.processFunctionsAndConstructorsByName(
             info.name,
             session,
@@ -290,7 +289,7 @@ class ScopeTowerLevel(
         processor: TowerScopeLevelProcessor<FirVariableSymbol<*>>
     ): ProcessResult {
         var empty = true
-        session.firLookupTracker?.recordLookup(info, scope)
+        session.firLookupTracker?.recordLookup(info, scope.scopeLookupNames)
         scope.processPropertiesByName(info.name) { candidate ->
             empty = false
             consumeCallableCandidate(candidate, processor)
@@ -303,7 +302,7 @@ class ScopeTowerLevel(
         processor: TowerScopeLevelProcessor<AbstractFirBasedSymbol<*>>
     ): ProcessResult {
         var empty = true
-        session.firLookupTracker?.recordLookup(info, scope)
+        session.firLookupTracker?.recordLookup(info, scope.scopeLookupNames)
         scope.processClassifiersByName(info.name) {
             empty = false
             processor.consumeCandidate(

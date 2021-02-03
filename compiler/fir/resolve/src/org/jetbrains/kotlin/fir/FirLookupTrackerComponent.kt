@@ -23,22 +23,6 @@ abstract class FirLookupTrackerComponent : FirSessionComponent {
         recordLookup(name, source, fileSource, arrayOf(inScope))
     }
 
-    fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement?, inScopes: Iterable<FirScope>) {
-        val scopesLookupNames = ArrayList<String>()
-        for (scope in inScopes) {
-            scopesLookupNames.addAll(scope.scopeLookupNames)
-        }
-        recordLookup(name, source, fileSource, scopesLookupNames.toTypedArray())
-    }
-
-    fun recordLookup(name: Name, source: FirSourceElement?, fileSource: FirSourceElement?, inScope: FirScope) {
-        recordLookup(name, source, fileSource, inScope.scopeLookupNames)
-    }
-
-    fun recordLookup(callInfo: CallInfo, inScope: String) {
-        recordLookup(callInfo.name, callInfo.callSite.source, callInfo.containingFile.source, inScope)
-    }
-
     fun recordLookup(callInfo: CallInfo, type: ConeKotlinType) {
         if (type.classId?.isLocal == true) return
         recordLookup(callInfo.name, callInfo.callSite.source, callInfo.containingFile.source, type.render().replace('/', '.'))
@@ -47,30 +31,27 @@ abstract class FirLookupTrackerComponent : FirSessionComponent {
         }
     }
 
-    fun recordLookup(callInfo: CallInfo, inScope: FirScope) {
-        recordLookup(callInfo.name, callInfo.callSite.source, callInfo.containingFile.source, inScope.scopeLookupNames)
+    fun recordLookup(callInfo: CallInfo, scopes: Array<String>) {
+        recordLookup(callInfo.name, callInfo.callSite.source, callInfo.containingFile.source, scopes)
     }
 
-    fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement?, scopes: Iterable<FirScope>) {
-        val name = when (typeRef) {
-//            is FirResolvedTypeRef -> typeRef.type.let {
-//                when (it) {
-//
-//                }
-//            }
-            is FirUserTypeRef -> typeRef.qualifier.first().name
-            else -> null
-        }
-        if (name != null) {
-            recordLookup(name, typeRef.source, fileSource, scopes)
+    fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement?, scopes: Array<String>) {
+        when (typeRef) {
+            is FirUserTypeRef -> recordLookup(typeRef.qualifier.first().name, typeRef.source, fileSource, scopes)
         }
     }
 
-    fun recordLookup(typeRef: FirTypeRef, fileSource: FirSourceElement?, scope: FirScope) {
-        recordLookup(typeRef, fileSource, listOf(scope))
+    fun recordLookup(typeRef: FirResolvedTypeRef, source: FirSourceElement?, fileSource: FirSourceElement?) {
+        if (source == null && fileSource == null) return // TODO: investigate all cases
+        if (typeRef.type is ConeKotlinErrorType) return // TODO: investigate whether some cases should be recorded, e.g. unresolved
+        typeRef.type.classId?.let {
+            if (!it.isLocal) {
+                recordLookup(it.shortClassName, source, fileSource, it.packageFqName.asString())
+            }
+        }
     }
 
-    fun recordLookup(symbol: FirBasedSymbol<*>, source: FirSourceElement?, fileSource: FirSourceElement?, scopes: Iterable<FirScope>) {
+    fun recordLookup(symbol: FirBasedSymbol<*>, source: FirSourceElement?, fileSource: FirSourceElement?, scopes: Array<String>) {
         val name = when (val fir = symbol.fir) {
             is FirSimpleFunction -> fir.name
             is FirVariable<*> -> fir.name
@@ -85,5 +66,14 @@ abstract class FirLookupTrackerComponent : FirSessionComponent {
 
     abstract fun flushLookups()
 }
+
+val Iterable<FirScope>.scopeLookupNames: Array<String>
+    get() {
+        val scopesLookupNames = ArrayList<String>()
+        for (scope in this) {
+            scopesLookupNames.addAll(scope.scopeLookupNames)
+        }
+        return scopesLookupNames.toTypedArray()
+    }
 
 val FirSession.firLookupTracker: FirLookupTrackerComponent? by FirSession.nullableSessionComponentAccessor()
