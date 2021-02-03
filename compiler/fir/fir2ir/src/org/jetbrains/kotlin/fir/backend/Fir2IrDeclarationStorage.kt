@@ -33,6 +33,7 @@ import org.jetbrains.kotlin.fir.resolve.toSymbol
 import org.jetbrains.kotlin.fir.symbols.*
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.*
+import org.jetbrains.kotlin.ir.IrLock
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.declarations.UNDEFINED_PARAMETER_INDEX
@@ -410,8 +411,10 @@ class Fir2IrDeclarationStorage(
         irParent: IrDeclarationParent?,
         isLocal: Boolean = false,
     ): IrSimpleFunction {
-        getCachedIrFunction(function)?.let { return it }
-        return createIrFunction(function, irParent, isLocal = isLocal)
+        synchronized(IrLock) {
+            getCachedIrFunction(function)?.let { return it }
+            return createIrFunction(function, irParent, isLocal = isLocal)
+        }
     }
 
     fun createIrFunction(
@@ -682,17 +685,21 @@ class Fir2IrDeclarationStorage(
         irParent: IrDeclarationParent?,
         isLocal: Boolean = false,
     ): IrProperty {
-        getCachedIrProperty(property)?.let { return it }
-        return createIrProperty(property, irParent, isLocal = isLocal)
+        synchronized(IrLock) {
+            getCachedIrProperty(property)?.let { return it }
+            return createIrProperty(property, irParent, isLocal = isLocal)
+        }
     }
 
     fun getOrCreateIrPropertyByPureField(
         field: FirField,
         irParent: IrDeclarationParent
     ): IrProperty {
-        fieldToPropertyCache[field]?.let { return it }
-        return createIrProperty(field.toStubProperty(), irParent).apply {
-            fieldToPropertyCache[field] = this
+        synchronized(IrLock) {
+            fieldToPropertyCache[field]?.let { return it }
+            return createIrProperty(field.toStubProperty(), irParent).apply {
+                fieldToPropertyCache[field] = this
+            }
         }
     }
 
@@ -1006,11 +1013,13 @@ class Fir2IrDeclarationStorage(
     fun getIrFunctionSymbol(firFunctionSymbol: FirFunctionSymbol<*>): IrFunctionSymbol {
         return when (val fir = firFunctionSymbol.fir) {
             is FirAnonymousFunction -> {
-                getCachedIrFunction(fir)?.let { return it.symbol }
-                val irParent = findIrParent(fir)
-                val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
-                val declarationOrigin = computeDeclarationOrigin(firFunctionSymbol, parentOrigin, irParent)
-                createIrFunction(fir, irParent, origin = declarationOrigin).symbol
+                synchronized(IrLock) {
+                    getCachedIrFunction(fir)?.let { return it.symbol }
+                    val irParent = findIrParent(fir)
+                    val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
+                    val declarationOrigin = computeDeclarationOrigin(firFunctionSymbol, parentOrigin, irParent)
+                    createIrFunction(fir, irParent, origin = declarationOrigin).symbol
+                }
             }
             is FirSimpleFunction -> {
                 return getIrCallableSymbol(
@@ -1090,26 +1099,28 @@ class Fir2IrDeclarationStorage(
         val fir = firSymbol.fir as F
         val irParent by lazy { findIrParent(fir) }
         val signature by lazy { signatureComposer.composeSignature(fir) }
-        getCachedIrDeclaration(fir) {
-            // Parent calculation provokes declaration calculation for some members from IrBuiltIns
-            @Suppress("UNUSED_EXPRESSION") irParent
-            signature
-        }?.let { return it.symbol }
-        val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
-        val declarationOrigin = computeDeclarationOrigin(firSymbol, parentOrigin, irParent)
-        // TODO: package fragment members (?)
-        val parent = irParent
-        if (parent is Fir2IrLazyClass) {
-            assert(parentOrigin != IrDeclarationOrigin.DEFINED) {
-                "Should not have reference to public API uncached property from source code"
+        synchronized(IrLock) {
+            getCachedIrDeclaration(fir) {
+                // Parent calculation provokes declaration calculation for some members from IrBuiltIns
+                @Suppress("UNUSED_EXPRESSION") irParent
+                signature
+            }?.let { return it.symbol }
+            val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
+            val declarationOrigin = computeDeclarationOrigin(firSymbol, parentOrigin, irParent)
+            // TODO: package fragment members (?)
+            val parent = irParent
+            if (parent is Fir2IrLazyClass) {
+                assert(parentOrigin != IrDeclarationOrigin.DEFINED) {
+                    "Should not have reference to public API uncached property from source code"
+                }
+                signature?.let {
+                    return createIrLazyDeclaration(it, parent, declarationOrigin).symbol
+                }
             }
-            signature?.let {
-                return createIrLazyDeclaration(it, parent, declarationOrigin).symbol
-            }
+            return createIrDeclaration(irParent, declarationOrigin).apply {
+                (this as IrDeclaration).setAndModifyParent(irParent)
+            }.symbol
         }
-        return createIrDeclaration(irParent, declarationOrigin).apply {
-            (this as IrDeclaration).setAndModifyParent(irParent)
-        }.symbol
     }
 
     private fun computeDeclarationOrigin(
@@ -1143,12 +1154,14 @@ class Fir2IrDeclarationStorage(
                 if (fir.isLocal) {
                     return localStorage.getDelegatedProperty(fir)?.delegate?.symbol ?: getIrVariableSymbol(fir)
                 }
-                propertyCache[fir]?.let { return it.backingField!!.symbol }
-                val irParent = findIrParent(fir)
-                val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
-                createIrProperty(fir, irParent, origin = parentOrigin).apply {
-                    setAndModifyParent(irParent)
-                }.backingField!!.symbol
+                synchronized(IrLock) {
+                    propertyCache[fir]?.let { return it.backingField!!.symbol }
+                    val irParent = findIrParent(fir)
+                    val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
+                    createIrProperty(fir, irParent, origin = parentOrigin).apply {
+                        setAndModifyParent(irParent)
+                    }.backingField!!.symbol
+                }
             }
             else -> {
                 getIrVariableSymbol(fir)
@@ -1164,15 +1177,17 @@ class Fir2IrDeclarationStorage(
     fun getIrValueSymbol(firVariableSymbol: FirVariableSymbol<*>): IrSymbol {
         return when (val firDeclaration = firVariableSymbol.fir) {
             is FirEnumEntry -> {
-                classifierStorage.getCachedIrEnumEntry(firDeclaration)?.let { return it.symbol }
-                val containingFile = firProvider.getFirCallableContainerFile(firVariableSymbol)
-                val irParentClass = firDeclaration.containingClass()?.let { findIrClass(it) }
-                classifierStorage.createIrEnumEntry(
-                    firDeclaration,
-                    irParent = irParentClass,
-                    origin = if (containingFile != null) IrDeclarationOrigin.DEFINED else
-                        irParentClass?.origin ?: IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB
-                ).symbol
+                synchronized(IrLock) {
+                    classifierStorage.getCachedIrEnumEntry(firDeclaration)?.let { return it.symbol }
+                    val containingFile = firProvider.getFirCallableContainerFile(firVariableSymbol)
+                    val irParentClass = firDeclaration.containingClass()?.let { findIrClass(it) }
+                    classifierStorage.createIrEnumEntry(
+                        firDeclaration,
+                        irParent = irParentClass,
+                        origin = if (containingFile != null) IrDeclarationOrigin.DEFINED else
+                            irParentClass?.origin ?: IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB
+                    ).symbol
+                }
             }
             is FirValueParameter -> {
                 localStorage.getParameter(firDeclaration)?.symbol
