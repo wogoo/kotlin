@@ -90,7 +90,7 @@ class FirSignatureEnhancement(
                 val newReturnTypeRef = enhanceReturnType(firElement, emptyList(), memberContext, predefinedInfo)
                 return firElement.symbol.apply {
                     this.fir.replaceReturnTypeRef(newReturnTypeRef)
-                    session.firLookupTracker?.recordLookup(newReturnTypeRef, this.fir.source, null)
+                    session.firLookupTracker?.recordTypeResolve(newReturnTypeRef, this.fir.source, null)
                 }
             }
             is FirField -> {
