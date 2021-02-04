@@ -560,10 +560,11 @@ allprojects {
     }
 }
 
-gradle.buildFinished {
-    val taskGraph = gradle?.taskGraph
-    if (taskGraph != null) {
-        taskGraph.allTasks
+if ((gradle.startParameter as? org.gradle.api.internal.StartParameterInternal)?.isConfigurationCache != true) {
+    gradle.buildFinished {
+        val taskGraph = gradle?.taskGraph
+        if (taskGraph != null) {
+            taskGraph.allTasks
                 .filterIsInstance<SourceTask>()
                 .filter { it.didWork }
                 .forEach {
@@ -573,6 +574,7 @@ gradle.buildFinished {
                         }
                     }
                 }
+        }
     }
 }
 
