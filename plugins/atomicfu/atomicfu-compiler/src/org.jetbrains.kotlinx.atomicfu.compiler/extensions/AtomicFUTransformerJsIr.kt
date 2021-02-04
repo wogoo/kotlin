@@ -60,29 +60,29 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
         "AtomicArray" to "Array"
     )
 
-    override fun visitFile(irFile: IrFile): IrFile {
-        irFile.declarations.forEachIndexed { index, irDeclaration ->
-            irFile.declarations[index] = irDeclaration.transformAtomicInlineDeclaration()
+    override fun visitFile(declaration: IrFile): IrFile {
+        declaration.declarations.forEachIndexed { index, irDeclaration ->
+            declaration.declarations[index] = irDeclaration.transformAtomicInlineDeclaration()
         }
-        return super.visitFile(irFile)
+        return super.visitFile(declaration)
     }
 
-    override fun visitClass(irClass: IrClass): IrStatement {
-        irClass.declarations.forEachIndexed { index, irDeclaration ->
-            irClass.declarations[index] = irDeclaration.transformAtomicInlineDeclaration()
+    override fun visitClass(declaration: IrClass): IrStatement {
+        declaration.declarations.forEachIndexed { index, irDeclaration ->
+            declaration.declarations[index] = irDeclaration.transformAtomicInlineDeclaration()
         }
-        return super.visitClass(irClass)
+        return super.visitClass(declaration)
     }
 
-    override fun visitProperty(property: IrProperty): IrStatement {
-        if (property.backingField != null) {
-            val backingField = property.backingField!!
+    override fun visitProperty(declaration: IrProperty): IrStatement {
+        if (declaration.backingField != null) {
+            val backingField = declaration.backingField!!
             if (backingField.initializer != null) {
                 val initializer = backingField.initializer!!.expression.transformAtomicValueInitializer(backingField)
-                property.backingField!!.initializer = context.irFactory.createExpressionBody(initializer)
+                declaration.backingField!!.initializer = context.irFactory.createExpressionBody(initializer)
             }
         }
-        return super.visitProperty(property)
+        return super.visitProperty(declaration)
     }
 
     override fun visitFunction(declaration: IrFunction): IrStatement {
@@ -258,6 +258,13 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
         when (this) {
             is IrTypeOperatorCall -> {
                 return apply { argument = argument.transformAtomicFunctionCall(parentDeclaration) }
+            }
+            is IrStringConcatenationImpl -> {
+                return apply {
+                    arguments.forEachIndexed { i, arg ->
+                        arguments[i] = arg.transformAtomicFunctionCall(parentDeclaration)
+                    }
+                }
             }
             is IrReturn -> {
                 return apply { value = value.transformAtomicFunctionCall(parentDeclaration) }
