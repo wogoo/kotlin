@@ -136,54 +136,10 @@ fun main(args: Array<String>) {
     specialCasingGenerators.forEach { it.close() }
 }
 
-internal class UnicodeDataLine(properties: List<String>) {
-    init {
-        require(properties.size == 15)
-    }
-
-    val char: String = properties[0]
-    val name: String = properties[1]
-    val categoryCode: String = properties[2]
-    val uppercaseMapping: String = properties[12]
-    val lowercaseMapping: String = properties[13]
-    val titlecaseMapping: String = properties[14]
-
-    override fun toString(): String {
-        return "UnicodeDataLine{char=$char" +
-                ", categoryCode=$categoryCode" +
-                ", uppercaseMapping=$uppercaseMapping" +
-                ", lowercaseMapping=$lowercaseMapping" +
-                ", titlecaseMapping=$titlecaseMapping" +
-                ", name=$name" +
-                "}"
-    }
-}
 
 internal interface UnicodeDataGenerator {
     fun appendLine(line: UnicodeDataLine)
     fun close()
-}
-
-
-internal class SpecialCasingLine(properties: List<String>) {
-    init {
-        require(properties.size in 5..6)
-    }
-
-    val char: String = properties[0]
-    val lowercaseMapping: List<String> = properties[1].split(" ")
-    val titlecaseMapping: List<String> = properties[2].split(" ")
-    val uppercaseMapping: List<String> = properties[3].split(" ")
-    val conditionList: List<String> = if (properties.size == 6) properties[4].split(" ") else emptyList()
-
-    override fun toString(): String {
-        return "SpecialCasingLine{char=$char" +
-                ", lowercaseMapping=$lowercaseMapping" +
-                ", uppercaseMapping=$uppercaseMapping" +
-                ", titlecaseMapping=$titlecaseMapping" +
-                ", conditionList=$conditionList" +
-                "}"
-    }
 }
 
 internal interface SpecialCasingGenerator {
