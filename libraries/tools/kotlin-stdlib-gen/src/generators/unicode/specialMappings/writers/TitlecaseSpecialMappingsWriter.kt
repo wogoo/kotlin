@@ -12,7 +12,7 @@ import java.io.FileWriter
 internal class TitlecaseSpecialMappingsWriter(private val strategy: RangesWritingStrategy) : SpecialMappingsWriter {
     override fun write(mappings: Map<Int, List<String>>, writer: FileWriter) {
         strategy.beforeWritingRanges(writer)
-        writer.writeMappings("mappings", mappings, strategy)
+        writer.writeMappings(mappings, strategy)
         strategy.afterWritingRanges(writer)
         writer.appendLine()
         writer.appendLine(titlecaseImpl())
@@ -20,7 +20,12 @@ internal class TitlecaseSpecialMappingsWriter(private val strategy: RangesWritin
 
     private fun titlecaseImpl(): String = """
         internal fun Char.titlecaseImpl(): String {
-            return mappings[this] ?: titlecaseCharImpl().toString()
+            val code = this.toInt()
+            val index = binarySearchRange(keys, code)
+            if (keys[index] == code) {
+                return values[index]
+            }
+            return titlecaseCharImpl().toString()
         }
     """.trimIndent()
 }

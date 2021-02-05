@@ -26,14 +26,21 @@ internal class LowercaseMappingsWriter(private val strategy: RangesWritingStrate
         writer.writeIntArray("rangeLength", length, strategy)
         strategy.afterWritingRanges(writer)
         writer.appendLine()
+        writer.appendLine(lowercaseCodePoint())
+        writer.appendLine()
         writer.appendLine(lowercaseCharImpl())
     }
 
+    private fun lowercaseCodePoint(): String = """
+        internal fun Int.lowercaseCodePoint(): Int {
+            val index = binarySearchRange(rangeStart, this)
+            return equalDistanceMapping(this, rangeStart[index], rangeLength[index])
+        }
+    """.trimIndent()
+
     private fun lowercaseCharImpl(): String = """
         internal fun Char.lowercaseCharImpl(): Char {
-            val code = this.toInt()
-            val index = binarySearchRange(rangeStart, code)
-            return equalDistanceMapping(code, rangeStart[index], rangeLength[index])
+            return toInt().lowercaseCodePoint().toChar()
         }
     """.trimIndent()
 }

@@ -28,33 +28,40 @@ internal class UppercaseMappingsWriter(private val strategy: RangesWritingStrate
         writer.appendLine()
         writer.appendLine(equalDistanceMapping())
         writer.appendLine()
+        writer.appendLine(uppercaseCodePoint())
+        writer.appendLine()
         writer.appendLine(uppercaseCharImpl())
     }
 
     private fun equalDistanceMapping(): String = """
-        internal fun equalDistanceMapping(code: Int, start: Int, pattern: Int): Char {
+        internal fun equalDistanceMapping(code: Int, start: Int, pattern: Int): Int {
             val diff = code - start
 
             val length = pattern and 0xff
             if (diff >= length) {
-                return code.toChar()
+                return code
             }
 
             val distance = (pattern shr 8) and 0xf
             if (diff % distance != 0) {
-                return code.toChar()
+                return code
             }
 
             val mapping = pattern shr 12
-            return (code + mapping).toChar()
+            return code + mapping
+        }
+    """.trimIndent()
+
+    private fun uppercaseCodePoint(): String = """
+        internal fun Int.uppercaseCodePoint(): Int {
+            val index = binarySearchRange(rangeStart, this)
+            return equalDistanceMapping(this, rangeStart[index], rangeLength[index])
         }
     """.trimIndent()
 
     private fun uppercaseCharImpl(): String = """
         internal fun Char.uppercaseCharImpl(): Char {
-            val code = this.toInt()
-            val index = binarySearchRange(rangeStart, code)
-            return equalDistanceMapping(code, rangeStart[index], rangeLength[index])
+            return toInt().uppercaseCodePoint().toChar()
         }
     """.trimIndent()
 }

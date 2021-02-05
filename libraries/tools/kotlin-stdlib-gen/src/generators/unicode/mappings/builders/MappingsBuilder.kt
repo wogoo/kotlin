@@ -21,8 +21,10 @@ internal abstract class MappingsBuilder {
      */
     fun append(line: UnicodeDataLine) {
         val charCode = line.char.hexToInt()
-        val equivalent = mappingEquivalent(line) ?: return
-        val mapping = equivalent.hexToInt() - charCode
+        val equivalent = mappingEquivalent(line)?.hexToInt() ?: return
+        val mapping = equivalent - charCode
+
+        check((charCode > Char.MAX_VALUE.toInt()) == (equivalent > Char.MAX_VALUE.toInt())) { "Handle when equivalent mapping is out of BMP." }
 
         if (patterns.isEmpty()) {
             patterns.add(createPattern(charCode, line.categoryCode, mapping))

@@ -12,15 +12,28 @@ import java.io.FileWriter
 internal class UppercaseSpecialMappingsWriter(private val strategy: RangesWritingStrategy) : SpecialMappingsWriter {
     override fun write(mappings: Map<Int, List<String>>, writer: FileWriter) {
         strategy.beforeWritingRanges(writer)
-        writer.writeMappings("mappings", mappings, strategy)
+        writer.writeMappings(mappings, strategy)
         strategy.afterWritingRanges(writer)
+        writer.appendLine()
+        writer.appendLine(uppercaseSpecialCasing())
         writer.appendLine()
         writer.appendLine(uppercaseImpl())
     }
 
+    private fun uppercaseSpecialCasing(): String = """
+        internal fun Char.uppercaseSpecialCasing(): String? {
+            val code = this.toInt()
+            val index = binarySearchRange(keys, code)
+            if (keys[index] == code) {
+                return values[index]
+            }
+            return null
+        }
+    """.trimIndent()
+
     private fun uppercaseImpl(): String = """
         internal fun Char.uppercaseImpl(): String {
-            return mappings[this] ?: uppercaseCharImpl().toString()
+            return uppercaseSpecialCasing() ?: uppercaseCharImpl().toString()
         }
     """.trimIndent()
 }

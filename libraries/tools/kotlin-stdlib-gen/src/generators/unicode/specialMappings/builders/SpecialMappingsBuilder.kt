@@ -14,20 +14,12 @@ internal abstract class SpecialMappingsBuilder(unicodeDataLines: List<UnicodeDat
     private val mappings = mutableMapOf<Int, List<String>>()
 
     fun append(line: SpecialCasingLine) {
-        if (line.conditionList.isNotEmpty()) {
-            val isLocaleAgnosticCondition = line.conditionList.all { it.length > 2 }
-            if (isLocaleAgnosticCondition && (line.char != "03A3"
-                        || line.lowercaseMapping != listOf("03C2")
-                        || line.uppercaseMapping != listOf("03A3")
-                        || line.titlecaseMapping != listOf("03A3")
-                        || line.conditionList != listOf("Final_Sigma"))
-            ) {
-                error("The locale-agnostic conditional mapping $line is not handled. Please update String case conversions implementation.")
-            }
-            return
-        }
+        if (line.conditionList.isNotEmpty()) return
 
         val charCode = line.char.hexToInt()
+
+        check(charCode <= Char.MAX_VALUE.toInt()) { "Handle special casing for the supplementary code point: $line" }
+
         val mapping = mapping(charCode, line) ?: return
 
         mappings[charCode] = mapping

@@ -12,20 +12,21 @@ import java.io.FileWriter
 
 internal class LowercaseSpecialMappingsWriter(private val strategy: RangesWritingStrategy) : SpecialMappingsWriter {
     override fun write(mappings: Map<Int, List<String>>, writer: FileWriter) {
-
         check(mappings.size == 1) { "Number of multi-char lowercase mappings has changed." }
 
         val (key, value) = mappings.entries.single()
+        val char = key.toHexCharLiteral()
+        val result = value.hexCharsToStringLiteral()
 
-        writer.appendLine(
-            """
-            internal fun Char.lowercaseImpl(): String {
-                if (this == ${key.toHexCharLiteral()}) {
-                    return ${value.hexCharsToStringLiteral()}
-                }
-                return lowercaseCharImpl().toString()
-            }
-            """.trimIndent()
-        )
+        writer.appendLine(lowercaseImpl(char, result))
     }
+
+    private fun lowercaseImpl(specialCasingChar: String, specialCasingResult: String): String = """
+        internal fun Char.lowercaseImpl(): String {
+            if (this == $specialCasingChar) {
+                return $specialCasingResult
+            }
+            return lowercaseCharImpl().toString()
+        }
+    """.trimIndent()
 }

@@ -9,6 +9,10 @@ import generators.unicode.mappings.MappingsGenerator
 import generators.unicode.specialMappings.SpecialMappingsGenerator
 import generators.unicode.ranges.CharCategoryTestGenerator
 import generators.unicode.ranges.RangesGenerator
+import generators.unicode.ranges.RangesWritingStrategy
+import generators.unicode.stringMappings.StringCasingTestGenerator
+import generators.unicode.stringMappings.StringLowercaseGenerator
+import generators.unicode.stringMappings.StringUppercaseGenerator
 import templates.COPYRIGHT_NOTICE
 import templates.KotlinTarget
 import templates.readCopyrightNoticeFromProfile
@@ -21,6 +25,9 @@ import kotlin.system.exitProcess
 private const val unicodeVersion = "13.0.0"
 private const val unicodeDataUrl = "https://www.unicode.org/Public/$unicodeVersion/ucd/UnicodeData.txt"
 private const val specialCasingUrl = "https://www.unicode.org/Public/$unicodeVersion/ucd/SpecialCasing.txt"
+private const val propListUrl = "https://www.unicode.org/Public/$unicodeVersion/ucd/PropList.txt"
+private const val wordBreakPropertyUrl = "https://www.unicode.org/Public/$unicodeVersion/ucd/auxiliary/WordBreakProperty.txt"
+private const val derivedCorePropertiesUrl = "https://www.unicode.org/Public/$unicodeVersion/ucd/DerivedCoreProperties.txt"
 
 /**
  * This program generates sources related to UnicodeData.txt and SpecialCasing.txt.
@@ -32,36 +39,63 @@ private const val specialCasingUrl = "https://www.unicode.org/Public/$unicodeVer
  *  No tests are generated.
  */
 fun main(args: Array<String>) {
-
-    val unicodeDataLines = URL(unicodeDataUrl).openStream().reader().readLines()
-    val bmpUnicodeDataLines = unicodeDataLines.mapNotNull { line ->
-        UnicodeDataLine(line.split(";")).takeIf { it.char.length <= 4 } // Basic Multilingual Plane (BMP)
-    }
-    val specialCasingLines = URL(specialCasingUrl).openStream().reader().readLines()
-    val nonCommentSpecialCasingLines = specialCasingLines.mapNotNull { line ->
-        if (line.isEmpty() || line.startsWith("#")) null else SpecialCasingLine(line.split("; "))
+    fun readLines(url: String): List<String> {
+        return URL(url).openStream().reader().readLines()
     }
 
-    val unicodeDataGenerators = mutableListOf<UnicodeDataGenerator>()
+    fun downloadFile(fromUrl: String, dest: File) {
+        dest.writeText(readLines(fromUrl).joinToString(separator = "\n"))
+    }
+
+    val unicodeDataLines = readLines(unicodeDataUrl).map { line -> UnicodeDataLine(line.split(";")) }
+    val bmpUnicodeDataLines = unicodeDataLines.filter { line -> line.char.length <= 4 } // Basic Multilingual Plane (BMP)
+
+    val specialCasingLines = readLines(specialCasingUrl).filterNot {
+        it.isEmpty() || it.startsWith("#")
+    }.map { line ->
+        SpecialCasingLine(line.split("; "))
+    }
+
+    val propListLines = URL(propListUrl).openStream().reader().readLines().filterNot {
+        it.isEmpty() || it.startsWith("#")
+    }.map { line ->
+        PropertyLine(line.split("; ").map { it.trim() })
+    }
+
+    val wordBreakPropertyLines = URL(wordBreakPropertyUrl).openStream().reader().readLines().filterNot {
+        it.isEmpty() || it.startsWith("#")
+    }.map { line ->
+        PropertyLine(line.split("; ").map { it.trim() })
+    }
+
+    val derivedCorePropertiesLines = URL(derivedCorePropertiesUrl).openStream().reader().readLines().filterNot {
+        it.isEmpty() || it.startsWith("#")
+    }.map { line ->
+        PropertyLine(line.split("; ").map { it.trim() })
+    }
+
+    val categoryRangesGenerators = mutableListOf<UnicodeDataGenerator>()
 
     fun addRangesGenerators(generatedDir: File, target: KotlinTarget) {
         val category = RangesGenerator.forCharCategory(generatedDir.resolve("_CharCategories.kt"), target)
         val digit = RangesGenerator.forDigit(generatedDir.resolve("_DigitChars.kt"), target)
         val letter = RangesGenerator.forLetter(generatedDir.resolve("_LetterChars.kt"), target)
         val whitespace = RangesGenerator.forWhitespace(generatedDir.resolve("_WhitespaceChars.kt"))
-        unicodeDataGenerators.add(category)
-        unicodeDataGenerators.add(digit)
-        unicodeDataGenerators.add(letter)
-        unicodeDataGenerators.add(whitespace)
+        categoryRangesGenerators.add(category)
+        categoryRangesGenerators.add(digit)
+        categoryRangesGenerators.add(letter)
+        categoryRangesGenerators.add(whitespace)
     }
+
+    val caseMappingsGenerators = mutableListOf<UnicodeDataGenerator>()
 
     fun addMappingsGenerators(generatedDir: File, target: KotlinTarget) {
         val uppercase = MappingsGenerator.forUppercase(generatedDir.resolve("_UppercaseMappings.kt"), target)
         val lowercase = MappingsGenerator.forLowercase(generatedDir.resolve("_LowercaseMappings.kt"), target)
         val titlecase = MappingsGenerator.forTitlecase(generatedDir.resolve("_TitlecaseMappings.kt"))
-        unicodeDataGenerators.add(uppercase)
-        unicodeDataGenerators.add(lowercase)
-        unicodeDataGenerators.add(titlecase)
+        caseMappingsGenerators.add(uppercase)
+        caseMappingsGenerators.add(lowercase)
+        caseMappingsGenerators.add(titlecase)
     }
 
     val specialCasingGenerators = mutableListOf<SpecialCasingGenerator>()
@@ -75,27 +109,37 @@ fun main(args: Array<String>) {
         specialCasingGenerators.add(titlecase)
     }
 
+    var stringUppercaseGenerator: StringUppercaseGenerator? = null
+    var stringLowercaseGenerator: StringLowercaseGenerator? = null
+    var stringCasingTestGenerator: StringCasingTestGenerator? = null
+
     when (args.size) {
         1 -> {
             val baseDir = File(args.first())
 
             val categoryTestFile = baseDir.resolve("libraries/stdlib/js/test/text/unicodeData/_CharCategoryTest.kt")
             val categoryTestGenerator = CharCategoryTestGenerator(categoryTestFile)
-            unicodeDataGenerators.add(categoryTestGenerator)
+            categoryRangesGenerators.add(categoryTestGenerator)
 
             val jsGeneratedDir = baseDir.resolve("libraries/stdlib/js/src/generated/")
             addRangesGenerators(jsGeneratedDir, KotlinTarget.JS)
+
+            addMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
+            addSpecialMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
+            stringUppercaseGenerator = StringUppercaseGenerator(jsGeneratedDir.resolve("_StringUppercase.kt"), bmpUnicodeDataLines)
+            stringLowercaseGenerator = StringLowercaseGenerator(jsGeneratedDir.resolve("_StringLowercase.kt"), RangesWritingStrategy.of(KotlinTarget.Native), unicodeDataLines)
+            stringCasingTestGenerator = StringCasingTestGenerator(categoryTestFile.resolveSibling("_StringCasingTest.kt"))
 
             val jsIrGeneratedDir = baseDir.resolve("libraries/stdlib/js-ir/src/generated/")
             addRangesGenerators(jsIrGeneratedDir, KotlinTarget.JS_IR)
 
             // For debugging. To see the file content
-            fun writeContent(lines: List<String>, fileName: String) {
+            fun downloadFile(url: String, fileName: String) {
                 val file = baseDir.resolve("libraries/tools/kotlin-stdlib-gen/src/generators/unicode/$fileName")
-                file.writeText(lines.joinToString(separator = "\n"))
+                downloadFile(url, file)
             }
-            writeContent(unicodeDataLines, "UnicodeData.txt")
-            writeContent(specialCasingLines, "SpecialCasing.txt")
+            downloadFile(unicodeDataUrl, "UnicodeData.txt")
+            downloadFile(specialCasingUrl, "SpecialCasing.txt")
         }
         2 -> {
             val (targetName, targetDir) = args
@@ -109,6 +153,8 @@ fun main(args: Array<String>) {
             if (target == KotlinTarget.Native) {
                 addMappingsGenerators(generatedDir, target)
                 addSpecialMappingsGenerators(generatedDir, target)
+                stringUppercaseGenerator = StringUppercaseGenerator(generatedDir.resolve("_StringUppercase.kt"), bmpUnicodeDataLines)
+                stringLowercaseGenerator = StringLowercaseGenerator(generatedDir.resolve("_StringLowercase.kt"), RangesWritingStrategy.of(target), unicodeDataLines)
             }
         }
         else -> {
@@ -126,14 +172,35 @@ fun main(args: Array<String>) {
         readCopyrightNoticeFromProfile { Thread.currentThread().contextClassLoader.getResourceAsStream("apache.xml").reader() }
 
     bmpUnicodeDataLines.forEach { line ->
-        unicodeDataGenerators.forEach { it.appendLine(line) }
+        categoryRangesGenerators.forEach { it.appendLine(line) }
     }
-    unicodeDataGenerators.forEach { it.close() }
+    categoryRangesGenerators.forEach { it.close() }
 
-    nonCommentSpecialCasingLines.forEach { line ->
+    unicodeDataLines.forEach { line ->
+        caseMappingsGenerators.forEach { it.appendLine(line) }
+    }
+    caseMappingsGenerators.forEach { it.close() }
+
+    specialCasingLines.forEach { line ->
         specialCasingGenerators.forEach { it.appendLine(line) }
     }
     specialCasingGenerators.forEach { it.close() }
+
+    stringUppercaseGenerator?.let {
+        specialCasingLines.forEach { line -> it.appendSpecialCasingLine(line) }
+        it.generate()
+    }
+    stringLowercaseGenerator?.let {
+        specialCasingLines.forEach { line -> it.appendSpecialCasingLine(line) }
+        propListLines.forEach { line -> it.appendPropListLine(line) }
+        wordBreakPropertyLines.forEach { line -> it.appendWordBreakPropertyLine(line) }
+        it.generate()
+    }
+    stringCasingTestGenerator?.let {
+        derivedCorePropertiesLines.forEach { line -> it.appendDerivedCorePropertiesLine(line) }
+        it.generate()
+    }
+
 }
 
 
