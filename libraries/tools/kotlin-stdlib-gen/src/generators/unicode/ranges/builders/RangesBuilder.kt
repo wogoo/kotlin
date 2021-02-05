@@ -178,16 +178,12 @@ internal abstract class RangesBuilder {
     /**
      * The function to use to transform periodic ranges with period equal to 1 to an Int representation.
      */
-    protected abstract val makeOnePeriodCategory: (Array<String>) -> Int
+    protected open val makeOnePeriodCategory: (Array<String>) -> Int = { 0 }
 
     /**
      * Appends the [charCode] with the specified [categoryId] to the [lastRange] and returns the resulting range,
      * or returns `null` if [charCode] can't be appended to the [lastRange].
      * The [lastRange] can be transformed to another range type to accommodate the [charCode].
      */
-    protected abstract fun evolveLastRange(
-        lastRange: RangePattern,
-        charCode: Int,
-        categoryId: String
-    ): RangePattern?
+    protected open fun evolveLastRange(lastRange: RangePattern, charCode: Int, categoryId: String): RangePattern? = null
 }
