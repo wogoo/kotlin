@@ -34,8 +34,10 @@ internal abstract class SpecialMappingsBuilder(unicodeDataLines: List<UnicodeDat
     private fun mapping(charCode: Int, line: SpecialCasingLine): List<String>? {
         val mapping = line.mapping()
 
-        if (mapping.size <= 1) {
-            val specialCasingMapping = mapping.firstOrNull() ?: line.char
+        check(mapping.isNotEmpty() && mapping.all { it.isNotEmpty() })
+
+        if (mapping.size == 1) {
+            val specialCasingMapping = mapping.first()
 
             val unicodeLine = unicodeDataLines[charCode]
             val unicodeDataMapping = unicodeLine?.mapping()?.takeIf { it.isNotEmpty() } ?: line.char
@@ -46,6 +48,7 @@ internal abstract class SpecialMappingsBuilder(unicodeDataLines: List<UnicodeDat
 
             return null
         }
+
         return mapping
     }
 
