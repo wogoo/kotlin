@@ -14,3 +14,11 @@ enum class DceMode {
         val DEFAULT = REMOVAL_DECLARATION
     }
 }
+
+fun DceMode.dceModeToArgumentOfUnreachableMethod(): Int {
+    return when (this) {
+        DceMode.LOGGING -> 0
+        DceMode.THROWING_EXCEPTION -> 1
+        else -> error("Only logging and throwing exception allowed for unreachable method")
+    }
+}
