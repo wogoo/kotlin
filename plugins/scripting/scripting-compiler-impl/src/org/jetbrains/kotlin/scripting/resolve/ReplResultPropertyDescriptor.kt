@@ -32,8 +32,6 @@ class ReplResultPropertyDescriptor(
 ) {
     init {
         setType(kotlinType, emptyList(), receiver, null)
-        initialize(
-            null, null
-        )
+        initialize(null, null, null, null)
     }
 }

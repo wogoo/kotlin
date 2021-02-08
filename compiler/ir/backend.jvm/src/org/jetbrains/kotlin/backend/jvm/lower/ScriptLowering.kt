@@ -433,25 +433,52 @@ private class ScriptToClassTransformer(
         visitExpression(expression)
     }
 
+    private fun getAccessCallForEarlierScript(expression: IrDeclarationReference, maybeScriptType: IrType): IrCall? {
+        if (irScript.earlierScripts?.isEmpty() != false) return null
+        val scriptSymbol = maybeScriptType.classifierOrNull ?: return null
+        val earlierScriptIndex = when {
+            scriptSymbol.owner is IrScript ->
+                irScript.earlierScripts!!.indexOfFirst { it == scriptSymbol }
+            (scriptSymbol.owner as? IrClass)?.origin == IrDeclarationOrigin.SCRIPT_CLASS -> {
+                irScript.earlierScripts!!.indexOfFirst { it.owner.targetClass == scriptSymbol }
+            }
+            else -> return null
+        }
+        if (earlierScriptIndex >= 0) {
+            val objArray = context.irBuiltIns.arrayClass
+            val objArrayGet = objArray.functions.single { it.owner.name == OperatorNameConventions.GET }
+            val builder = context.createIrBuilder(expression.symbol)
+            return builder.irCall(objArrayGet).apply {
+                dispatchReceiver = builder.irGet(objArray.defaultType, irScript.earlierScriptsParameter!!.symbol)
+                putValueArgument(0, earlierScriptIndex.toIrConst(objArrayGet.owner.valueParameters.first().type))
+            }
+        }
+        return null
+    }
+
+    override fun visitGetField(expression: IrGetField): IrExpression {
+        if (irScript.earlierScripts != null) {
+            val receiver = expression.receiver
+            if (receiver is IrGetValue && receiver.symbol.owner.name == Name.special("<this>")) {
+                val newReceiver = getAccessCallForEarlierScript(expression, receiver.type)
+                if (newReceiver != null) {
+                    val newGetField =
+                        IrGetFieldImpl(expression.startOffset, expression.endOffset, expression.symbol, expression.type, newReceiver)
+                    return super.visitGetField(newGetField)
+                }
+            }
+        }
+        return super.visitGetField(expression)
+    }
+
     override fun visitCall(expression: IrCall): IrExpression {
         if (irScript.earlierScripts != null) {
             val target = expression.symbol.owner
-            val receiver = target.dispatchReceiverParameter
+            val receiver: IrValueParameter? = target.dispatchReceiverParameter
             if (target.origin == IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR && receiver?.name == Name.special("<this>")) {
-                val earlierScriptIndex =
-                    receiver.type.classifierOrNull
-                        ?.takeIf { (it.owner as? IrClass)?.origin == IrDeclarationOrigin.SCRIPT_CLASS }
-                        ?.let { originalSymbol ->
-                            irScript.earlierScripts!!.indexOfFirst { it.owner.targetClass == originalSymbol }
-                        }
-                if (earlierScriptIndex != -1) {
-                    val objArray = context.irBuiltIns.arrayClass
-                    val objArrayGet = objArray.functions.single { it.owner.name == OperatorNameConventions.GET }
+                val newReceiver = getAccessCallForEarlierScript(expression, receiver.type)
+                if (newReceiver != null) {
                     val builder = context.createIrBuilder(expression.symbol)
-                    val newReceiver = builder.irCall(objArrayGet).apply {
-                        dispatchReceiver = builder.irGet(objArray.defaultType, irScript.earlierScriptsParameter!!.symbol)
-                        putValueArgument(0, earlierScriptIndex.toIrConst(objArrayGet.owner.valueParameters.first().type))
-                    }
                     val newCall = builder.irCall(expression.symbol, target.returnType, origin = expression.origin).also {
                         it.copyTypeAndValueArgumentsFrom(expression)
                         it.dispatchReceiver = newReceiver
