@@ -80,6 +80,50 @@ public actual fun Char.uppercaseChar(): Char {
 public actual inline fun Char.uppercase(): String = toString().asDynamic().toUpperCase() as String
 
 /**
+ * Converts this character to title case using Unicode mapping rules of the invariant locale.
+ *
+ * This function performs one-to-one character mapping.
+ * To support one-to-many character mapping use the [titlecase] function.
+ * If this character has no mapping equivalent, the result of calling [uppercaseChar] is returned.
+ *
+ * @sample samples.text.Chars.titlecase
+ */
+@SinceKotlin("1.4")
+@ExperimentalStdlibApi
+public actual fun Char.titlecaseChar(): Char {
+    val code = this.toInt()
+    // Letters repeating <Lu, Lt, Ll> sequence and code of the Lt is a multiple of 3, e.g. <Ǆ, ǅ, ǆ>
+    if (code in 0x01C4..0x01CC || code in 0x01F1..0x01F3) {
+        return (3 * ((code + 1) / 3)).toChar()
+    }
+    // Lower case letters whose title case mapping equivalent is equal to the original letter
+    if (code in 0x10D0..0x10FA || code in 0x10FD..0x10FF) {
+        return code.toChar()
+    }
+    return uppercaseChar()
+}
+
+/**
+ * Converts this character to title case using Unicode mapping rules of the invariant locale.
+ *
+ * This function supports one-to-many character mapping, thus the length of the returned string can be greater than one.
+ * For example, `'\uFB00'.titlecase()` returns `"\u0046\u0066"`,
+ * where `'\uFB00'` is the LATIN SMALL LIGATURE FF character (`ﬀ`).
+ * If this character has no title case mapping, the result of [uppercase] is returned instead.
+ *
+ * @sample samples.text.Chars.titlecase
+ */
+@SinceKotlin("1.4")
+@ExperimentalStdlibApi
+public actual fun Char.titlecase(): String {
+    val uppercase = uppercase()
+    if (uppercase.length > 1) {
+        return if (this == '\u0149') uppercase else uppercase[0] + uppercase.substring(1).lowercase()
+    }
+    return titlecaseChar().toString()
+}
+
+/**
  * Returns `true` if this character is a Unicode high-surrogate code unit (also known as leading-surrogate code unit).
  */
 public actual fun Char.isHighSurrogate(): Boolean = this in Char.MIN_HIGH_SURROGATE..Char.MAX_HIGH_SURROGATE

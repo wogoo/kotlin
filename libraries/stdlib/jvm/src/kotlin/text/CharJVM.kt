@@ -238,7 +238,7 @@ public inline fun Char.toTitleCase(): Char = titlecaseChar()
 @SinceKotlin("1.4")
 @ExperimentalStdlibApi
 @kotlin.internal.InlineOnly
-public inline fun Char.titlecaseChar(): Char = Character.toTitleCase(this)
+public actual inline fun Char.titlecaseChar(): Char = Character.toTitleCase(this)
 
 /**
  * Converts this character to title case using Unicode mapping rules of the invariant locale.
@@ -252,7 +252,7 @@ public inline fun Char.titlecaseChar(): Char = Character.toTitleCase(this)
  */
 @SinceKotlin("1.4")
 @ExperimentalStdlibApi
-public fun Char.titlecase(): String {
+public actual fun Char.titlecase(): String {
     val uppercase = uppercase()
     if (uppercase.length > 1) {
         return if (this == '\u0149') uppercase else uppercase[0] + uppercase.substring(1).lowercase()
