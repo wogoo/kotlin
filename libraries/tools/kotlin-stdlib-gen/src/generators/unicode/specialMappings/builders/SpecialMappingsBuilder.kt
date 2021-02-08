@@ -8,10 +8,11 @@ package generators.unicode.specialMappings.builders
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
 import generators.unicode.hexToInt
+import java.util.TreeMap
 
 internal abstract class SpecialMappingsBuilder(unicodeDataLines: List<UnicodeDataLine>) {
     private val unicodeDataLines = unicodeDataLines.associateBy { it.char.hexToInt() }
-    private val mappings = mutableMapOf<Int, List<String>>()
+    private val mappings = TreeMap<Int, List<String>>()
 
     fun append(line: SpecialCasingLine) {
         if (line.conditionList.isNotEmpty()) return
