@@ -206,6 +206,82 @@ class GeneralNativeIT : BaseGradleIT() {
     }
 
     @Test
+    fun testCanProduceNativeFrameworkArtifact() = with(
+        transformNativeTestProjectWithPluginDsl("frameworks", directoryPrefix = "native-binaries")
+    ) {
+        Assume.assumeTrue(HostManager.hostIsMac)
+
+        gradleBuildScript().appendText(
+            """
+            val frameworkTargets = Attribute.of(
+                "org.jetbrains.kotlin.native.framework.targets",
+                Set::class.java
+            )
+            val kotlinNativeBuildTypeAttribute = Attribute.of(
+                "org.jetbrains.kotlin.native.build.type",
+                String::class.java
+            )
+                 
+            fun validateConfiguration(conf: Configuration, targets: Set<String>, expectedBuildType: String) {
+                if (conf.artifacts.files.count() != 1 || conf.artifacts.files.singleFile.name != "main.framework") {
+                    throw IllegalStateException("Framework artifact is not properly declared")
+                }
+                val confTargets = conf.attributes.getAttribute(frameworkTargets)!!
+                val buildType = conf.attributes.getAttribute(kotlinNativeBuildTypeAttribute)!!
+                if (confTargets.size != targets.size || !confTargets.containsAll(targets) || buildType != expectedBuildType) {
+                    throw IllegalStateException("Framework artifact has incorrect attributes")
+                }
+            }
+            
+            tasks.register("validateThinArtifacts") {
+                doLast {
+                    val targets = listOf("ios" to "ios_arm64", "iosSim" to "ios_x64")
+                    val buildTypes = listOf("release", "debug")
+                    targets.forEach { (name, target) ->
+                        buildTypes.forEach { buildType ->
+                            val conf = project.configurations.getByName("main${'$'}{buildType.capitalize()}Framework${'$'}{name.capitalize()}")
+                            validateConfiguration(conf, setOf(target), buildType.toUpperCase())
+                        }
+                    }
+                }
+            }
+            
+            tasks.register("validateFatArtifacts") {
+                doLast {
+                    val buildTypes = listOf("release", "debug")
+                    buildTypes.forEach { buildType ->
+                        val conf = project.configurations.getByName("main${'$'}{buildType.capitalize()}FrameworkIosFat")
+                        validateConfiguration(conf, setOf("ios_x64", "ios_arm64"), buildType.toUpperCase())
+                    }
+                }
+            }
+            
+            tasks.register("validateCustomAttributesSetting") {
+                doLast {
+                    val conf = project.configurations.getByName("customReleaseFrameworkIos")
+                    if (conf.attributes.getAttribute(disambiguation1Attribute) != "someValue" ||
+                        conf.attributes.getAttribute(disambiguation2Attribute) != "someValue2") {
+                       throw IllegalStateException("Custom framework attributes is not properly set")
+                    }
+                }
+            }
+        """.trimIndent()
+        )
+
+        build(":validateThinArtifacts") {
+            assertSuccessful()
+        }
+
+        build(":validateFatArtifacts") {
+            assertSuccessful()
+        }
+
+        build(":validateCustomAttributesSetting") {
+            assertSuccessful()
+        }
+    }
+
+    @Test
     fun testCanProduceNativeFrameworks() = with(
         transformNativeTestProjectWithPluginDsl("frameworks", directoryPrefix = "native-binaries")
     ) {
