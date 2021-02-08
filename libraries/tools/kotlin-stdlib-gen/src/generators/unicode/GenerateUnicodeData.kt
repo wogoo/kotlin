@@ -124,12 +124,6 @@ fun main(args: Array<String>) {
             val jsGeneratedDir = baseDir.resolve("libraries/stdlib/js/src/generated/")
             addRangesGenerators(jsGeneratedDir, KotlinTarget.JS)
 
-            addMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
-            addSpecialMappingsGenerators(jsGeneratedDir, KotlinTarget.Native)
-            stringUppercaseGenerator = StringUppercaseGenerator(jsGeneratedDir.resolve("_StringUppercase.kt"), bmpUnicodeDataLines)
-            stringLowercaseGenerator = StringLowercaseGenerator(jsGeneratedDir.resolve("_StringLowercase.kt"), RangesWritingStrategy.of(KotlinTarget.Native), unicodeDataLines)
-            stringCasingTestGenerator = StringCasingTestGenerator(categoryTestFile.resolveSibling("_StringCasingTest.kt"))
-
             val jsIrGeneratedDir = baseDir.resolve("libraries/stdlib/js-ir/src/generated/")
             addRangesGenerators(jsIrGeneratedDir, KotlinTarget.JS_IR)
 
