@@ -24,7 +24,7 @@ internal class UppercaseSpecialMappingsWriter(private val strategy: RangesWritin
         internal fun Char.uppercaseSpecialCasing(): String? {
             val code = this.toInt()
             val index = binarySearchRange(keys, code)
-            if (keys[index] == code) {
+            if (index >= 0 && keys[index] == code) {
                 return values[index]
             }
             return null

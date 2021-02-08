@@ -54,6 +54,12 @@ internal class UppercaseMappingsWriter(private val strategy: RangesWritingStrate
 
     private fun uppercaseCodePoint(): String = """
         internal fun Int.uppercaseCodePoint(): Int {
+            if (this in 0x61..0x7a) {
+                return this - 32
+            }
+            if (this < 0x80) {
+                return this
+            }
             val index = binarySearchRange(rangeStart, this)
             return equalDistanceMapping(this, rangeStart[index], rangeLength[index])
         }

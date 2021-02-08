@@ -33,6 +33,12 @@ internal class LowercaseMappingsWriter(private val strategy: RangesWritingStrate
 
     private fun lowercaseCodePoint(): String = """
         internal fun Int.lowercaseCodePoint(): Int {
+            if (this in 0x41..0x5a) {
+                return this + 32
+            }
+            if (this < 0x80) {
+                return this
+            }
             val index = binarySearchRange(rangeStart, this)
             return equalDistanceMapping(this, rangeStart[index], rangeLength[index])
         }

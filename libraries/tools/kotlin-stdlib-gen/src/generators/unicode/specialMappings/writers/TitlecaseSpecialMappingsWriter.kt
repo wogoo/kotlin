@@ -22,7 +22,7 @@ internal class TitlecaseSpecialMappingsWriter(private val strategy: RangesWritin
         internal fun Char.titlecaseImpl(): String {
             val code = this.toInt()
             val index = binarySearchRange(keys, code)
-            if (keys[index] == code) {
+            if (index >= 0 && keys[index] == code) {
                 return values[index]
             }
             return titlecaseCharImpl().toString()
