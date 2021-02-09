@@ -8,3 +8,5 @@ fun test_1() {
 fun test_2() {
     run(fun (): Int { return 1 })
 }
+
+//FIR_FRAGMENTS_COUNT 15

@@ -19,3 +19,5 @@ class SomeClass : SomeInterface {
 }
 
 inline class InlineClass
+
+//FIR_FRAGMENTS_COUNT 12

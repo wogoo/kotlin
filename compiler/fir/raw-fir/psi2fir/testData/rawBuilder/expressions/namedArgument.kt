@@ -7,3 +7,5 @@ fun test() {
     foo(third = -1.0, first = "123")
     foo(= "")
 }
+
+//FIR_FRAGMENTS_COUNT 12

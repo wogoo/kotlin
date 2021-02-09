@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.builder.PsiToFirElementMapper
 import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
@@ -175,6 +176,37 @@ internal class FirModuleResolveStateImpl(
 
     override fun getFirFile(declaration: FirDeclaration, cache: ModuleFileCache): FirFile? =
         cache.getContainerFirFile(declaration)
+
+    override fun getResolvedFragment(anchorExpression: KtExpression, targetExpression: KtExpression): FirElement? {
+
+        val psiToFirElementMapper = PsiToFirElementMapper {
+            getOrBuildFirFor(it)
+        }
+
+        val moduleInfo = anchorExpression.getModuleInfo() as? ModuleSourceInfo
+        require(moduleInfo != null) { "Cannot find module info for anchor node" }
+
+        val cache = sessionProvider.getModuleCache(moduleInfo)
+        val firFile = firFileBuilder.getFirFileResolvedToPhaseWithCaching(
+            ktFile = anchorExpression.containingKtFile,
+            cache = cache,
+            toPhase = FirResolvePhase.BODY_RESOLVE,
+            checkPCE = false
+        )
+
+        val tower = getTowerDataContextForElement(anchorExpression) ?: return null
+
+        return cache.firFileLockProvider.withReadLock(firFile) {
+            firFileBuilder.getFirNodeResolvedToPhase(
+                anchorExpression = anchorExpression,
+                targetExpression = targetExpression,
+                cache = cache,
+                toPhase = FirResolvePhase.RAW_FIR,
+                checkPCE = false,
+                psiToFirElementMapper = psiToFirElementMapper
+            )
+        }
+    }
 
     override fun getTowerDataContextForElement(element: KtElement): FirTowerDataContext? {
         return collector.getClosestAvailableParentContext(element)

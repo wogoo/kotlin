@@ -19,3 +19,5 @@ fun bar(limit: Int) {
         println(k)
     } while (k >= 0)
 }
+
+//FIR_FRAGMENTS_COUNT 18

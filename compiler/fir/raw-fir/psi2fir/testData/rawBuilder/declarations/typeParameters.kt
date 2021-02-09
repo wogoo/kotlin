@@ -14,3 +14,5 @@ class SomeList : AbstractList<Int>() {
 
     override fun concat(other: List<Int>): List<Int> = this
 }
+
+//FIR_FRAGMENTS_COUNT 15

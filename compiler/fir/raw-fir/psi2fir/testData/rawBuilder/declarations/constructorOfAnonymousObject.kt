@@ -9,3 +9,5 @@ private fun resolveAccessorCall(
         override fun getResultingDescriptor() = suspendPropertyDescriptor
     }
 }
+
+//FIR_FRAGMENTS_COUNT 8

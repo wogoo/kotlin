@@ -8,3 +8,5 @@ fun foo() = 1
 fun test2() {
     intArrayOf(1, 2, 3)[foo()] = 1
 }
+
+//FIR_FRAGMENTS_COUNT 8

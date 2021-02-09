@@ -14,3 +14,5 @@ enum class SomeEnum(val x: Some) {
 
     abstract fun check(y: Some): Boolean
 }
+
+//FIR_FRAGMENTS_COUNT 11

@@ -33,3 +33,5 @@ fun withParameter(list: List<Some>) {
         println(s)
     }
 }
+
+//FIR_FRAGMENTS_COUNT 30

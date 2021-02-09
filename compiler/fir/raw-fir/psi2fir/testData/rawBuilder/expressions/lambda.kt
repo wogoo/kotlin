@@ -32,3 +32,5 @@ fun test(list: List<Int>) {
 val simple = { }
 
 val another = { 42 }
+
+//FIR_FRAGMENTS_COUNT 30

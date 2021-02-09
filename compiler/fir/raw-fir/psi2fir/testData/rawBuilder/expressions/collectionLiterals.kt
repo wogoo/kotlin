@@ -17,3 +17,5 @@ class Second
 
 @Ann3(["Alpha", "Omega"])
 class Third
+
+//FIR_FRAGMENTS_COUNT 10

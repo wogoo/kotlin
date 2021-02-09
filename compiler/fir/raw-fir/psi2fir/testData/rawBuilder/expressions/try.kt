@@ -10,3 +10,5 @@ fun some() {
         println("finally")
     }
 }
+
+//FIR_FRAGMENTS_COUNT 11

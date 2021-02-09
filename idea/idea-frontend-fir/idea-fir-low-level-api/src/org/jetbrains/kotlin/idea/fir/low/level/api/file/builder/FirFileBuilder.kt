@@ -5,17 +5,17 @@
 
 package org.jetbrains.kotlin.idea.fir.low.level.api.file.builder
 
-import org.jetbrains.kotlin.fir.builder.RawFirBuilder
-import org.jetbrains.kotlin.fir.builder.RawFirBuilderMode
+import org.jetbrains.kotlin.fir.FirElement
+import org.jetbrains.kotlin.fir.builder.*
 import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.scopes.FirScopeProvider
 import org.jetbrains.kotlin.idea.fir.low.level.api.FirPhaseRunner
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.idea.fir.low.level.api.annotations.ThreadSafe
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.checkCanceled
-import org.jetbrains.kotlin.idea.fir.low.level.api.util.lockWithPCECheck
+import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtFile
 
 /**
  * Responsible for building [FirFile] by [KtFile]
@@ -61,6 +61,39 @@ internal class FirFileBuilder(
             }
         }
         return firFile
+    }
+
+    fun getFirNodeResolvedToPhase(
+        anchorExpression: KtExpression,
+        targetExpression: KtExpression,
+        cache: ModuleFileCache,
+        @Suppress("SameParameterValue") toPhase: FirResolvePhase,
+        checkPCE: Boolean,
+        psiToFirElementMapper: PsiToFirElementMapper
+    ): FirElement? {
+        val needResolve = false //toPhase > FirResolvePhase.RAW_FIR
+        check(anchorExpression.isValid) { "Cannot build FIR node for invalid PSI context" }
+
+        val firFile = buildRawFirFileWithCaching(anchorExpression.containingKtFile, cache, lazyBodiesMode = false)
+        cache.firFileLockProvider.withReadLock(firFile) {
+            tryBuildFirFragment(
+                cache.session,
+                scopeProvider,
+                psiToFirElementMapper,
+                targetExpression,
+                anchorExpression
+            )
+        }
+
+        //val s = RawFirBuilder(session, scopeProvider, RawFirBuilderMode.NORMAL).buildFirFile(contextExpression.containingKtFile)
+        //val firFile = buildRawFirFileWithCaching(ktFile, cache, lazyBodiesMode = !needResolve)
+        if (needResolve) {
+//            cache.firFileLockProvider.withWriteLock(firFile) {
+//                if (firFile.resolvePhase >= toPhase) return@withWriteLock
+//                runResolveWithoutLock(firFile, fromPhase = firFile.resolvePhase, toPhase = toPhase, checkPCE = checkPCE)
+//            }
+        }
+        return null
     }
 
     /**

@@ -11,3 +11,5 @@ abstract class My {
 class Your : My() {
     class NestedThree : NestedOne()
 }
+
+//FIR_FRAGMENTS_COUNT 5

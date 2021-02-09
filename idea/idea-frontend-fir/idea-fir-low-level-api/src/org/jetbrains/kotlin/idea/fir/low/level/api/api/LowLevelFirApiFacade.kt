@@ -16,12 +16,8 @@ import org.jetbrains.kotlin.idea.caches.project.getModuleInfo
 import org.jetbrains.kotlin.idea.fir.low.level.api.FirIdeResolveStateService
 import org.jetbrains.kotlin.idea.fir.low.level.api.annotations.InternalForInline
 import org.jetbrains.kotlin.idea.fir.low.level.api.sessions.FirIdeSourcesSession
-import org.jetbrains.kotlin.idea.fir.low.level.api.util.ktDeclaration
 import org.jetbrains.kotlin.idea.util.getElementTextInContext
-import org.jetbrains.kotlin.psi.KtDeclaration
-import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.*
 import kotlin.reflect.KClass
 
 /**
@@ -175,6 +171,10 @@ inline fun <reified E : FirElement> KtElement.getOrBuildFirOfType(
  */
 fun KtFile.getFirFile(resolveState: FirModuleResolveState): FirFile =
     resolveState.getFirFile(this)
+
+fun KtExpression.getFirForExpression(anchor: KtExpression): FirElement? {
+    return getResolveState().getResolvedFragment(anchor, this)
+}
 
 class InvalidFirElementTypeException(
     ktElement: KtElement,

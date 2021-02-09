@@ -17,3 +17,5 @@ data class Two(x: Int, y: Int)
 fun bar(two: Two) {
     val (@Ann x, @Ann y) = two
 }
+
+//FIR_FRAGMENTS_COUNT 14

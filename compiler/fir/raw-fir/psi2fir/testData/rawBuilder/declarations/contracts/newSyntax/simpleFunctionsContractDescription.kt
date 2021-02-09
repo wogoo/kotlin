@@ -6,3 +6,5 @@ fun test1(s: MyClass?) contract [returns() implies (s != null), returns() implie
 fun test2() contract [returnsNotNull()] {
     test2()
 }
+
+//FIR_FRAGMENTS_COUNT 7

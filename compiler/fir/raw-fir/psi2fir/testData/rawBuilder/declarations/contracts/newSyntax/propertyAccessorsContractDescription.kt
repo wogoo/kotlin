@@ -23,3 +23,5 @@ class SomeClass(multiplier: Int?) {
         field = value
     }
 }
+
+//FIR_FRAGMENTS_COUNT 10

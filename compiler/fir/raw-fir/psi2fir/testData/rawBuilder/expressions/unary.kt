@@ -28,3 +28,5 @@ fun test4(y: Y) {
     val x1 = y.arr[0]++
     val x2 = ++y.arr[1]
 }
+
+//FIR_FRAGMENTS_COUNT 29

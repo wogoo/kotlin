@@ -20,3 +20,5 @@ fun test(some: Some): Int {
         this.foo() + this@with.extension()
     }
 }
+
+//FIR_FRAGMENTS_COUNT 14

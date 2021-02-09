@@ -18,3 +18,5 @@ class C {
 val anonObject = object {
     constructor()
 }
+
+//FIR_FRAGMENTS_COUNT 7

@@ -9,3 +9,5 @@ actual class MyClass
 actual fun foo() = "Hello"
 
 actual val x = 42
+
+//FIR_FRAGMENTS_COUNT 6

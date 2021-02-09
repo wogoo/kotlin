@@ -7,3 +7,5 @@ class NoPrimary {
 
     constructor(): this("")
 }
+
+//FIR_FRAGMENTS_COUNT 3

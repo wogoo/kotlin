@@ -5,3 +5,5 @@ fun test() {
     val x = nullableValue<Double>()
     val s = nullableValue<String>()
 }
+
+//FIR_FRAGMENTS_COUNT 7

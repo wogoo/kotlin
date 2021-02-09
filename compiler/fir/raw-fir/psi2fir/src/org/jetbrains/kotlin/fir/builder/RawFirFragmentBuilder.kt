@@ -6,7 +6,7 @@
 package org.jetbrains.kotlin.fir.builder
 
 import com.intellij.psi.PsiElement
-import com.intellij.psi.tree.IElementType
+import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.*
@@ -21,7 +21,6 @@ import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
-import org.jetbrains.kotlin.types.expressions.OperatorConventions
 import org.jetbrains.kotlin.util.OperatorNameConventions
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
@@ -30,10 +29,71 @@ fun interface PsiToFirElementMapper {
     fun mapToFirElement(ktElement: KtElement): FirElement?
 }
 
-private fun interface RawFirContextInterceptor {
-    fun intercept(context: Context<PsiElement>, psiElement: PsiElement)
+private interface RawFirContextInterceptor {
+    fun intercept(context: Context<PsiElement>, element: PsiElement)
+    fun allowToVisit(psiElement: PsiElement): Boolean
 }
 
+/**
+ * Checks if fragment expression is valid for FIR fragment building
+ */
+fun isAcceptableTarget(psiElement: PsiElement): Boolean =
+    when (psiElement) {
+        is KtFile,
+        is KtClassOrObject,
+        is KtTypeAlias,
+        is KtNamedFunction,
+        is KtLambdaExpression,
+        is KtAnonymousInitializer,
+        is KtProperty,
+        is KtTypeReference,
+        is KtAnnotationEntry,
+        is KtTypeParameter,
+        is KtTypeProjection,
+        is KtParameter,
+        is KtSimpleNameExpression,
+        is KtConstantExpression,
+        is KtBlockExpression,
+        is KtStringTemplateExpression,
+        is KtReturnExpression,
+        is KtTryExpression,
+        is KtIfExpression,
+        is KtWhenExpression,
+        is KtDoWhileExpression,
+        is KtWhileExpression,
+        is KtForExpression,
+        is KtBreakExpression,
+        is KtContinueExpression,
+        is KtBinaryExpression,
+        is KtBinaryExpressionWithTypeRHS,
+        is KtIsExpression,
+        is KtUnaryExpression,
+        is KtCallExpression,
+        is KtArrayAccessExpression,
+        is KtQualifiedExpression,
+        is KtThisExpression,
+        is KtSuperExpression,
+        is KtParenthesizedExpression,
+        is KtLabeledExpression,
+        is KtAnnotatedExpression,
+        is KtThrowExpression,
+        is KtDestructuringDeclaration,
+        is KtClassLiteralExpression,
+        is KtCallableReferenceExpression,
+        is KtCollectionLiteralExpression -> true
+        else -> false
+    }
+
+/**
+ * Build FIR node from fragment of PSI node (only for fragments that valid for that @see isAcceptableTarget)
+ * @param session Fir session for FIR context
+ * @param baseScopeProvider Fir scope provider that delivers a scopes
+ * @param psiToFirElementMapper Mapper from PSI to FIR node of the FirFile that is the context of fragment
+ * @param targetExpression PSI node fragment to translate into the FIR
+ * @param anchorExpression PSI node that points to the place of code where the fragment should be translated
+ * @param mode builder mode (should not be RawFirBuilderMode.LAZY_BODIES)
+ * @param moveAnchorToAcceptable elevate the anchor node on the acceptable node (nearest parent node where target node can be translated)
+ */
 fun tryBuildFirFragment(
     session: FirSession,
     baseScopeProvider: FirScopeProvider,
@@ -41,39 +101,53 @@ fun tryBuildFirFragment(
     targetExpression: KtExpression,
     anchorExpression: KtExpression,
     mode: RawFirBuilderMode = RawFirBuilderMode.NORMAL,
+    moveAnchorToAcceptable: Boolean = true
 ): FirElement? {
 
-    var result: FirElement? = null
-    val interceptor = RawFirContextInterceptor { context, element ->
-        if (element != anchorExpression) return@RawFirContextInterceptor
-        if (result != null) return@RawFirContextInterceptor
+    if (!isAcceptableTarget(targetExpression)) return null
 
-        val fragmentBuilder = RawFirBuilder(session, baseScopeProvider, mode, context)
-        result = fragmentBuilder.buildFirElement(targetExpression)
+    val patchedAnchorExpression =
+        if (moveAnchorToAcceptable) PsiTreeUtil.findFirstParent(anchorExpression, false, ::isAcceptableTarget) as KtElement
+        else anchorExpression
+
+    val interceptor = object : RawFirContextInterceptor {
+
+        var result: FirElement? = null
+
+        override fun intercept(context: Context<PsiElement>, element: PsiElement) {
+            if (element != patchedAnchorExpression) return
+            if (result != null) return
+
+            val fragmentBuilder = RawFirBuilder(session, baseScopeProvider, mode, context)
+            result = fragmentBuilder.buildFirElement(targetExpression)
+        }
+
+        override fun allowToVisit(psiElement: PsiElement): Boolean =
+            result == null && psiElement.isAncestor(patchedAnchorExpression, strict = false)
     }
 
-    val contextBuilder = RawFirContextBuilder(
+    val contextBuilder = RawFirFragmentBuilder(
         session,
-        psiToFirElementMapper,
         mode,
+        psiToFirElementMapper,
         interceptor
     )
+
     contextBuilder.execute(anchorExpression.containingKtFile)
 
-    return result
+    return interceptor.result
 }
 
 
-private class RawFirContextBuilder(
+private class RawFirFragmentBuilder(
     session: FirSession,
+    mode: RawFirBuilderMode,
     private val psiToFirElementMapper: PsiToFirElementMapper,
-    val mode: RawFirBuilderMode = RawFirBuilderMode.NORMAL,
-    private val contextInterceptor: RawFirContextInterceptor
-) : BaseFirBuilder<PsiElement>(session) {
-
-    private val stubMode get() = mode == RawFirBuilderMode.STUBS
+    private val contextInterceptor: RawFirContextInterceptor,
+) : RawFirBuilderBase(session, mode, Context()) {
 
     fun execute(file: KtFile) {
+        require(mode != RawFirBuilderMode.LAZY_BODIES) { "Fragment builder does not support LazyBodies mode" }
         file.accept(Visitor(), Unit)
     }
 
@@ -84,81 +158,36 @@ private class RawFirContextBuilder(
         }
     }
 
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun <T> T.intercept() where T : KtElement =
+        contextInterceptor.intercept(this@RawFirFragmentBuilder.context, this)
+
     override fun PsiElement.toFirSourceElement(kind: FirFakeSourceElementKind?): FirPsiSourceElement<*> {
-        val actualKind = kind ?: this@RawFirContextBuilder.context.forcedElementSourceKind ?: FirRealSourceElementKind
+        val actualKind = kind ?: this@RawFirFragmentBuilder.context.forcedElementSourceKind ?: FirRealSourceElementKind
         return this.toFirPsiSourceElement(actualKind)
     }
 
-    override val PsiElement.elementType: IElementType
-        get() = node.elementType
-
-    override val PsiElement.asText: String
-        get() = text
-
-    override val PsiElement.unescapedValue: String
-        get() = (this as KtEscapeStringTemplateEntry).unescapedValue
-
-    override fun PsiElement.getChildNodeByType(type: IElementType): PsiElement? {
-        return children.firstOrNull { it.node.elementType == type }
-    }
-
-    override fun PsiElement.getReferencedNameAsName(): Name {
-        return (this as KtSimpleNameExpression).getReferencedNameAsName()
-    }
-
-    override fun PsiElement.getLabelName(): String? {
-        return (this as? KtExpressionWithLabel)?.getLabelName()
-    }
-
-    override fun PsiElement.getExpressionInParentheses(): PsiElement? {
-        return (this as KtParenthesizedExpression).expression
-    }
-
-    override fun PsiElement.getAnnotatedExpression(): PsiElement? {
-        return (this as KtAnnotatedExpression).baseExpression
-    }
-
-    override fun PsiElement.getLabeledExpression(): PsiElement? {
-        return (this as KtLabeledExpression).baseExpression
-    }
-
-    override val PsiElement?.receiverExpression: PsiElement?
-        get() = (this as? KtQualifiedExpression)?.receiverExpression
-
-    override val PsiElement?.selectorExpression: PsiElement?
-        get() = (this as? KtQualifiedExpression)?.selectorExpression
-
-    override val PsiElement?.arrayExpression: PsiElement?
-        get() = (this as? KtArrayAccessExpression)?.arrayExpression
-
-    override val PsiElement?.indexExpressions: List<PsiElement>?
-        get() = (this as? KtArrayAccessExpression)?.indexExpressions
 
     private inner class Visitor : KtVisitor<Unit, Unit>() {
 
-        override fun visitKtElement(element: KtElement, data: Unit?) {
-            element.intercept()
-            super.visitKtElement(element, data)
-        }
-
         private fun KtElement?.convertSafe() =
-            this?.accept(this@Visitor, Unit)
+            this?.convert()
 
-        private fun KtElement.convert() =
-            this.accept(this@Visitor, Unit)
+        private fun KtElement.convert() {
+            if (contextInterceptor.allowToVisit(this)) {
+                this.accept(this@Visitor, Unit)
+            }
+        }
 
         private fun KtExpression?.toFirExpression() {
             if (!stubMode) convertSafe()
         }
 
-        private fun KtExpression.toFirStatement() = convertSafe()
-
         private fun KtDeclaration.toFirDeclaration(owner: KtClassOrObject) {
-            this.intercept()
             when (this) {
                 is KtSecondaryConstructor -> toFirConstructor()
                 is KtEnumEntry -> {
-                    val primaryConstructor = owner.primaryConstructor.interceptSafe()
+                    val primaryConstructor = owner.primaryConstructor
                     val ownerClassHasDefaultConstructor =
                         primaryConstructor?.valueParameters?.isEmpty() ?: owner.secondaryConstructors.let { constructors ->
                             constructors.isEmpty() || constructors.any { it.valueParameters.isEmpty() }
@@ -173,22 +202,19 @@ private class RawFirContextBuilder(
         }
 
         private fun KtExpression?.toFirBlock() {
-            this.interceptSafe()
             if (this is KtBlockExpression) {
-                accept(this@Visitor, Unit)
+                convert()
             } else {
-                this?.convert()
+                convertSafe()
             }
         }
 
         private fun KtDeclarationWithBody.buildFirBody() {
-            this.intercept()
             if (!hasBody()) return
-            require(mode != RawFirBuilderMode.LAZY_BODIES)
 
             if (hasBlockBody()) {
                 if (!stubMode) {
-                    bodyBlockExpression?.accept(this@Visitor, Unit)
+                    bodyBlockExpression.convertSafe()
                 }
             } else {
                 bodyExpression.toFirExpression()
@@ -200,7 +226,7 @@ private class RawFirContextBuilder(
 
             when (val expression = getArgumentExpression()) {
                 is KtConstantExpression, is KtStringTemplateExpression -> {
-                    expression.accept(this@Visitor, Unit)
+                    expression.convert()
                 }
                 else -> {
                     expression.toFirExpression()
@@ -209,8 +235,6 @@ private class RawFirContextBuilder(
         }
 
         private fun KtPropertyAccessor?.toFirPropertyAccessor(isGetter: Boolean) {
-            this.interceptSafe()
-
             if (this == null || !hasBody()) {
                 this?.extractAnnotations()
                 return
@@ -228,13 +252,13 @@ private class RawFirContextBuilder(
             withFir<FirFunction<*>> {
                 accessorTarget.bind(this)
             }
-            this@RawFirContextBuilder.context.firFunctionTargets += accessorTarget
+            this@RawFirFragmentBuilder.context.firFunctionTargets += accessorTarget
 
             extractValueParameters()
             this@toFirPropertyAccessor.obtainContractDescription()
             this@toFirPropertyAccessor.buildFirBody()
 
-            this@RawFirContextBuilder.context.firFunctionTargets.removeLast()
+            this@RawFirFragmentBuilder.context.firFunctionTargets.removeLast()
         }
 
         private fun KtParameter.toFirValueParameter() {
@@ -252,21 +276,18 @@ private class RawFirContextBuilder(
         }
 
         private fun KtTypeParameterListOwner.extractTypeParameters() {
-            this.intercept()
             for (typeParameter in typeParameters) {
                 typeParameter.convert()
             }
         }
 
         private fun KtDeclarationWithBody.extractValueParameters() {
-            this.intercept()
             for (valueParameter in valueParameters) {
                 valueParameter.toFirValueParameter()
             }
         }
 
         private fun KtCallElement.extractArguments() {
-            this.intercept()
             for (argument in valueArguments) {
                 argument.toFirExpression()
             }
@@ -274,9 +295,7 @@ private class RawFirContextBuilder(
 
 
         private fun generateDestructuringBlock(multiDeclaration: KtDestructuringDeclaration) {
-            multiDeclaration.intercept()
             for (entry in multiDeclaration.entries) {
-                entry.intercept()
                 if (entry.nameIdentifier?.text == "_") continue
                 entry.typeReference.convertSafe()
                 entry.extractAnnotations()
@@ -285,10 +304,8 @@ private class RawFirContextBuilder(
 
 
         private fun KtClassOrObject.extractSuperTypeListEntriesTo() {
-            this.intercept()
             var superTypeCallEntry: KtSuperTypeCallEntry? = null
             for (superTypeListEntry in superTypeListEntries) {
-                superTypeCallEntry.interceptSafe()
                 when (superTypeListEntry) {
                     is KtSuperTypeEntry -> {
                         superTypeListEntry.typeReference.convertSafe()
@@ -308,7 +325,6 @@ private class RawFirContextBuilder(
         }
 
         private fun KtPrimaryConstructor?.toFirConstructor(superTypeCallEntry: KtSuperTypeCallEntry?) {
-            superTypeCallEntry.interceptSafe()
             if (!stubMode) {
                 superTypeCallEntry?.extractArguments()
             }
@@ -330,8 +346,6 @@ private class RawFirContextBuilder(
         }
 
         private fun KtEnumEntry.toFirEnumEntry(ownerClassHasDefaultConstructor: Boolean) {
-            this.intercept()
-
             if (ownerClassHasDefaultConstructor && initializerList == null &&
                 annotationEntries.isEmpty() && body == null
             ) {
@@ -376,17 +390,16 @@ private class RawFirContextBuilder(
                     classOrObject.extractAnnotations()
                     classOrObject.extractTypeParameters()
 
-                    val typeParameters = context.capturedTypeParameters.map { buildOuterClassTypeParameterRef { symbol = it } }
-                    addCapturedTypeParameters(typeParameters.take(classOrObject.typeParameters.size))
-
                     classOrObject.withFir<FirRegularClass> {
+                        addCapturedTypeParameters(typeParameters.take(classOrObject.typeParameters.size))
+
                         val resolvedTypeRef = classOrObject.toDelegatedSelfType(this)
                         registerSelfType(resolvedTypeRef)
                     }
 
                     classOrObject.extractSuperTypeListEntriesTo()
 
-                    val primaryConstructor = classOrObject.primaryConstructor.interceptSafe()
+                    val primaryConstructor = classOrObject.primaryConstructor
                     if (primaryConstructor != null) {
                         for (valueParameter in primaryConstructor.valueParameters) {
                             if (valueParameter.hasValOrVar()) {
@@ -421,7 +434,6 @@ private class RawFirContextBuilder(
                     registerSelfType(delegatedSelfType)
                 }
 
-                objectDeclaration.intercept()
                 objectDeclaration.extractAnnotations()
                 objectDeclaration.extractSuperTypeListEntriesTo()
 
@@ -491,16 +503,16 @@ private class RawFirContextBuilder(
         }
 
         private fun KtContractEffectList.extractRawEffects() {
-            getExpressions().forEach { it.accept(this@Visitor, Unit) }
+            getExpressions().forEach { it.convert() }
         }
 
         override fun visitLambdaExpression(expression: KtLambdaExpression, data: Unit) {
             expression.intercept()
 
-            val literal = expression.functionLiteral.intercept()
+            val literal = expression.functionLiteral
 
             for (valueParameter in literal.valueParameters) {
-                val multiDeclaration = valueParameter.destructuringDeclaration.interceptSafe()
+                val multiDeclaration = valueParameter.destructuringDeclaration
                 if (multiDeclaration != null) {
                     valueParameter.typeReference?.convertSafe()
                     generateDestructuringBlock(multiDeclaration)
@@ -540,13 +552,13 @@ private class RawFirContextBuilder(
             this@toFirConstructor.withFir<FirFunction<*>> {
                 target.bind(this)
             }
-            this@RawFirContextBuilder.context.firFunctionTargets += target
+            this@RawFirFragmentBuilder.context.firFunctionTargets += target
 
             extractAnnotations()
             extractValueParameters()
             buildFirBody()
 
-            this@RawFirContextBuilder.context.firFunctionTargets.removeLast()
+            this@RawFirFragmentBuilder.context.firFunctionTargets.removeLast()
         }
 
         private fun KtConstructorDelegationCall.convert() {
@@ -557,8 +569,6 @@ private class RawFirContextBuilder(
 
         private fun KtProperty.toFirProperty() {
             typeReference.convertSafe()
-
-            require(mode != RawFirBuilderMode.LAZY_BODIES)
 
             if (hasInitializer()) {
                 if (!stubMode) initializer.toFirExpression()
@@ -606,24 +616,22 @@ private class RawFirContextBuilder(
         override fun visitTypeReference(typeReference: KtTypeReference, data: Unit) {
             typeReference.intercept()
 
-            val typeElement = typeReference.typeElement.interceptSafe()
+            val typeElement = typeReference.typeElement
 
             fun KtTypeElement?.unwrapNullable(): KtTypeElement? =
                 if (this is KtNullableType) this.innerType.unwrapNullable() else this
 
-            when (val unwrappedElement = typeElement.unwrapNullable().interceptSafe()) {
-                is KtDynamicType -> {
-                }
+            when (val unwrappedElement = typeElement.unwrapNullable()) {
                 is KtUserType -> {
-                    var referenceExpression = unwrappedElement.referenceExpression.interceptSafe()
+                    var referenceExpression = unwrappedElement.referenceExpression
                     if (referenceExpression != null) {
                         var ktQualifier: KtUserType? = unwrappedElement
                         do {
                             for (typeArgument in ktQualifier!!.typeArguments) {
                                 typeArgument.convert()
                             }
-                            ktQualifier = ktQualifier.qualifier.interceptSafe()
-                            referenceExpression = ktQualifier?.referenceExpression.interceptSafe()
+                            ktQualifier = ktQualifier.qualifier
+                            referenceExpression = ktQualifier?.referenceExpression
                         } while (referenceExpression != null)
 
                     }
@@ -658,7 +666,6 @@ private class RawFirContextBuilder(
             val parameterName = parameter.nameAsSafeName
 
             for (typeConstraint in owner.typeConstraints) {
-                typeConstraint.intercept()
                 val subjectName = typeConstraint.subjectTypeParameterName?.getReferencedNameAsName()
                 if (subjectName == parameterName) {
                     typeConstraint.boundTypeReference.convertSafe()
@@ -673,9 +680,7 @@ private class RawFirContextBuilder(
         override fun visitTypeProjection(typeProjection: KtTypeProjection, data: Unit) {
             typeProjection.intercept()
 
-            val projectionKind = typeProjection.projectionKind
-
-            if (projectionKind == KtProjectionKind.STAR || typeProjection.isPlaceholderProjection()) return
+            if (typeProjection.projectionKind == KtProjectionKind.STAR || typeProjection.isPlaceholderProjection()) return
 
             typeProjection.typeReference.convertSafe()
         }
@@ -685,6 +690,13 @@ private class RawFirContextBuilder(
             parameter.toFirValueParameter()
         }
 
+        override fun visitSimpleNameExpression(expression: KtSimpleNameExpression, data: Unit?) {
+            expression.intercept()
+        }
+
+        override fun visitConstantExpression(expression: KtConstantExpression, data: Unit?) {
+            expression.intercept()
+        }
 
         override fun visitBlockExpression(expression: KtBlockExpression, data: Unit) {
             expression.intercept()
@@ -693,7 +705,7 @@ private class RawFirContextBuilder(
 
         private fun configureBlockWithoutBuilding(expression: KtBlockExpression) {
             for (statement in expression.statements) {
-                statement.toFirStatement()
+                statement.convert()
             }
         }
 
@@ -701,7 +713,6 @@ private class RawFirContextBuilder(
             expression.intercept()
 
             for (entry in expression.entries) {
-                entry.intercept()
                 if (entry is KtStringTemplateEntryWithExpression) {
                     entry.expression.toFirExpression()
                 }
@@ -719,7 +730,6 @@ private class RawFirContextBuilder(
             expression.tryBlock.toFirBlock()
             expression.finallyBlock?.finalExpression?.toFirBlock()
             for (clause in expression.catchClauses) {
-                clause.intercept()
                 clause.catchParameter?.toFirValueParameter() ?: continue
                 clause.catchBody.toFirBlock()
             }
@@ -740,10 +750,10 @@ private class RawFirContextBuilder(
         override fun visitWhenExpression(expression: KtWhenExpression, data: Unit) {
             expression.intercept()
 
-            val ktSubjectExpression = expression.subjectExpression.interceptSafe()
+            val ktSubjectExpression = expression.subjectExpression
 
             val subjectExpression = when (ktSubjectExpression) {
-                is KtVariableDeclaration -> ktSubjectExpression.initializer.interceptSafe()
+                is KtVariableDeclaration -> ktSubjectExpression.initializer
                 else -> ktSubjectExpression
             }
             subjectExpression?.toFirExpression()
@@ -757,12 +767,10 @@ private class RawFirContextBuilder(
             //It used inside when expression so possibly we cant analyze subexpressions of when
 
             for (entry in expression.entries) {
-                entry.intercept()
                 entry.expression.toFirBlock()
                 if (!entry.isElse) {
                     if (hasSubject) {
                         for (condition in entry.conditions) {
-                            condition.intercept()
                             when (condition) {
                                 is KtWhenConditionWithExpression -> {
                                     condition.expression.toFirExpression()
@@ -783,22 +791,22 @@ private class RawFirContextBuilder(
             }
         }
 
-        private fun KtLoopExpression.configureX(generateBlock: () -> Unit) {
-            val label = this@RawFirContextBuilder.context.firLabels.pop()
+        private fun KtLoopExpression.configure(generateBlock: () -> Unit) {
+            val label = this@RawFirFragmentBuilder.context.firLabels.pop()
             val target = FirLoopTarget(label?.name)
             this.withFir<FirLoop> {
                 target.bind(this)
             }
-            this@RawFirContextBuilder.context.firLoopTargets += target
+            this@RawFirFragmentBuilder.context.firLoopTargets += target
             generateBlock()
-            this@RawFirContextBuilder.context.firLoopTargets.removeLast()
+            this@RawFirFragmentBuilder.context.firLoopTargets.removeLast()
         }
 
         override fun visitDoWhileExpression(expression: KtDoWhileExpression, data: Unit) {
             expression.intercept()
 
             expression.condition.toFirExpression()
-            expression.configureX {
+            expression.configure {
                 expression.body.toFirBlock()
             }
         }
@@ -807,7 +815,7 @@ private class RawFirContextBuilder(
             expression.intercept()
 
             expression.condition.toFirExpression()
-            expression.configureX {
+            expression.configure {
                 expression.body.toFirBlock()
             }
         }
@@ -817,22 +825,21 @@ private class RawFirContextBuilder(
 
             expression.loopRange.toFirExpression()
 
-            expression.configureX {
+            expression.configure {
                 val body = expression.body
                 if (body is KtBlockExpression) {
                     configureBlockWithoutBuilding(body)
                 } else {
-                    body?.toFirStatement()
+                    body?.convert()
                 }
 
-                val ktParameter = expression.loopParameter?.intercept()
+                val ktParameter = expression.loopParameter
                 if (ktParameter != null) {
                     ktParameter.typeReference.convertSafe()
 
-                    val multiDeclaration = ktParameter.destructuringDeclaration?.intercept()
+                    val multiDeclaration = ktParameter.destructuringDeclaration
                     if (multiDeclaration != null) {
                         for (entry in multiDeclaration.entries) {
-                            entry.intercept()
                             if (entry.nameIdentifier?.text == "_") continue
                             entry.typeReference.convertSafe()
                             entry.extractAnnotations()
@@ -842,13 +849,21 @@ private class RawFirContextBuilder(
             }
         }
 
+        override fun visitBreakExpression(expression: KtBreakExpression, data: Unit?) {
+            expression.intercept()
+        }
+
+        override fun visitContinueExpression(expression: KtContinueExpression, data: Unit?) {
+            expression.intercept()
+        }
+
         override fun visitBinaryExpression(expression: KtBinaryExpression, data: Unit) {
             expression.intercept()
 
             val operationToken = expression.operationToken
 
             if (operationToken == IDENTIFIER) {
-                context.calleeNamesForLambda += expression.operationReference.intercept().getReferencedNameAsName()
+                context.calleeNamesForLambda += expression.operationReference.getReferencedNameAsName()
             }
 
             expression.left.toFirExpression()
@@ -856,23 +871,6 @@ private class RawFirContextBuilder(
 
             if (operationToken == IDENTIFIER) {
                 context.calleeNamesForLambda.removeLast()
-            }
-
-            when (operationToken) {
-                ELVIS, ANDAND, OROR, in OperatorConventions.IN_OPERATIONS, in OperatorConventions.COMPARISON_OPERATIONS ->
-                    return
-            }
-
-            val conventionCallName = operationToken.toBinaryName()
-
-            if (conventionCallName == null && operationToken != IDENTIFIER) {
-                val firOperation = operationToken.toFirOperation()
-                if (firOperation in FirOperation.ASSIGNMENTS) {
-//TODO
-//                    return expression.left.generateAssignment(source, expression.right, rightArgument, firOperation) {
-//                        (this as KtExpression).toFirExpression("Incorrect expression in assignment: ${expression.text}")
-//                    }
-                }
             }
         }
 
@@ -897,10 +895,10 @@ private class RawFirContextBuilder(
             expression.baseExpression.toFirExpression()
         }
 
-        private fun splitToCalleeAndReceiverX(calleeExpression: KtExpression?): Name {
+        private fun splitToCalleeAndReceiver(calleeExpression: KtExpression?): Name {
             return when (calleeExpression) {
                 is KtSimpleNameExpression -> calleeExpression.getReferencedNameAsName()
-                is KtParenthesizedExpression -> splitToCalleeAndReceiverX(calleeExpression.expression.interceptSafe())
+                is KtParenthesizedExpression -> splitToCalleeAndReceiver(calleeExpression.expression)
                 null -> Name.special("<Call has no callee>")
                 is KtSuperExpression -> Name.special("<Super cannot be a callee>")
                 else -> {
@@ -913,7 +911,7 @@ private class RawFirContextBuilder(
         override fun visitCallExpression(expression: KtCallExpression, data: Unit) {
             expression.intercept()
 
-            val calleeReferenceName = splitToCalleeAndReceiverX(expression.calleeExpression.interceptSafe())
+            val calleeReferenceName = splitToCalleeAndReceiver(expression.calleeExpression)
 
             if (expression.valueArgumentList != null || expression.lambdaArguments.isNotEmpty()) {
                 context.calleeNamesForLambda += calleeReferenceName
@@ -941,11 +939,14 @@ private class RawFirContextBuilder(
 
         override fun visitQualifiedExpression(expression: KtQualifiedExpression, data: Unit) {
             expression.intercept()
-            expression.receiverExpression.intercept()
 
             val selector = expression.selectorExpression ?: return
             selector.toFirExpression()
             expression.receiverExpression.toFirExpression()
+        }
+
+        override fun visitThisExpression(expression: KtThisExpression, data: Unit?) {
+            expression.intercept()
         }
 
         override fun visitSuperExpression(expression: KtSuperExpression, data: Unit) {
@@ -957,7 +958,7 @@ private class RawFirContextBuilder(
         override fun visitParenthesizedExpression(expression: KtParenthesizedExpression, data: Unit) {
             expression.intercept()
 
-            expression.expression?.accept(this, data)
+            expression.expression.convertSafe()
         }
 
         override fun visitLabeledExpression(expression: KtLabeledExpression, data: Unit) {
@@ -972,7 +973,7 @@ private class RawFirContextBuilder(
                 }
             }
 
-            expression.baseExpression?.accept(this, data)
+            expression.baseExpression.convertSafe()
 
             if (size != context.firLabels.size) {
                 context.firLabels.removeLast()
@@ -982,7 +983,7 @@ private class RawFirContextBuilder(
         override fun visitAnnotatedExpression(expression: KtAnnotatedExpression, data: Unit) {
             expression.intercept()
 
-            expression.baseExpression?.accept(this, data)
+            expression.baseExpression.convertSafe()
             expression.extractAnnotations()
         }
 
@@ -1009,14 +1010,6 @@ private class RawFirContextBuilder(
             expression.intercept()
 
             expression.receiverExpression?.toFirExpression()
-        }
-
-        private fun <T> T.intercept(): T where T : KtElement = this.also {
-            contextInterceptor.intercept(this@RawFirContextBuilder.context, this)
-        }
-
-        private fun <T> T?.interceptSafe(): T? where T : KtElement = this?.also {
-            contextInterceptor.intercept(this@RawFirContextBuilder.context, this)
         }
 
         override fun visitCollectionLiteralExpression(expression: KtCollectionLiteralExpression, data: Unit) {

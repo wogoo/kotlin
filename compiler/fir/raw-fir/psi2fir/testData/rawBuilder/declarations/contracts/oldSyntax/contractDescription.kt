@@ -60,3 +60,6 @@ fun test_8() {
     }
     test_8()
 }
+
+//FIR_FRAGMENTS_IGNORE
+//FIR_FRAGMENTS_COUNT

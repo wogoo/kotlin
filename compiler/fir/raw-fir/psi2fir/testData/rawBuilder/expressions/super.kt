@@ -17,3 +17,5 @@ class C : A, B {
         super<B>.foo()
     }
 }
+
+//FIR_FRAGMENTS_COUNT 13

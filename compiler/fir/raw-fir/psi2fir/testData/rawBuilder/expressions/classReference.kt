@@ -12,3 +12,5 @@ fun test() {
     test.A::class.java
     A()::class.java
 }
+
+//FIR_FRAGMENTS_COUNT 9

@@ -22,3 +22,5 @@ val test6 = A::qux
 val test7 = ::baz
 
 val test8 = A?::foo
+
+//FIR_FRAGMENTS_COUNT 15

@@ -21,10 +21,7 @@ import org.jetbrains.kotlin.idea.fir.low.level.api.file.builder.ModuleFileCache
 import org.jetbrains.kotlin.idea.fir.low.level.api.file.structure.FirElementsRecorder
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.containingKtFileIfAny
 import org.jetbrains.kotlin.idea.fir.low.level.api.util.originalKtFile
-import org.jetbrains.kotlin.psi.KtDeclaration
-import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.*
 
 internal class FirModuleResolveStateForCompletion(
     override val project: Project,
@@ -73,6 +70,10 @@ internal class FirModuleResolveStateForCompletion(
         toPhase: FirResolvePhase,
     ) {
         originalState.lazyResolveDeclarationForCompletion(firFunction, containerFirFile, firIdeProvider, toPhase)
+    }
+
+    override fun getResolvedFragment(anchorExpression: KtExpression, targetExpression: KtExpression): FirElement? {
+        error("Not yet implemented")
     }
 
     override fun getFirFile(declaration: FirDeclaration, cache: ModuleFileCache): FirFile? {

@@ -23,3 +23,5 @@ fun testQualified(first: My, second: My?) {
     first.copy().foo()
     first.x = 42
 }
+
+//FIR_FRAGMENTS_COUNT 19

@@ -44,3 +44,5 @@ enum class PseudoInsn(val signature: String = "()V") {
 
     fun emit() {}
 }
+
+//FIR_FRAGMENTS_COUNT 19

@@ -6,3 +6,5 @@ fun foo() {
     val w = y - x
     return w
 }
+
+//FIR_FRAGMENTS_COUNT 8

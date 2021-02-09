@@ -11,3 +11,5 @@ val delegate = object: ReadWriteProperty<Any?, Int> {
 val value by delegate
 
 var variable by delegate
+
+//FIR_FRAGMENTS_COUNT 13

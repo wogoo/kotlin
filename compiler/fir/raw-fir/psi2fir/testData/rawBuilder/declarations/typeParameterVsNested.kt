@@ -15,3 +15,5 @@ abstract class My<T : Some> {
 
     class Some : T()
 }
+
+//FIR_FRAGMENTS_COUNT 7

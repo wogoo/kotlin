@@ -15,3 +15,5 @@ fun withLocals(p: Int): Int {
 
     return sum(code, Local(1).diff(), fun(x: Int, y: Int) = x + y)
 }
+
+//FIR_FRAGMENTS_COUNT 21

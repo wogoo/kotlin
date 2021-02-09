@@ -5,3 +5,5 @@ class WithInit(x: Int) {
         this.x = x
     }
 }
+
+//FIR_FRAGMENTS_COUNT 4

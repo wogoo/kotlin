@@ -5,3 +5,5 @@ class Outer {
 
     object Obj : Base("")
 }
+
+//FIR_FRAGMENTS_COUNT 5

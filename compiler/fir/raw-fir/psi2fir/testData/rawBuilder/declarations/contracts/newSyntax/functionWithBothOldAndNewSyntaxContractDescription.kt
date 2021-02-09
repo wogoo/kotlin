@@ -4,3 +4,5 @@ fun test1(s: String?) contract [returnsNotNull()] {
     }
     test1()
 }
+
+//FIR_FRAGMENTS_COUNT 6

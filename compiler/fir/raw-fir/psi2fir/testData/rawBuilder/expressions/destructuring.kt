@@ -11,3 +11,5 @@ fun foo(some: Some) {
 fun bar(some: Some) {
     val (a, _, `_`) = some
 }
+
+//FIR_FRAGMENTS_COUNT 14

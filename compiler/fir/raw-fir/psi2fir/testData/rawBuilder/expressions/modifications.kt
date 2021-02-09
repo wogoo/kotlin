@@ -15,3 +15,5 @@ fun List<String>.modify() {
 fun Any.modify() {
     (this as List<Int>) += 42
 }
+
+//FIR_FRAGMENTS_COUNT 14

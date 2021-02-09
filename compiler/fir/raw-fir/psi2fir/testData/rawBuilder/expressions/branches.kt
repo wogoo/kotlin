@@ -32,3 +32,5 @@ fun grade(g: Int): String {
         else -> "Unknown"
     }
 }
+
+//FIR_FRAGMENTS_COUNT 26
