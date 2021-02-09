@@ -433,13 +433,14 @@ private class ScriptToClassTransformer(
         visitExpression(expression)
     }
 
-    private fun getAccessCallForEarlierScript(expression: IrDeclarationReference, maybeScriptType: IrType): IrCall? {
+    private fun getAccessCallForEarlierScript(expression: IrDeclarationReference, maybeScriptType: IrType): IrExpression? {
         if (irScript.earlierScripts?.isEmpty() != false) return null
         val scriptSymbol = maybeScriptType.classifierOrNull ?: return null
+        val scriptSymbolOwner = scriptSymbol.owner
         val earlierScriptIndex = when {
-            scriptSymbol.owner is IrScript ->
+            scriptSymbolOwner is IrScript ->
                 irScript.earlierScripts!!.indexOfFirst { it == scriptSymbol }
-            (scriptSymbol.owner as? IrClass)?.origin == IrDeclarationOrigin.SCRIPT_CLASS -> {
+            (scriptSymbolOwner as? IrClass)?.origin == IrDeclarationOrigin.SCRIPT_CLASS -> {
                 irScript.earlierScripts!!.indexOfFirst { it.owner.targetClass == scriptSymbol }
             }
             else -> return null
@@ -448,10 +449,18 @@ private class ScriptToClassTransformer(
             val objArray = context.irBuiltIns.arrayClass
             val objArrayGet = objArray.functions.single { it.owner.name == OperatorNameConventions.GET }
             val builder = context.createIrBuilder(expression.symbol)
-            return builder.irCall(objArrayGet).apply {
+            val getPrevScriptObjectExpression = builder.irCall(objArrayGet).apply {
                 dispatchReceiver = builder.irGet(objArray.defaultType, irScript.earlierScriptsParameter!!.symbol)
                 putValueArgument(0, earlierScriptIndex.toIrConst(objArrayGet.owner.valueParameters.first().type))
             }
+            val prevScriptClassType =
+                when {
+                    scriptSymbolOwner is IrScript -> scriptSymbolOwner.targetClass?.owner
+                    (scriptSymbolOwner as? IrClass)?.origin == IrDeclarationOrigin.SCRIPT_CLASS -> scriptSymbolOwner
+                    else -> null
+                }
+            return if (prevScriptClassType == null) getPrevScriptObjectExpression
+            else builder.irImplicitCast(getPrevScriptObjectExpression, prevScriptClassType.defaultType)
         }
         return null
     }
