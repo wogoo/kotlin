@@ -407,7 +407,7 @@ val DIAGNOSTICS_LIST = DiagnosticListBuilder.buildDiagnosticList {
     }
 }
 
-private inline fun <reified P : PsiElement> DiagnosticListBuilder.exposedVisibilityError(
+private inline fun <reified P : PsiElement> DiagnosticGroupBuilder.exposedVisibilityError(
     positioningStrategy: PositioningStrategy = PositioningStrategy.DEFAULT
 ) = error<FirSourceElement, P>(positioningStrategy) {
     parameter<FirEffectiveVisibility>("elementVisibility")

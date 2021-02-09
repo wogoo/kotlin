@@ -33,8 +33,7 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
 
     private fun SmartPrinter.printErrorsObject(diagnosticList: DiagnosticList) {
         inBracketsWithIndent("object FirErrors") {
-            val groups = diagnosticList.diagnostics.groupBy { it.group }
-            for ((group, diagnostics) in groups) {
+            for ((group, diagnostics) in diagnosticList.groups) {
                 printDiagnosticGroup(group, diagnostics)
                 println()
             }
@@ -110,7 +109,7 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
 
     @OptIn(ExperimentalStdlibApi::class)
     private fun collectImports(diagnosticList: DiagnosticList): Collection<String> = buildSet {
-        diagnosticList.diagnostics.forEach { diagnostic ->
+        diagnosticList.allDiagnostics.forEach { diagnostic ->
             for (typeArgument in diagnostic.getAllTypeArguments()) {
                 typeArgument.collectClassNamesTo(this)
             }

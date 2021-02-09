@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtVisitorVoid
 import kotlin.reflect.KClass
 
-abstract class AbstractHLInspection<PSI : KtElement, INPUT : HLApplicatorInput>(
+abstract class AbstractHLInspection<PSI : PsiElement, INPUT : HLApplicatorInput>(
     val elementType: KClass<PSI>
 ) : AbstractKotlinInspection() {
     final override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean, session: LocalInspectionToolSession) =

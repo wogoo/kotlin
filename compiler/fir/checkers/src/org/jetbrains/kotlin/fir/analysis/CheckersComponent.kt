@@ -18,28 +18,44 @@ import org.jetbrains.kotlin.fir.analysis.extensions.FirAdditionalCheckersExtensi
 @RequiresOptIn
 annotation class CheckersComponentInternal
 
+abstract class CheckersComponent {
+    abstract val declarationCheckers: DeclarationCheckers
+    abstract val expressionCheckers: ExpressionCheckers
+
+    @SessionConfiguration
+    @OptIn(CheckersComponentInternal::class)
+    abstract fun register(checkers: DeclarationCheckers)
+
+    @SessionConfiguration
+    @OptIn(CheckersComponentInternal::class)
+    abstract fun register(checkers: ExpressionCheckers)
+
+    @SessionConfiguration
+    abstract fun register(checkers: FirAdditionalCheckersExtension)
+}
+
 @NoMutableState
-class CheckersComponent : FirSessionComponent {
-    val declarationCheckers: DeclarationCheckers get() = _declarationCheckers
+class CheckersComponentImpl : FirSessionComponent, CheckersComponent() {
+    override val declarationCheckers: DeclarationCheckers get() = _declarationCheckers
     private val _declarationCheckers = ComposedDeclarationCheckers()
 
-    val expressionCheckers: ExpressionCheckers get() = _expressionCheckers
+    override val expressionCheckers: ExpressionCheckers get() = _expressionCheckers
     private val _expressionCheckers = ComposedExpressionCheckers()
 
     @SessionConfiguration
     @OptIn(CheckersComponentInternal::class)
-    fun register(checkers: DeclarationCheckers) {
+    override fun register(checkers: DeclarationCheckers) {
         _declarationCheckers.register(checkers)
     }
 
     @SessionConfiguration
     @OptIn(CheckersComponentInternal::class)
-    fun register(checkers: ExpressionCheckers) {
+    override fun register(checkers: ExpressionCheckers) {
         _expressionCheckers.register(checkers)
     }
 
     @SessionConfiguration
-    fun register(checkers: FirAdditionalCheckersExtension) {
+    override fun register(checkers: FirAdditionalCheckersExtension) {
         register(checkers.declarationCheckers)
         register(checkers.expressionCheckers)
     }
