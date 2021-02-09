@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.ir.declarations.lazy
 
+import org.jetbrains.kotlin.ir.IrLock
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -23,7 +24,7 @@ private class SynchronizedLazyVar<T>(initializer: () -> T) : ReadWriteProperty<A
         get() {
             @Suppress("UNCHECKED_CAST")
             if (isInitialized) return _value as T
-            synchronized(this) {
+            synchronized(IrLock) {
                 if (!isInitialized) {
                     _value = initializer!!()
                     isInitialized = true
@@ -39,7 +40,7 @@ private class SynchronizedLazyVar<T>(initializer: () -> T) : ReadWriteProperty<A
     override fun getValue(thisRef: Any?, property: KProperty<*>): T = value
 
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
-        synchronized(this) {
+        synchronized(IrLock) {
             this._value = value
             isInitialized = true
         }
