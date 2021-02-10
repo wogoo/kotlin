@@ -327,7 +327,7 @@ class IrElementToJsExpressionTransformer : BaseIrElementToJsNodeTransformer<JsEx
         )
 
     private fun IrValueDeclaration.isThisReceiver(): Boolean = when (val p = parent) {
-        is IrSimpleFunction -> this === p.dispatchReceiverParameter
+        is IrSimpleFunction -> this === p.dispatchReceiverParameter || this == p.extensionReceiverParameter
         is IrClass -> this === p.thisReceiver
         else -> false
     }

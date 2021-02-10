@@ -70,7 +70,7 @@ dependencies {
     testRuntime(project(":compiler:backend-common"))
     testRuntime(commonDep("org.fusesource.jansi", "jansi"))
 
-    atomicfuClasspath("org.jetbrains.kotlinx:atomicfu-js:0.14.4-1.4-test") {
+    atomicfuClasspath("org.jetbrains.kotlinx:atomicfu-js:0.15.1") {
         isTransitive = false
     }
 
