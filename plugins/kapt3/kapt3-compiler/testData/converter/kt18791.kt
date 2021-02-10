@@ -52,6 +52,8 @@ import lib.R.id.textView
 
 annotation class Bind(val id: Int)
 
+annotation class MultiValue(val ids: IntArray)
+
 @Target(AnnotationTarget.FIELD)
 annotation class BindField(val id: Int)
 
@@ -110,6 +112,15 @@ class MyActivity {
 
     @Bind(B.id.textView)
     fun plainIntConstant() {}
+
+    @MultiValue(ids = [])
+    fun multi0() {}
+
+    @MultiValue(ids = [B.id.textView])
+    fun multi1() {}
+
+    @MultiValue(ids = [B.id.textView, B.a3])
+    fun multi2() {}
 
     const val propA = B.id.textView
     val propB = B.id.textView
