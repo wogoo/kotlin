@@ -5,6 +5,8 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.cir.factory
 
+import kotlinx.metadata.KmType
+import kotlinx.metadata.KmVariance
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
@@ -22,11 +24,25 @@ object CirTypeFactory {
             arguments = emptyList(),
             isMarkedNullable = false
         )
+
+        // just a temporary solution until full type resolution is implemented
+        internal val NON_EXISTING_TYPE = createClassType(
+            classId = CirEntityId.create("non/existing/type/ABCDEF01234"),
+            outerType = null,
+            visibility = DescriptorVisibilities.PUBLIC,
+            arguments = emptyList(),
+            isMarkedNullable = false
+        )
     }
 
     private val classTypeInterner = Interner<CirClassType>()
     private val typeAliasTypeInterner = Interner<CirTypeAliasType>()
     private val typeParameterTypeInterner = Interner<CirTypeParameterType>()
+
+    fun create(source: KmType, useAbbreviation: Boolean = true): CirType {
+        // TODO: implement
+        return StandardTypes.NON_EXISTING_TYPE
+    }
 
     fun create(source: KotlinType, useAbbreviation: Boolean = true): CirType = source.unwrap().run {
         when (this) {
@@ -146,6 +162,13 @@ object CirTypeFactory {
                     isMarkedNullable = true
                 )
             }
+
+    @Suppress("NOTHING_TO_INLINE")
+    inline fun decodeVariance(variance: KmVariance): Variance = when (variance) {
+        KmVariance.INVARIANT -> Variance.INVARIANT
+        KmVariance.IN -> Variance.IN_VARIANCE
+        KmVariance.OUT -> Variance.OUT_VARIANCE
+    }
 
     private fun createClassTypeWithAllOuterTypes(
         classDescriptor: ClassDescriptor,

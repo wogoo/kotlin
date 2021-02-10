@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.descriptors.commonizer.utils
 
 import kotlinx.metadata.ClassName
+import kotlinx.metadata.KmAnnotation
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.descriptors.PackageFragmentDescriptor
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
@@ -17,10 +18,13 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.serialization.konan.impl.ForwardDeclarationsFqNames
 
 internal val DEPRECATED_ANNOTATION_FQN: FqName = FqName(Deprecated::class.java.name)
-internal val DEPRECATED_ANNOTATION_CLASS_ID: CirEntityId = CirEntityId.create("kotlin/Deprecated")
+internal const val DEPRECATED_ANNOTATION_FULL_NAME: ClassName = "kotlin/Deprecated"
+internal val DEPRECATED_ANNOTATION_CLASS_ID: CirEntityId = CirEntityId.create(DEPRECATED_ANNOTATION_FULL_NAME)
 
-internal val ANY_CLASS_ID: CirEntityId = CirEntityId.create("kotlin/Any")
-private val NOTHING_CLASS_ID: CirEntityId = CirEntityId.create("kotlin/Nothing")
+internal const val ANY_CLASS_FULL_NAME: ClassName = "kotlin/Any"
+internal val ANY_CLASS_ID: CirEntityId = CirEntityId.create(ANY_CLASS_FULL_NAME)
+
+internal val NOTHING_CLASS_ID: CirEntityId = CirEntityId.create("kotlin/Nothing")
 
 internal val SPECIAL_CLASS_WITHOUT_SUPERTYPES_CLASS_IDS: List<CirEntityId> = listOf(
     ANY_CLASS_ID,
@@ -49,6 +53,10 @@ private val OBJC_INTEROP_CALLABLE_ANNOTATIONS: List<CirName> = listOf(
     CirName.create("ObjCFactory")
 )
 
+private val OBJC_INTEROP_CALLABLE_ANNOTATION_FULL_NAMES: List<ClassName> = OBJC_INTEROP_CALLABLE_ANNOTATIONS.map { name ->
+    CirEntityId.create(CINTEROP_PACKAGE, name).toString()
+}
+
 internal val DEFAULT_CONSTRUCTOR_NAME: CirName = CirName.create("<init>")
 internal val DEFAULT_SETTER_VALUE_NAME: CirName = CirName.create("value")
 
@@ -70,3 +78,6 @@ internal val AnnotationDescriptor.isObjCInteropCallableAnnotation: Boolean
         return CirName.create(classifier.name) in OBJC_INTEROP_CALLABLE_ANNOTATIONS
                 && (classifier.containingDeclaration as? PackageFragmentDescriptor)?.fqName?.let(CirPackageName::create) == CINTEROP_PACKAGE
     }
+
+internal val KmAnnotation.isObjCInteropCallableAnnotation: Boolean
+    get() = className in OBJC_INTEROP_CALLABLE_ANNOTATION_FULL_NAMES

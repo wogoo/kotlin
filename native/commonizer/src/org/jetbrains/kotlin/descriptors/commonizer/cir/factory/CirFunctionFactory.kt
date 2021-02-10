@@ -5,9 +5,15 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.cir.factory
 
+import kotlinx.metadata.Flag
+import kotlinx.metadata.KmFunction
+import kotlinx.metadata.klib.annotations
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirFunctionImpl
+import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeCallableKind
+import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeModality
+import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
 
 object CirFunctionFactory {
@@ -23,6 +29,21 @@ object CirFunctionFactory {
         extensionReceiver = source.extensionReceiverParameter?.let(CirExtensionReceiverFactory::create),
         returnType = CirTypeFactory.create(source.returnType!!),
         kind = source.kind,
+        modifiers = CirFunctionModifiersFactory.create(source),
+    )
+
+    fun create(name: CirName, source: KmFunction, containingClass: CirContainingClass?): CirFunction = create(
+        annotations = CirAnnotationFactory.createAnnotations(source.flags, source::annotations),
+        name = name,
+        typeParameters = source.typeParameters.compactMap(CirTypeParameterFactory::create),
+        visibility = decodeVisibility(source.flags),
+        modality = decodeModality(source.flags),
+        containingClass = containingClass,
+        valueParameters = source.valueParameters.compactMap(CirValueParameterFactory::create),
+        hasStableParameterNames = !Flag.Function.HAS_NON_STABLE_PARAMETER_NAMES(source.flags),
+        extensionReceiver = source.receiverParameterType?.let(CirExtensionReceiverFactory::create),
+        returnType = CirTypeFactory.create(source.returnType),
+        kind = decodeCallableKind(source.flags),
         modifiers = CirFunctionModifiersFactory.create(source),
     )
 
