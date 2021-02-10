@@ -694,8 +694,10 @@ class KotlinMPPGradleModelBuilder : ModelBuilderService {
 
     private fun buildCompilationArguments(compileKotlinTask: Task): KotlinCompilationArguments {
         val compileTaskClass = compileKotlinTask.javaClass
-        val getCurrentArguments = compileTaskClass.getMethodOrNull("getSerializedCompilerArguments")
-        val getDefaultArguments = compileTaskClass.getMethodOrNull("getDefaultSerializedCompilerArguments")
+        val getCurrentArguments = compileTaskClass.getMethodOrNull("getFullSerializedCompilerArguments")
+            ?: compileTaskClass.getMethodOrNull("getSerializedCompilerArguments")
+        val getDefaultArguments = compileTaskClass.getMethodOrNull("getFullDefaultSerializedCompilerArguments")
+            ?: compileTaskClass.getMethodOrNull("getDefaultSerializedCompilerArguments")
         val currentArguments = safelyGetArguments(compileKotlinTask, getCurrentArguments)
         val defaultArguments = safelyGetArguments(compileKotlinTask, getDefaultArguments)
         return KotlinCompilationArgumentsImpl(defaultArguments.toTypedArray(), currentArguments.toTypedArray())

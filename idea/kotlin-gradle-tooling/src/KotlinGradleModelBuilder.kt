@@ -173,9 +173,13 @@ class KotlinGradleModelBuilder : AbstractKotlinGradleModelBuilder() {
             if (compileTask.javaClass.name !in kotlinCompileTaskClasses) return@forEach
 
             val sourceSetName = compileTask.getSourceSetName()
-            val currentArguments = compileTask.getCompilerArguments("getSerializedCompilerArguments")
-                ?: compileTask.getCompilerArguments("getSerializedCompilerArgumentsIgnoreClasspathIssues") ?: emptyList()
-            val defaultArguments = compileTask.getCompilerArguments("getDefaultSerializedCompilerArguments").orEmpty()
+            val currentArguments = compileTask.getCompilerArguments("getFullSerializedCompilerArguments")
+                ?: compileTask.getCompilerArguments("getFullSerializedCompilerArgumentsIgnoreClasspathIssues")
+                ?: compileTask.getCompilerArguments("getSerializedCompilerArguments")
+                ?: compileTask.getCompilerArguments("getSerializedCompilerArgumentsIgnoreClasspathIssues")
+                ?: emptyList()
+            val defaultArguments = compileTask.getCompilerArguments("getFullDefaultSerializedCompilerArguments")
+                ?: compileTask.getCompilerArguments("getDefaultSerializedCompilerArguments").orEmpty()
             val dependencyClasspath = compileTask.getDependencyClasspath()
             compilerArgumentsBySourceSet[sourceSetName] = ArgsInfoImpl(currentArguments, defaultArguments, dependencyClasspath)
             extraProperties.acknowledgeTask(compileTask, null)
