@@ -18,7 +18,7 @@ public open class CharProgression
             start: Char,
             endInclusive: Char,
             step: Int
-    ) : Iterable<Char> {
+    ) : Collection<Char> {
     init {
         if (step == 0) throw kotlin.IllegalArgumentException("Step must be non-zero.")
         if (step == Int.MIN_VALUE) throw kotlin.IllegalArgumentException("Step must be greater than Int.MIN_VALUE to avoid overflow on negation.")
@@ -42,7 +42,7 @@ public open class CharProgression
     override fun iterator(): CharIterator = CharProgressionIterator(first, last, step)
 
     /** Checks if the progression is empty. */
-    public open fun isEmpty(): Boolean = if (step > 0) first > last else first < last
+    public override fun isEmpty(): Boolean = if (step > 0) first > last else first < last
 
     override fun equals(other: Any?): Boolean =
         other is CharProgression && (isEmpty() && other.isEmpty() ||
@@ -52,6 +52,18 @@ public open class CharProgression
         if (isEmpty()) -1 else (31 * (31 * first.toInt() + last.toInt()) + step)
 
     override fun toString(): String = if (step > 0) "$first..$last step $step" else "$first downTo $last step ${-step}"
+
+    override val size: Int
+        get() = if (isEmpty()) 0 else (last - first) / step + 1
+
+    override fun contains(@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") /* for the backward compatibility with old names */ value: Char): Boolean = when {
+        this.isEmpty() -> false
+        step > 0 && value >= first && value <= last -> (value - first) % step == 0
+        step < 0 && value <= first && value >= last -> (first - value) % (-step) == 0
+        else -> false
+    }
+    
+    override fun containsAll(elements: Collection<Char>): Boolean = if (this.isEmpty()) elements.isEmpty() else elements.all { it in this }
 
     companion object {
         /**
@@ -75,7 +87,7 @@ public open class IntProgression
             start: Int,
             endInclusive: Int,
             step: Int
-    ) : Iterable<Int> {
+    ) : Collection<Int> {
     init {
         if (step == 0) throw kotlin.IllegalArgumentException("Step must be non-zero.")
         if (step == Int.MIN_VALUE) throw kotlin.IllegalArgumentException("Step must be greater than Int.MIN_VALUE to avoid overflow on negation.")
@@ -99,7 +111,7 @@ public open class IntProgression
     override fun iterator(): IntIterator = IntProgressionIterator(first, last, step)
 
     /** Checks if the progression is empty. */
-    public open fun isEmpty(): Boolean = if (step > 0) first > last else first < last
+    public override fun isEmpty(): Boolean = if (step > 0) first > last else first < last
 
     override fun equals(other: Any?): Boolean =
         other is IntProgression && (isEmpty() && other.isEmpty() ||
@@ -109,6 +121,18 @@ public open class IntProgression
         if (isEmpty()) -1 else (31 * (31 * first + last) + step)
 
     override fun toString(): String = if (step > 0) "$first..$last step $step" else "$first downTo $last step ${-step}"
+
+    override val size: Int
+        get() = if (isEmpty()) 0 else (last - first) / step + 1
+
+    override fun contains(@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") /* for the backward compatibility with old names */ value: Int): Boolean = when {
+        this.isEmpty() -> false
+        step > 0 && value >= first && value <= last -> (value - first) % step == 0
+        step < 0 && value <= first && value >= last -> (first - value) % (-step) == 0
+        else -> false
+    }
+    
+    override fun containsAll(elements: Collection<Int>): Boolean = if (this.isEmpty()) elements.isEmpty() else elements.all { it in this }
 
     companion object {
         /**
@@ -132,7 +156,7 @@ public open class LongProgression
             start: Long,
             endInclusive: Long,
             step: Long
-    ) : Iterable<Long> {
+    ) : Collection<Long> {
     init {
         if (step == 0L) throw kotlin.IllegalArgumentException("Step must be non-zero.")
         if (step == Long.MIN_VALUE) throw kotlin.IllegalArgumentException("Step must be greater than Long.MIN_VALUE to avoid overflow on negation.")
@@ -156,7 +180,7 @@ public open class LongProgression
     override fun iterator(): LongIterator = LongProgressionIterator(first, last, step)
 
     /** Checks if the progression is empty. */
-    public open fun isEmpty(): Boolean = if (step > 0) first > last else first < last
+    public override fun isEmpty(): Boolean = if (step > 0) first > last else first < last
 
     override fun equals(other: Any?): Boolean =
         other is LongProgression && (isEmpty() && other.isEmpty() ||
@@ -166,6 +190,18 @@ public open class LongProgression
         if (isEmpty()) -1 else (31 * (31 * (first xor (first ushr 32)) + (last xor (last ushr 32))) + (step xor (step ushr 32))).toInt()
 
     override fun toString(): String = if (step > 0) "$first..$last step $step" else "$first downTo $last step ${-step}"
+
+    override val size: Int
+        get() = if (isEmpty()) 0 else ((last - first) / step + 1).toIntExactOrNull() ?: Int.MAX_VALUE
+
+    override fun contains(@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") /* for the backward compatibility with old names */ value: Long): Boolean = when {
+        this.isEmpty() -> false
+        step > 0 && value >= first && value <= last -> (value - first) % step == 0L
+        step < 0 && value <= first && value >= last -> (first - value) % (-step) == 0L
+        else -> false
+    }
+    
+    override fun containsAll(elements: Collection<Long>): Boolean = if (this.isEmpty()) elements.isEmpty() else elements.all { it in this }
 
     companion object {
         /**

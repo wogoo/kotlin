@@ -513,6 +513,14 @@ class UnsignedRangeGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIn
         fun hashCodeConversion(name: String, isSigned: Boolean = false) =
             if (type == UnsignedType.ULONG) "($name xor ($name ${if (isSigned) "u" else ""}shr 32))" else name
 
+        val sizeBody = """
+            when {
+              isEmpty() -> 0UL
+              step > 0 -> (last - first) / step.toULong() + 1UL
+              step < 0 -> (first - last) / (-step).toULong() + 1UL
+              else -> error("Invariant is broken: step cannot be 0")
+            }.let { if (it > Int.MAX_VALUE.toULong()) Int.MAX_VALUE else it.toInt() }
+"""
         out.println(
             """
 
@@ -556,7 +564,7 @@ internal constructor(
     start: $elementType,
     endInclusive: $elementType,
     step: $stepType
-) : Iterable<$elementType> {
+) : Collection<$elementType> {
     init {
         if (step == 0.to$stepType()) throw kotlin.IllegalArgumentException("Step must be non-zero.")
         if (step == $stepMinValue) throw kotlin.IllegalArgumentException("Step must be greater than $stepMinValue to avoid overflow on negation.")
@@ -580,7 +588,7 @@ internal constructor(
     override fun iterator(): ${elementType}Iterator = ${elementType}ProgressionIterator(first, last, step)
 
     /** Checks if the progression is empty. */
-    public open fun isEmpty(): Boolean = if (step > 0) first > last else first < last
+    public override fun isEmpty(): Boolean = if (step > 0) first > last else first < last
 
     override fun equals(other: Any?): Boolean =
         other is ${elementType}Progression && (isEmpty() && other.isEmpty() ||
@@ -590,6 +598,19 @@ internal constructor(
         if (isEmpty()) -1 else (31 * (31 * ${hashCodeConversion("first")}.toInt() + ${hashCodeConversion("last")}.toInt()) + ${hashCodeConversion("step", isSigned = true)}.toInt())
 
     override fun toString(): String = if (step > 0) "${'$'}first..${'$'}last step ${'$'}step" else "${'$'}first downTo ${'$'}last step ${'$'}{-step}"
+    
+    override val size: Int
+        get() = $sizeBody
+
+    override fun contains(@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") /* for the backward compatibility with old names */ value: $elementType): Boolean = when {
+        this.isEmpty() -> false
+        step > 0 && value >= first && value <= last -> (value - first) % step.toULong() == 0UL
+        step < 0 && value <= first && value >= last -> (first - value) % (-step).toULong() == 0UL
+        else -> false
+    }
+    
+    override fun containsAll(elements: Collection<$elementType>): Boolean = if (this.isEmpty()) elements.isEmpty() else elements.all { it in this }
+
 
     companion object {
         /**

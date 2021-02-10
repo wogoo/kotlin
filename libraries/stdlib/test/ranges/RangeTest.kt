@@ -5,11 +5,136 @@
 
 package test.ranges
 
+import kotlin.math.sign
 import kotlin.test.*
 
+fun <T : Comparable<T>, S> progressionCollection(
+    limitRange: Collection<T>,
+    stepRange: Iterable<S>,
+    makePositiveRange: (T, T, S) -> Collection<T>,
+    makeNegativeRange: (T, T, S) -> Collection<T>,
+    nextItem: (T, S) -> T?,
+    sign: (S) -> Int
+) {
+    for (start in limitRange)
+        for (finish in limitRange)
+            for (step in stepRange) {
+                val s = sign(step)
+                val range = when {
+                    s > 0 -> makePositiveRange(start, finish, step)
+                    s < 0 -> makeNegativeRange(start, finish, step)
+                    else -> continue
+                }
+                val listRange = generateSequence(start) { nextItem(it, step) }
+                    .takeWhile { if (s > 0) start <= it && it <= finish else start >= it && it >= finish }.toList()
+                collectionWithIterating(listRange, range, limitRange)
+                collectionWithoutIterating(listRange, object : Collection<T> {
+                    override val size: Int
+                        get() = range.size
+
+                    override fun contains(element: T): Boolean = range.contains(element)
+
+                    override fun containsAll(elements: Collection<T>): Boolean = range.containsAll(elements)
+
+                    override fun isEmpty(): Boolean = range.isEmpty()
+
+                    override fun iterator(): Iterator<T> = error("Do not use it")
+                }, limitRange)
+
+            }
+}
+
+private fun <T> collectionWithIterating(
+    listRange: List<T>,
+    range: Collection<T>,
+    bigRange: Collection<T>
+) {
+    assertIterableContentEquals(listRange, range)
+    collectionWithoutIterating(listRange, range, bigRange)
+}
+
+private fun <T> collectionWithoutIterating(
+    listRange: List<T>,
+    range: Collection<T>,
+    bigRange: Collection<T>
+) {
+    assertEquals(listRange.isEmpty(), range.isEmpty())
+    assertEquals(listRange.size, range.size)
+
+    for (element in bigRange) {
+        assertEquals(element in listRange, element in range, "$element in (expected $listRange) (found $range)")
+    }
+    for (element in bigRange) {
+        assertEquals(element in listRange, element in range)
+    }
+    repeat(100) {
+        for (length in 0..3) {
+            val elements = List(length) { bigRange.random() }
+            assertEquals(listRange.containsAll(elements), range.containsAll(elements))
+        }
+    }
+}
+
+private fun <T> assertIterableContentEquals(expected: Iterable<T>, found: Iterable<T>) {
+    assertEquals(expected.toList(), found.toList())
+}
+
 public class RangeTest {
-    @Test fun intRange() {
-        val range = -5..9
+
+    @Test
+    fun intProgressionCollection() {
+        progressionCollection(
+            -10..10, -10..10,
+            { start, finish, step -> start..finish step step },
+            { start, finish, step -> start downTo finish step -step },
+            { cur: Int, step ->
+                when {
+                    step > 0 -> (cur + step).takeIf { cur <= Int.MAX_VALUE - step }
+                    step < 0 -> (cur + step).takeIf { cur >= Int.MIN_VALUE - step }
+                    else -> cur
+                }
+            },
+            { it.sign }
+        )
+    }
+
+    @Test
+    fun charProgressionCollection() {
+        progressionCollection(
+            'a'..'z', -10..10,
+            { start, finish, step -> start..finish step step },
+            { start, finish, step -> start downTo finish step -step },
+            { cur: Char, step ->
+                when {
+                    step > 0 -> (cur + step).takeIf { cur <= Char.MAX_VALUE - step }
+                    step < 0 -> (cur + step).takeIf { cur >= Char.MIN_VALUE - step }
+                    else -> cur
+                }
+            },
+            { it.sign }
+        )
+    }
+
+    @Test
+    fun longProgressionCollection() {
+        progressionCollection(
+            -10L..10L, -10L..10L,
+            { start, finish, step -> start..finish step step },
+            { start, finish, step -> start downTo finish step -step },
+            { cur: Long, step ->
+                when {
+                    step > 0L -> (cur + step).takeIf { cur <= Long.MAX_VALUE - step }
+                    step < 0L -> (cur + step).takeIf { cur >= Long.MIN_VALUE - step }
+                    else -> cur
+                }
+            },
+            { it.sign }
+        )
+    }
+
+    @Test
+    fun intRange() {
+        val range: IntRange = -5..9
         assertFalse(-1000 in range)
         assertFalse(-6 in range)
 
@@ -49,7 +174,8 @@ public class RangeTest {
         assertTrue((1 until Int.MIN_VALUE).isEmpty())
     }
 
-    @Test fun byteRange() {
+    @Test
+    fun byteRange() {
         val range = (-5).toByte()..9.toByte()
         assertFalse((-100).toByte() in range)
         assertFalse((-6).toByte() in range)
@@ -88,7 +214,8 @@ public class RangeTest {
         assertTrue((0.toByte() until Int.MIN_VALUE).isEmpty())
     }
 
-    @Test fun shortRange() {
+    @Test
+    fun shortRange() {
         val range = (-5).toShort()..9.toShort()
         assertFalse((-1000).toShort() in range)
         assertFalse((-6).toShort() in range)
@@ -125,7 +252,8 @@ public class RangeTest {
         assertTrue((0.toShort() until Int.MIN_VALUE).isEmpty())
     }
 
-    @Test fun longRange() {
+    @Test
+    fun longRange() {
         val range = -5L..9L
         assertFalse(-10000000L in range)
         assertFalse(-6L in range)
@@ -168,7 +296,8 @@ public class RangeTest {
 
     }
 
-    @Test fun charRange() {
+    @Test
+    fun charRange() {
         val range = 'c'..'w'
         assertFalse('0' in range)
         assertFalse('b' in range)
@@ -199,7 +328,8 @@ public class RangeTest {
         assertTrue(('A' until Char.MIN_VALUE).isEmpty())
     }
 
-    @Test fun doubleRange() {
+    @Test
+    fun doubleRange() {
         val range = -1.0..3.14159265358979
         assertFalse(-1e200 in range)
         assertFalse(-100.0 in range)
@@ -247,7 +377,8 @@ public class RangeTest {
         assertTrue(Float.POSITIVE_INFINITY in halfInfRange)
     }
 
-    @Test fun floatRange() {
+    @Test
+    fun floatRange() {
         val range = -1.0f..3.14159f
         assertFalse(-1e30f in range)
         assertFalse(-100.0f in range)
@@ -297,7 +428,8 @@ public class RangeTest {
     }
 
     @Suppress("EmptyRange")
-    @Test fun isEmpty() {
+    @Test
+    fun isEmpty() {
         assertTrue((2..1).isEmpty())
         assertTrue((2L..0L).isEmpty())
         assertTrue((1.toShort()..(-1).toShort()).isEmpty())
@@ -317,7 +449,8 @@ public class RangeTest {
     }
 
     @Suppress("ReplaceAssertBooleanWithAssertEquality", "EmptyRange")
-    @Test fun emptyEquals() {
+    @Test
+    fun emptyEquals() {
         assertTrue(IntRange.EMPTY == IntRange.EMPTY)
         assertEquals(IntRange.EMPTY, IntRange.EMPTY)
         assertEquals(0L..42L, 0L..42L)
@@ -343,7 +476,8 @@ public class RangeTest {
     }
 
     @Suppress("EmptyRange")
-    @Test fun emptyHashCode() {
+    @Test
+    fun emptyHashCode() {
         assertEquals((0..42).hashCode(), (0..42).hashCode())
         assertEquals((1.23..4.56).hashCode(), (1.23..4.56).hashCode())
 
@@ -362,7 +496,8 @@ public class RangeTest {
         assertEquals(("range".."progression").hashCode(), ("hashcode".."equals").hashCode())
     }
 
-    @Test fun comparableRange() {
+    @Test
+    fun comparableRange() {
         val range = "island".."isle"
         assertFalse("apple" in range)
         assertFalse("icicle" in range)
@@ -379,7 +514,8 @@ public class RangeTest {
 
     private fun assertFailsWithIllegalArgument(f: () -> Unit) = assertFailsWith<IllegalArgumentException> { f() }
 
-    @Test fun illegalProgressionCreation() {
+    @Test
+    fun illegalProgressionCreation() {
         // create Progression explicitly with increment = 0
         assertFailsWithIllegalArgument { IntProgression.fromClosedRange(0, 5, 0) }
         assertFailsWithIllegalArgument { LongProgression.fromClosedRange(0, 5, 0) }
@@ -412,19 +548,22 @@ public class RangeTest {
         assertFailsWithIllegalArgument { 'z' downTo 'a' step -2 }
     }
 
-    @Test fun stepSizeIsTooLow() {
+    @Test
+    fun stepSizeIsTooLow() {
         assertFailsWithIllegalArgument { CharProgression.fromClosedRange('a', 'b', Int.MIN_VALUE) }
         assertFailsWithIllegalArgument { IntProgression.fromClosedRange(0, 1, Int.MIN_VALUE) }
         assertFailsWithIllegalArgument { LongProgression.fromClosedRange(0, 1, Long.MIN_VALUE) }
     }
 
-    @Test fun randomInEmptyRange() {
+    @Test
+    fun randomInEmptyRange() {
         assertFailsWith<NoSuchElementException> { IntRange.EMPTY.random() }
         assertFailsWith<NoSuchElementException> { LongRange.EMPTY.random() }
         assertFailsWith<NoSuchElementException> { CharRange.EMPTY.random() }
     }
 
-    @Test fun randomOrNullInEmptyRange() {
+    @Test
+    fun randomOrNullInEmptyRange() {
         assertNull(IntRange.EMPTY.randomOrNull())
         assertNull(LongRange.EMPTY.randomOrNull())
         assertNull(CharRange.EMPTY.randomOrNull())

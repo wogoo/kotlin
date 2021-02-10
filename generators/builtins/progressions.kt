@@ -49,6 +49,9 @@ class GenerateProgressions(out: PrintWriter) : BuiltInsSourceGenerator(out) {
                 "        if (isEmpty()) -1 else (31 * (31 * ${hashLong("first")} + ${hashLong("last")}) + ${hashLong("step")}).toInt()"
         }
 
+        val sizeBody = "if (isEmpty()) 0 else " +
+                "(last - first) / step + 1".let { if (kind == LONG) "($it).toIntExactOrNull() ?: Int.MAX_VALUE" else it }
+
         out.println(
                 """/**
  * A progression of values of type `$t`.
@@ -59,7 +62,7 @@ public open class $progression
             start: $t,
             endInclusive: $t,
             step: $incrementType
-    ) : Iterable<$t> {
+    ) : Collection<$t> {
     init {
         $checkZero
         $checkMin
@@ -83,7 +86,7 @@ public open class $progression
     override fun iterator(): ${t}Iterator = ${t}ProgressionIterator(first, last, step)
 
     /** Checks if the progression is empty. */
-    public open fun isEmpty(): Boolean = if (step > 0) first > last else first < last
+    public override fun isEmpty(): Boolean = if (step > 0) first > last else first < last
 
     override fun equals(other: Any?): Boolean =
         other is $progression && (isEmpty() && other.isEmpty() ||
@@ -92,6 +95,18 @@ public open class $progression
     override fun hashCode(): Int $hashCode
 
     override fun toString(): String = ${"if (step > 0) \"\$first..\$last step \$step\" else \"\$first downTo \$last step \${-step}\""}
+
+    override val size: Int
+        get() = $sizeBody
+
+    override fun contains(@Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") /* for the backward compatibility with old names */ value: $t): Boolean = when {
+        this.isEmpty() -> false
+        step > 0 && value >= first && value <= last -> (value - first) % step == $zero
+        step < 0 && value <= first && value >= last -> (first - value) % (-step) == $zero
+        else -> false
+    }
+    
+    override fun containsAll(elements: Collection<$t>): Boolean = if (this.isEmpty()) elements.isEmpty() else elements.all { it in this }
 
     companion object {
         /**
