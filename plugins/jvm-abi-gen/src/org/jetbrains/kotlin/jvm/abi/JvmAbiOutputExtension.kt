@@ -28,7 +28,7 @@ class JvmAbiOutputExtension(
         val outputFiles = AbiOutputFiles(abiClassInfos, factory)
         if (outputPath.extension == "jar") {
             // We don't include the runtime or main class in interface jars and always reset time stamps.
-            CompileEnvironmentUtil.writeToJar(outputPath, false, true, null, outputFiles)
+            CompileEnvironmentUtil.writeToJar(outputPath, false, true, true, null, outputFiles)
         } else {
             outputFiles.writeAllTo(outputPath)
         }
