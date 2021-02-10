@@ -64,6 +64,11 @@ public class ClassFileToSourceStubConverterTestGenerated extends AbstractClassFi
         runTest("plugins/kapt3/kapt3-compiler/testData/converter/annotations3.kt");
     }
 
+    @TestMetadata("annotationsWithConstants.kt")
+    public void testAnnotationsWithConstants() throws Exception {
+        runTest("plugins/kapt3/kapt3-compiler/testData/converter/annotationsWithConstants.kt");
+    }
+
     @TestMetadata("annotationsWithTargets.kt")
     public void testAnnotationsWithTargets() throws Exception {
         runTest("plugins/kapt3/kapt3-compiler/testData/converter/annotationsWithTargets.kt");
@@ -307,11 +312,6 @@ public class ClassFileToSourceStubConverterTestGenerated extends AbstractClassFi
     @TestMetadata("kt18682.kt")
     public void testKt18682() throws Exception {
         runTest("plugins/kapt3/kapt3-compiler/testData/converter/kt18682.kt");
-    }
-
-    @TestMetadata("kt18791.kt")
-    public void testKt18791() throws Exception {
-        runTest("plugins/kapt3/kapt3-compiler/testData/converter/kt18791.kt");
     }
 
     @TestMetadata("kt19700.kt")
