@@ -22,26 +22,32 @@ class DeclarationCheckersDiagnosticComponent(
     }
 
     override fun visitProperty(property: FirProperty, data: CheckerContext) {
+        checkers.basicDeclarationCheckers.check(property, data, reporter)
         (checkers.memberDeclarationCheckers + checkers.propertyCheckers).check(property, data, reporter)
     }
 
     override fun <F : FirClass<F>> visitClass(klass: FirClass<F>, data: CheckerContext) {
+        checkers.basicDeclarationCheckers.check(klass, data, reporter)
         checkers.classCheckers.check(klass, data, reporter)
     }
 
     override fun visitRegularClass(regularClass: FirRegularClass, data: CheckerContext) {
+        checkers.basicDeclarationCheckers.check(regularClass, data, reporter)
         checkers.regularClassCheckers.check(regularClass, data, reporter)
     }
 
     override fun visitSimpleFunction(simpleFunction: FirSimpleFunction, data: CheckerContext) {
+        checkers.basicDeclarationCheckers.check(simpleFunction, data, reporter)
         (checkers.memberDeclarationCheckers + checkers.functionCheckers).check(simpleFunction, data, reporter)
     }
 
     override fun visitTypeAlias(typeAlias: FirTypeAlias, data: CheckerContext) {
+        checkers.basicDeclarationCheckers.check(typeAlias, data, reporter)
         checkers.memberDeclarationCheckers.check(typeAlias, data, reporter)
     }
 
     override fun visitConstructor(constructor: FirConstructor, data: CheckerContext) {
+        checkers.basicDeclarationCheckers.check(constructor, data, reporter)
         (checkers.memberDeclarationCheckers + checkers.constructorCheckers).check(constructor, data, reporter)
     }
 
