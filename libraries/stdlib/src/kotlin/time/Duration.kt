@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -7,9 +7,38 @@ package kotlin.time
 
 import kotlin.contracts.*
 import kotlin.math.abs
+import kotlin.math.floor
+import kotlin.native.concurrent.SharedImmutable
 
 @OptIn(ExperimentalTime::class)
 private inline val storageUnit get() = DurationUnit.NANOSECONDS
+
+private const val storageLongMax = Long.MAX_VALUE / 2
+
+@OptIn(ExperimentalTime::class)
+@SharedImmutable
+private val storageLongMaxByUnit =
+    DurationUnit.values().associateWith { storageLongMax / convertDurationUnit(1.0, it, storageUnit).toLong() }
+
+
+private fun fittingLongToStorage(long: Long): Long =
+    long.shl(1) + 1
+
+private fun longToStorage(long: Long): Long {
+    val shifted = long.shl(1)
+    return if (long xor shifted < 0) // if signed overflow happens after left shift
+        long.toDouble().toBits() and 1L.inv()
+    else
+        shifted + 1
+}
+
+private fun doubleToStorage(double: Double): Long {
+    if (double == floor(double)) {
+        val l = double.toLong()
+        if (l in -storageLongMax..storageLongMax) return fittingLongToStorage(l)
+    }
+    return double.toBits() and 1L.inv()
+}
 
 /**
  * Represents the amount of time one instant of time is away from another instant.
@@ -27,9 +56,17 @@ private inline val storageUnit get() = DurationUnit.NANOSECONDS
  */
 @SinceKotlin("1.3")
 @ExperimentalTime
-public inline class Duration internal constructor(internal val value: Double) : Comparable<Duration> {
+public inline class Duration internal constructor(internal val storage: Long) : Comparable<Duration> {
+
+    internal constructor(value: Double) : this(doubleToStorage(value))
+
+    internal fun isDouble(): Boolean = storage and 1L == 0L
+    private fun valueAsDouble() = Double.fromBits(storage)
+    private fun valueAsLong() = storage.shr(1)
+    private fun valueToDouble() = if (isDouble()) valueAsDouble() else valueAsLong().toDouble()
+
     init {
-        require(!value.isNaN()) { "Duration value cannot be NaN." }
+        if (isDouble()) require(!valueAsDouble().isNaN()) { "Duration value cannot be NaN." }
     }
 
     companion object {
@@ -47,69 +84,95 @@ public inline class Duration internal constructor(internal val value: Double) : 
     // arithmetic operators
 
     /** Returns the negative of this value. */
-    public operator fun unaryMinus(): Duration = Duration((-value).normalizeZero())
+    public operator fun unaryMinus(): Duration =
+        // TODO: test long overflow
+        if (isDouble()) Duration((-valueAsDouble()).normalizeZero()) else Duration(longToStorage(-valueAsLong()))
 
     /**
      * Returns a duration whose value is the sum of this and [other] duration values.
      *
      * @throws IllegalArgumentException if the operation results in a `NaN` value.
      */
-    public operator fun plus(other: Duration): Duration = Duration(value + other.value)
+    public operator fun plus(other: Duration): Duration =
+        // TODO: mixed +
+        when {
+            this.isDouble() || other.isDouble() -> Duration(valueToDouble() + other.valueToDouble())
+            else -> Duration(longToStorage(valueAsLong() + other.valueAsLong()))
+        }
 
     /**
      * Returns a duration whose value is the difference between this and [other] duration values.
      *
      * @throws IllegalArgumentException if the operation results in a `NaN` value.
      */
-    public operator fun minus(other: Duration): Duration = Duration(value - other.value)
+    public operator fun minus(other: Duration): Duration =
+        // TODO: mixed -
+        when {
+            this.isDouble() || other.isDouble() -> Duration(valueToDouble() - other.valueToDouble())
+            else -> Duration(longToStorage(valueAsLong() - other.valueAsLong()))
+        }
 
     /**
      * Returns a duration whose value is this duration value multiplied by the given [scale] number.
      *
      * @throws IllegalArgumentException if the operation results in a `NaN` value.
      */
-    public operator fun times(scale: Int): Duration = Duration((value * scale).normalizeZero())
+    public operator fun times(scale: Int): Duration =
+        // TODO:
+        Duration((valueToDouble() * scale).normalizeZero())
 
     /**
      * Returns a duration whose value is this duration value multiplied by the given [scale] number.
      *
      * @throws IllegalArgumentException if the operation results in a `NaN` value.
      */
-    public operator fun times(scale: Double): Duration = Duration((value * scale).normalizeZero())
+    public operator fun times(scale: Double): Duration =
+        // TODO:
+        Duration((valueToDouble() * scale).normalizeZero())
 
     /**
      * Returns a duration whose value is this duration value divided by the given [scale] number.
      *
      * @throws IllegalArgumentException if the operation results in a `NaN` value.
      */
-    public operator fun div(scale: Int): Duration = Duration((value / scale).normalizeZero())
+    public operator fun div(scale: Int): Duration =
+        // TODO:
+        Duration((valueToDouble() / scale).normalizeZero())
 
     /**
      * Returns a duration whose value is this duration value divided by the given [scale] number.
      *
      * @throws IllegalArgumentException if the operation results in a `NaN` value.
      */
-    public operator fun div(scale: Double): Duration = Duration((value / scale).normalizeZero())
+    public operator fun div(scale: Double): Duration =
+        // TODO:
+        Duration((valueToDouble() / scale).normalizeZero())
 
     /** Returns a number that is the ratio of this and [other] duration values. */
-    public operator fun div(other: Duration): Double = this.value / other.value
+    public operator fun div(other: Duration): Double =
+        this.valueToDouble() / other.valueToDouble()
 
     /** Returns true, if the duration value is less than zero. */
-    public fun isNegative(): Boolean = value < 0
+    public fun isNegative(): Boolean = storage < 0
 
     /** Returns true, if the duration value is greater than zero. */
-    public fun isPositive(): Boolean = value > 0
+    public fun isPositive(): Boolean = (storage shr 1) > 0
 
     /** Returns true, if the duration value is infinite. */
-    public fun isInfinite(): Boolean = value.isInfinite()
+    public fun isInfinite(): Boolean = isDouble() && valueAsDouble().isInfinite()
 
     /** Returns true, if the duration value is finite. */
-    public fun isFinite(): Boolean = value.isFinite()
+    public fun isFinite(): Boolean = !isDouble() || valueAsDouble().isFinite()
 
     /** Returns the absolute value of this value. The returned value is always non-negative. */
     public val absoluteValue: Duration get() = if (isNegative()) -this else this
 
-    override fun compareTo(other: Duration): Int = this.value.compareTo(other.value)
+    override fun compareTo(other: Duration): Int =
+        when {
+            this.isDouble() || other.isDouble() -> this.valueToDouble().compareTo(other.valueToDouble())
+            else -> this.valueAsLong().compareTo(other.valueAsLong())
+        }
+
 
 
     // splitting to components
@@ -183,20 +246,27 @@ public inline class Duration internal constructor(internal val value: Double) : 
     @PublishedApi
     internal val secondsComponent: Int get() = (inSeconds % 60).toInt()
     @PublishedApi
-    internal val nanosecondsComponent: Int get() = (inNanoseconds % 1e9).toInt()
+    internal val nanosecondsComponent: Int get() =
+        if (isDouble())
+            (inNanoseconds % 1e9).toInt()
+        else
+            (valueAsLong() % 1_000_000_000).toInt()
 
 
     // conversion to units
 
     /** Returns the value of this duration expressed as a [Double] number of the specified [unit]. */
-    public fun toDouble(unit: DurationUnit): Double = convertDurationUnit(value, storageUnit, unit)
+    public fun toDouble(unit: DurationUnit): Double = convertDurationUnit(valueToDouble(), storageUnit, unit)
 
     /**
      * Returns the value of this duration expressed as a [Long] number of the specified [unit].
      *
      * If the value doesn't fit in the range of [Long] type, it is coerced into that range, see the conversion [Double.toLong] for details.
      */
-    public fun toLong(unit: DurationUnit): Long = toDouble(unit).toLong()
+    public fun toLong(unit: DurationUnit): Long = if (isDouble())
+        toDouble(unit).toLong()
+    else
+        valueAsLong() / convertDurationUnit(1.0, unit, storageUnit).toLong()
 
     /**
      * Returns the value of this duration expressed as an [Int] number of the specified [unit].
@@ -260,8 +330,8 @@ public inline class Duration internal constructor(internal val value: Double) : 
      * @sample samples.time.Durations.toStringDefault
      */
     override fun toString(): String = when {
-        isInfinite() -> value.toString()
-        value == 0.0 -> "0s"
+        isInfinite() -> valueToDouble().toString()
+        valueToDouble() == 0.0 -> "0s"
         else -> {
             val absNs = absoluteValue.inNanoseconds
             var scientific = false
@@ -309,7 +379,7 @@ public inline class Duration internal constructor(internal val value: Double) : 
      */
     public fun toString(unit: DurationUnit, decimals: Int = 0): String {
         require(decimals >= 0) { "decimals must be not negative, but was $decimals" }
-        if (isInfinite()) return value.toString()
+        if (isInfinite()) return valueToDouble().toString()
         val number = toDouble(unit)
         return when {
             abs(number) < 1e14 -> formatToExactDecimals(number, decimals.coerceAtMost(12))
@@ -370,12 +440,18 @@ public inline class Duration internal constructor(internal val value: Double) : 
 /** Returns a [Duration] equal to this [Int] number of the specified [unit]. */
 @SinceKotlin("1.3")
 @ExperimentalTime
-public fun Int.toDuration(unit: DurationUnit): Duration = toDouble().toDuration(unit)
+public fun Int.toDuration(unit: DurationUnit): Duration = toLong().toDuration(unit)
 
 /** Returns a [Duration] equal to this [Long] number of the specified [unit]. */
 @SinceKotlin("1.3")
 @ExperimentalTime
-public fun Long.toDuration(unit: DurationUnit): Duration = toDouble().toDuration(unit)
+public fun Long.toDuration(unit: DurationUnit): Duration {
+    val max = storageLongMaxByUnit[unit]!!
+    if (this !in -max..max) return toDouble().toDuration(unit)
+    val value = this * convertDurationUnit(1.0, unit, storageUnit).toLong()
+    return Duration(fittingLongToStorage(value))
+}
+
 
 /**
  * Returns a [Duration] equal to this [Double] number of the specified [unit].
@@ -540,6 +616,7 @@ public inline operator fun Int.times(duration: Duration): Duration = duration * 
 public inline operator fun Double.times(duration: Duration): Duration = duration * this
 
 
+// TODO: normalizeZero is no longer necessary, all zeroes are stored as long
 @kotlin.internal.InlineOnly
 private inline fun Double.normalizeZero(): Double = this + 0.0
 

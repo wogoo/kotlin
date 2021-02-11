@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -7,13 +7,13 @@
 package test.time
 
 import test.numbers.assertAlmostEquals
+import kotlin.math.PI
 import kotlin.native.concurrent.SharedImmutable
+import kotlin.random.Random
+import kotlin.random.nextLong
 import kotlin.test.*
 import kotlin.time.*
-import kotlin.random.*
 
-@SharedImmutable
-private val expectStorageUnit = DurationUnit.NANOSECONDS
 @SharedImmutable
 private val units = DurationUnit.values()
 
@@ -21,16 +21,31 @@ class DurationTest {
 
     // construction white-box testing
     @Test
+    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
     fun construction() {
+        val expectStorageUnit = DurationUnit.NANOSECONDS
+        val safeLongRange = -(Long.MAX_VALUE / 2)..(Long.MAX_VALUE / 2)
 
-        @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
+        repeat(1000) {
+            val nanos = Random.nextLong(safeLongRange)
+            val duration = nanos.nanoseconds
+            assertFalse(duration.isDouble())
+            assertEquals(nanos, duration.toLongNanoseconds())
+            assertEquals(nanos / 1_000_000_000, duration.toLong(DurationUnit.SECONDS))
+            assertEquals((nanos / 86400_000_000_000).toInt(), duration.toInt(DurationUnit.DAYS))
+        }
+
+        assertTrue(PI.seconds.isDouble())
+        assertTrue((150 * 365.days).isDouble())
+
+
         repeat(100) {
             val value = Random.nextInt(1_000_000)
             val unit = units.random()
             val expected = convertDurationUnit(value.toDouble(), unit, expectStorageUnit)
-            assertEquals(expected, value.toDuration(unit).value)
-            assertEquals(expected, value.toLong().toDuration(unit).value)
-            assertEquals(expected, value.toDouble().toDuration(unit).value)
+            assertEquals(expected, value.toDuration(unit).inNanoseconds)
+            assertEquals(expected, value.toLong().toDuration(unit).inNanoseconds)
+            assertEquals(expected, value.toDouble().toDuration(unit).inNanoseconds)
         }
 
         assertFailsWith<IllegalArgumentException> { Double.NaN.toDuration(DurationUnit.SECONDS) }
@@ -62,6 +77,19 @@ class DurationTest {
                 assertNotEquals(d1, d3, "$value $unit in $unit2")
             }
         }
+    }
+
+    @Test
+    fun comparisons() {
+        val d1 = 1000.days + 1.nanoseconds
+        val d2 = d1 + 1.nanoseconds
+        assertNotEquals(d1, d2)
+        assertTrue(d1 < d2)
+        assertFalse(d2 < d1)
+
+        val d3 = d1 + 1.5.nanoseconds
+        // assertTrue(d3 >= d2) // TODO: problem in addition: a + b < a + c for b > c
+        // assertTrue(d3 >= d1) // TODO: problem in addition: a + b < a for positive b
     }
 
 
@@ -248,6 +276,13 @@ class DurationTest {
         assertEquals(0.5.days, 6.hours + 360.minutes)
         assertEquals(0.5.seconds, 200.milliseconds + 300_000.microseconds)
 
+        assertEquals(1.125.nanoseconds, 1.nanoseconds + 0.125.nanoseconds)
+
+        val year = 365.days
+        assertEquals(1.nanoseconds, 100 * year + 1.nanoseconds - 100 * year, "no rounding in long range")
+        assertEquals(280 * year, 140 * year + 140 * year, "long overflows to double")
+        assertEquals(year * 300, year * 300 + 1.nanoseconds, "double underflow")
+
         assertFailsWith<IllegalArgumentException> { Duration.INFINITE + (-Duration.INFINITE) }
     }
 
@@ -255,6 +290,13 @@ class DurationTest {
     fun subtraction() {
         assertEquals(10.hours, 0.5.days - 120.minutes)
         assertEquals(850.milliseconds, 1.seconds - 150.milliseconds)
+
+        assertEquals(0.625.nanoseconds, 1.nanoseconds - 0.375.nanoseconds)
+
+        val year = 365.days
+        assertEquals(-1.nanoseconds, 100 * year - 1.nanoseconds - 100 * year, "no rounding in long range")
+        assertEquals(-280 * year, -140 * year - 140 * year, "long overflows to double")
+        assertEquals(year * 300, year * 300 - 1.nanoseconds, "double underflow")
 
         assertFailsWith<IllegalArgumentException> { Duration.INFINITE - Duration.INFINITE }
     }
@@ -352,9 +394,9 @@ class DurationTest {
         test(DurationUnit.MICROSECONDS, "921us", "920.5us", "920.52us", "920.516us")
         d -= 920.microseconds
         // sub-nanosecond precision errors
-        test(DurationUnit.NANOSECONDS, "516ns", "516.3ns", "516.34ns", "516.344ns", "516.3438ns")
+        test(DurationUnit.NANOSECONDS, "516ns", "516.3ns", "516.31ns", "516.313ns", "516.3125ns")
         d = (d - 516.nanoseconds) / 17
-        test(DurationUnit.NANOSECONDS, "0ns", "0.0ns", "0.02ns", "0.020ns", "0.0202ns")
+        test(DurationUnit.NANOSECONDS, "0ns", "0.0ns", "0.02ns", "0.018ns", "0.0184ns")
 
         d = Double.MAX_VALUE.nanoseconds
         test(DurationUnit.DAYS, "2.08e+294d")
