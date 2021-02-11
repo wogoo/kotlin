@@ -23,7 +23,8 @@ class DeclarationCheckersDiagnosticComponent(
 
     override fun visitProperty(property: FirProperty, data: CheckerContext) {
         checkers.basicDeclarationCheckers.check(property, data, reporter)
-        (checkers.memberDeclarationCheckers + checkers.propertyCheckers).check(property, data, reporter)
+        checkers.memberDeclarationCheckers.check(property, data, reporter)
+        checkers.propertyCheckers.check(property, data, reporter)
     }
 
     override fun <F : FirClass<F>> visitClass(klass: FirClass<F>, data: CheckerContext) {
@@ -38,7 +39,8 @@ class DeclarationCheckersDiagnosticComponent(
 
     override fun visitSimpleFunction(simpleFunction: FirSimpleFunction, data: CheckerContext) {
         checkers.basicDeclarationCheckers.check(simpleFunction, data, reporter)
-        (checkers.memberDeclarationCheckers + checkers.functionCheckers).check(simpleFunction, data, reporter)
+        checkers.memberDeclarationCheckers.check(simpleFunction, data, reporter)
+        checkers.functionCheckers.check(simpleFunction, data, reporter)
     }
 
     override fun visitTypeAlias(typeAlias: FirTypeAlias, data: CheckerContext) {
@@ -48,7 +50,8 @@ class DeclarationCheckersDiagnosticComponent(
 
     override fun visitConstructor(constructor: FirConstructor, data: CheckerContext) {
         checkers.basicDeclarationCheckers.check(constructor, data, reporter)
-        (checkers.memberDeclarationCheckers + checkers.constructorCheckers).check(constructor, data, reporter)
+        checkers.memberDeclarationCheckers.check(constructor, data, reporter)
+        checkers.constructorCheckers.check(constructor, data, reporter)
     }
 
     override fun visitAnonymousFunction(anonymousFunction: FirAnonymousFunction, data: CheckerContext) {
@@ -72,7 +75,8 @@ class DeclarationCheckersDiagnosticComponent(
     }
 
     override fun visitAnonymousObject(anonymousObject: FirAnonymousObject, data: CheckerContext) {
-        (checkers.classCheckers + checkers.basicDeclarationCheckers).check(anonymousObject, data, reporter)
+        checkers.classCheckers.check(anonymousObject, data, reporter)
+        checkers.basicDeclarationCheckers.check(anonymousObject, data, reporter)
     }
 
     override fun visitAnonymousInitializer(anonymousInitializer: FirAnonymousInitializer, data: CheckerContext) {
