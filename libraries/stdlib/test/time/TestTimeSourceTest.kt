@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -13,14 +13,18 @@ class TestTimeSourceTest {
 
     @Test
     fun overflows() {
-        for (enormousDuration in listOf(Duration.INFINITE, Double.MAX_VALUE.nanoseconds, Long.MAX_VALUE.nanoseconds * 2)) {
+        for (enormousDuration in listOf(
+            Duration.INFINITE,
+            Double.MAX_VALUE * Duration.NANOSECOND,
+            Long.MAX_VALUE * Duration.NANOSECOND * 2
+        )) {
             assertFailsWith<IllegalStateException>(enormousDuration.toString()) { TestTimeSource() += enormousDuration }
             assertFailsWith<IllegalStateException>((-enormousDuration).toString()) { TestTimeSource() += -enormousDuration }
         }
 
-        val moderatePositiveDuration = Long.MAX_VALUE.takeHighestOneBit().nanoseconds
-        val borderlinePositiveDuration = Long.MAX_VALUE.nanoseconds // rounded to 2.0^63, which is slightly more than Long.MAX_VALUE
-        val borderlineNegativeDuration = Long.MIN_VALUE.nanoseconds
+        val moderatePositiveDuration = Long.MAX_VALUE.takeHighestOneBit() * Duration.NANOSECOND
+        val borderlinePositiveDuration = Long.MAX_VALUE * Duration.NANOSECOND // rounded to 2.0^63, which is slightly more than Long.MAX_VALUE
+        val borderlineNegativeDuration = Long.MIN_VALUE * Duration.NANOSECOND
         run {
             val timeSource = TestTimeSource()
             timeSource += moderatePositiveDuration
@@ -29,12 +33,12 @@ class TestTimeSourceTest {
         run {
             val timeSource = TestTimeSource()
             timeSource += borderlinePositiveDuration
-            assertFailsWith<IllegalStateException>("Should overflow positive") { timeSource += 1.nanoseconds }
+            assertFailsWith<IllegalStateException>("Should overflow positive") { timeSource += Duration.NANOSECOND }
         }
         run {
             val timeSource = TestTimeSource()
             timeSource += borderlineNegativeDuration
-            assertFailsWith<IllegalStateException>("Should overflow negative") { timeSource += -1.nanoseconds }
+            assertFailsWith<IllegalStateException>("Should overflow negative") { timeSource += -Duration.NANOSECOND }
         }
 
         run {
@@ -51,12 +55,12 @@ class TestTimeSourceTest {
         val mark = timeSource.markNow()
 
         repeat(10_000) {
-            timeSource += 0.9.nanoseconds
+            timeSource += 0.9 * Duration.NANOSECOND
 
             assertEquals(Duration.ZERO, mark.elapsedNow())
         }
 
-        timeSource += 1.9.nanoseconds
-        assertEquals(1.nanoseconds, mark.elapsedNow())
+        timeSource += 1.9 * Duration.NANOSECOND
+        assertEquals(Duration.NANOSECOND, mark.elapsedNow())
     }
 }

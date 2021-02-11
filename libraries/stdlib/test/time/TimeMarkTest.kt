@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -23,19 +23,19 @@ class TimeMarkTest {
         }
 
         val mark = timeSource.markNow()
-        val markFuture1 = (mark + 1.milliseconds).apply { assertHasPassed(false) }
-        val markFuture2 = (mark - (-1).milliseconds).apply { assertHasPassed(false) }
+        val markFuture1 = (mark + Duration.MILLISECOND).apply { assertHasPassed(false) }
+        val markFuture2 = (mark - (-Duration.MILLISECOND)).apply { assertHasPassed(false) }
 
-        val markPast1 = (mark - 1.milliseconds).apply { assertHasPassed(true) }
-        val markPast2 = (markFuture1 + (-2).milliseconds).apply { assertHasPassed(true) }
+        val markPast1 = (mark - 1 * Duration.MILLISECOND).apply { assertHasPassed(true) }
+        val markPast2 = (markFuture1 + (-2 * Duration.MILLISECOND)).apply { assertHasPassed(true) }
 
-        timeSource += 500_000.nanoseconds
+        timeSource += 500_000 * Duration.NANOSECOND
 
         val elapsed = mark.elapsedNow()
-        val elapsedFromFuture = elapsed - 1.milliseconds
-        val elapsedFromPast = elapsed + 1.milliseconds
+        val elapsedFromFuture = elapsed - Duration.MILLISECOND
+        val elapsedFromPast = elapsed + Duration.MILLISECOND
 
-        assertEquals(0.5.milliseconds, elapsed)
+        assertEquals(0.5 * Duration.MILLISECOND, elapsed)
         assertEquals(elapsedFromFuture, markFuture1.elapsedNow())
         assertEquals(elapsedFromFuture, markFuture2.elapsedNow())
 
@@ -45,7 +45,7 @@ class TimeMarkTest {
         markFuture1.assertHasPassed(false)
         markPast1.assertHasPassed(true)
 
-        timeSource += 1.milliseconds
+        timeSource += Duration.MILLISECOND
 
         markFuture1.assertHasPassed(true)
         markPast1.assertHasPassed(true)
