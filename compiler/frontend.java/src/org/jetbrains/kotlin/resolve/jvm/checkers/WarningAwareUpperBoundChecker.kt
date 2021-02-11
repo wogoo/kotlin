@@ -5,10 +5,10 @@
 
 package org.jetbrains.kotlin.resolve.jvm.checkers
 
-import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.UpperBoundChecker
@@ -18,9 +18,17 @@ import org.jetbrains.kotlin.resolve.jvm.diagnostics.ErrorsJvm.UPPER_BOUND_VIOLAT
 import org.jetbrains.kotlin.types.*
 
 // TODO: remove this checker after removing support LV < 1.6
-class WarningAwareUpperBoundChecker(languageVersionSettings: LanguageVersionSettings) : UpperBoundChecker(languageVersionSettings) {
-    private val isTypeEnhancementImprovementsEnabled =
-        languageVersionSettings.supportsFeature(LanguageFeature.ImprovementsAroundTypeEnhancement)
+class WarningAwareUpperBoundChecker : UpperBoundChecker() {
+    override fun checkBoundsOfExpandedTypeAlias(type: KotlinType, expression: KtExpression, trace: BindingTrace) {
+        val typeParameters = type.constructor.parameters
+
+        for ((index, arg) in type.arguments.withIndex()) {
+            checkBounds(
+                null, arg.type, typeParameters[index], TypeSubstitutor.create(type), trace, expression,
+                withOnlyCheckForWarning = true
+            )
+        }
+    }
 
     override fun checkBounds(
         argumentReference: KtTypeReference?,
@@ -62,9 +70,6 @@ class WarningAwareUpperBoundChecker(languageVersionSettings: LanguageVersionSett
                 // The error is already reported, it's unnecessary to do more checks
                 if (!isBaseCheckPassed) continue
             }
-
-            // If improvements are enabled, then type parameter's upper bounds will already enhanced, and the error will reported inside the first check
-            if (isTypeEnhancementImprovementsEnabled) continue
 
             val enhancedBound = bound.getEnhancementDeeply() ?: continue
 

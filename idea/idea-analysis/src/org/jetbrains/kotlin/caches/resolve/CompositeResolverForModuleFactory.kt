@@ -223,7 +223,7 @@ class CompositeResolverForModuleFactory(
 }
 
 class CompositeAnalyzerServices(val services: List<PlatformDependentAnalyzerServices>) : PlatformDependentAnalyzerServices() {
-    override val platformConfigurator: PlatformConfigurator = CompositePlatformConigurator(services.map { it.platformConfigurator })
+    override val platformConfigurator: PlatformConfigurator = CompositePlatformConfigurator(services.map { it.platformConfigurator })
 
     override fun computePlatformSpecificDefaultImports(storageManager: StorageManager, result: MutableList<ImportPath>) {
         val intersectionOfDefaultImports = services.map { service ->
@@ -246,7 +246,7 @@ class CompositeAnalyzerServices(val services: List<PlatformDependentAnalyzerServ
         if (isEmpty()) emptyList() else reduce { first, second -> first.intersect(second) }.toList()
 }
 
-class CompositePlatformConigurator(private val componentConfigurators: List<PlatformConfigurator>) : PlatformConfigurator {
+class CompositePlatformConfigurator(private val componentConfigurators: List<PlatformConfigurator>) : PlatformConfigurator {
     override val platformSpecificContainer: StorageComponentContainer
         get() = composeContainer(this::class.java.simpleName) {
             configureDefaultCheckers()
@@ -255,8 +255,8 @@ class CompositePlatformConigurator(private val componentConfigurators: List<Plat
             }
         }
 
-    override fun configureModuleComponents(container: StorageComponentContainer) {
-        componentConfigurators.forEach { it.configureModuleComponents(container) }
+    override fun configureModuleComponents(container: StorageComponentContainer, languageVersionSettings: LanguageVersionSettings) {
+        componentConfigurators.forEach { it.configureModuleComponents(container, languageVersionSettings) }
     }
 
     override fun configureModuleDependentCheckers(container: StorageComponentContainer) {
@@ -265,6 +265,5 @@ class CompositePlatformConigurator(private val componentConfigurators: List<Plat
         // Unfortunately, it is declared in base class, so repeating call to 'configureModuleDependentCheckers' will lead
         // to multiple registrrations.
         container.useImpl<ExperimentalMarkerDeclarationAnnotationChecker>()
-        container.useImpl<UpperBoundChecker>()
     }
 }

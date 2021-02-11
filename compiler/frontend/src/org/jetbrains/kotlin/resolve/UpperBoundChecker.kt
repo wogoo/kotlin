@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.resolve
 
-import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.container.DefaultImplementation
 import org.jetbrains.kotlin.descriptors.ClassifierDescriptor
 import org.jetbrains.kotlin.descriptors.TypeParameterDescriptor
@@ -15,6 +14,7 @@ import org.jetbrains.kotlin.diagnostics.Errors.UPPER_BOUND_VIOLATED
 import org.jetbrains.kotlin.diagnostics.Errors.UPPER_BOUND_VIOLATED_IN_TYPEALIAS_EXPANSION
 import org.jetbrains.kotlin.diagnostics.reportDiagnosticOnce
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlin.psi.psiUtil.getElementTextWithContext
 import org.jetbrains.kotlin.types.*
@@ -22,7 +22,28 @@ import org.jetbrains.kotlin.types.checker.KotlinTypeChecker
 import org.jetbrains.kotlin.types.typeUtil.containsTypeAliasParameters
 
 @DefaultImplementation(impl = UpperBoundChecker::class)
-open class UpperBoundChecker(val languageVersionSettings: LanguageVersionSettings) {
+open class UpperBoundChecker {
+    open fun checkBoundsOfExpandedTypeAlias(type: KotlinType, expression: KtExpression, trace: BindingTrace) {
+        // do nothing in the strict mode as the errors are already reported in the type inference if necessary
+    }
+
+    open fun checkBounds(
+        argumentReference: KtTypeReference?,
+        argumentType: KotlinType,
+        typeParameterDescriptor: TypeParameterDescriptor,
+        substitutor: TypeSubstitutor,
+        trace: BindingTrace,
+        typeAliasUsageElement: KtElement? = null,
+    ) {
+        if (typeParameterDescriptor.upperBounds.isEmpty()) return
+
+        val diagnosticsReporter = UpperBoundViolatedReporter(trace, argumentType, typeParameterDescriptor)
+
+        for (bound in typeParameterDescriptor.upperBounds) {
+            checkBound(bound, argumentType, argumentReference, substitutor, typeAliasUsageElement, diagnosticsReporter)
+        }
+    }
+
     fun checkBounds(typeReference: KtTypeReference, type: KotlinType, trace: BindingTrace) {
         if (type.isError) return
 
@@ -56,23 +77,6 @@ open class UpperBoundChecker(val languageVersionSettings: LanguageVersionSetting
             val ktTypeArgument = ktTypeArguments[i] ?: continue
             checkBounds(ktTypeArgument, arguments[i].type, trace)
             checkBounds(ktTypeArgument, arguments[i].type, parameters[i], substitutor, trace)
-        }
-    }
-
-    open fun checkBounds(
-        argumentReference: KtTypeReference?,
-        argumentType: KotlinType,
-        typeParameterDescriptor: TypeParameterDescriptor,
-        substitutor: TypeSubstitutor,
-        trace: BindingTrace,
-        typeAliasUsageElement: KtElement? = null,
-    ) {
-        if (typeParameterDescriptor.upperBounds.isEmpty()) return
-
-        val diagnosticsReporter = UpperBoundViolatedReporter(trace, argumentType, typeParameterDescriptor)
-
-        for (bound in typeParameterDescriptor.upperBounds) {
-            checkBound(bound, argumentType, argumentReference, substitutor, typeAliasUsageElement, diagnosticsReporter)
         }
     }
 

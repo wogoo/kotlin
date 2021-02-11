@@ -23,7 +23,7 @@ import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.BindingContext
-import org.jetbrains.kotlin.resolve.BindingTrace
+import org.jetbrains.kotlin.resolve.UpperBoundChecker
 import org.jetbrains.kotlin.resolve.calls.checkers.AdditionalTypeChecker
 import org.jetbrains.kotlin.resolve.calls.context.CallResolutionContext
 import org.jetbrains.kotlin.resolve.calls.context.ResolutionContext
@@ -41,7 +41,7 @@ import org.jetbrains.kotlin.types.model.KotlinTypeMarker
 import org.jetbrains.kotlin.types.typeUtil.contains
 import org.jetbrains.kotlin.types.typeUtil.makeNotNullable
 
-class JavaNullabilityChecker(val upperBoundChecker: WarningAwareUpperBoundChecker) : AdditionalTypeChecker {
+class JavaNullabilityChecker(val upperBoundChecker: UpperBoundChecker) : AdditionalTypeChecker {
     override fun checkType(
         expression: KtExpression,
         expressionType: KotlinType,
@@ -49,7 +49,7 @@ class JavaNullabilityChecker(val upperBoundChecker: WarningAwareUpperBoundChecke
         c: ResolutionContext<*>
     ) {
         if (expressionType is AbbreviatedType) {
-            checkBoundsOfExpandedTypeAlias(expressionType.expandedType, expression, c.trace)
+            upperBoundChecker.checkBoundsOfExpandedTypeAlias(expressionType.expandedType, expression, c.trace)
         }
 
         val dataFlowValue by lazy(LazyThreadSafetyMode.NONE) {
@@ -119,17 +119,6 @@ class JavaNullabilityChecker(val upperBoundChecker: WarningAwareUpperBoundChecke
                         }
                     }
                 }
-        }
-    }
-
-    private fun checkBoundsOfExpandedTypeAlias(type: KotlinType, expression: KtExpression, trace: BindingTrace) {
-        val typeParameters = type.constructor.parameters
-
-        for ((index, arg) in type.arguments.withIndex()) {
-            upperBoundChecker.checkBounds(
-                null, arg.type, typeParameters[index], TypeSubstitutor.create(type), trace, expression,
-                withOnlyCheckForWarning = true
-            )
         }
     }
 
