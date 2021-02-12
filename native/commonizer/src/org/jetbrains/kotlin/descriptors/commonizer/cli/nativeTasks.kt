@@ -118,5 +118,4 @@ internal class NativeDistributionCommonize(options: Collection<Option<*>>) : Tas
                 ?.size
         }
     }
-
 }

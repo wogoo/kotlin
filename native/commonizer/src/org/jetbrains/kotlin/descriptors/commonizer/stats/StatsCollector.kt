@@ -6,8 +6,6 @@
 package org.jetbrains.kotlin.descriptors.commonizer.stats
 
 import org.jetbrains.kotlin.konan.target.KonanTarget
-import java.io.File
-
 
 fun StatsCollector(type: StatsType, targets: List<KonanTarget>): StatsCollector? {
     return when (type) {
@@ -20,7 +18,6 @@ fun StatsCollector(type: StatsType, targets: List<KonanTarget>): StatsCollector?
 enum class StatsType {
     RAW, AGGREGATED, NONE;
 }
-
 
 interface StatsCollector {
     data class StatsKey(

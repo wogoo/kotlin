@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.descriptors.commonizer.cli
 
 import org.jetbrains.kotlin.descriptors.commonizer.stats.StatsType
 
-
 internal object StatsTypeOptionType : OptionType<StatsType>("log-stats", DESCRIPTION, mandatory = false) {
     override fun parse(rawValue: String, onError: (reason: String) -> Nothing): Option<StatsType> {
         val value = StatsType.values().firstOrNull { it.name.equals(rawValue, ignoreCase = true) }

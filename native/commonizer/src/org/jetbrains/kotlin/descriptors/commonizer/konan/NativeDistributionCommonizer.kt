@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.konan
 
-import com.intellij.util.containers.FactoryMap
 import org.jetbrains.kotlin.backend.common.serialization.metadata.KlibMetadataVersion
 import org.jetbrains.kotlin.backend.common.serialization.metadata.metadataVersion
 import org.jetbrains.kotlin.descriptors.commonizer.*

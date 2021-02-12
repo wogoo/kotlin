@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.descriptors.commonizer.konan
 
 import org.jetbrains.kotlin.descriptors.commonizer.LeafCommonizerTarget
 import org.jetbrains.kotlin.descriptors.commonizer.*
+import org.jetbrains.kotlin.descriptors.commonizer.cli.toProgressLogger
 import org.jetbrains.kotlin.descriptors.commonizer.konan.LibraryCommonizer.*
 import org.jetbrains.kotlin.descriptors.commonizer.repository.Repository
 import org.jetbrains.kotlin.descriptors.commonizer.stats.StatsCollector
@@ -92,7 +93,7 @@ internal class LibraryCommonizer internal constructor(
         }
     }
 
-    private fun logProgress(message: String) = logger.log("* $message in ${clockMark.elapsedSinceLast()}")
+    private fun logProgress(message: String) = logger.toProgressLogger().log("$message in ${clockMark.elapsedSinceLast()}")
 
     private fun logTotal() = logger.log("TOTAL: ${clockMark.elapsedSinceStart()}")
 }
