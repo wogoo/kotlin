@@ -17,23 +17,13 @@ import org.jetbrains.kotlin.library.impl.KotlinLibraryWriterImpl
 import org.jetbrains.kotlin.util.Logger
 import java.io.File
 
-internal class LibraryResultsConsumer(
+internal class ModuleSerializer(
     private val destination: File,
     private val outputLayout: CommonizerOutputLayout,
     private val logger: Logger? = null
 ) : ResultsConsumer {
     override fun consume(target: CommonizerTarget, moduleResult: ResultsConsumer.ModuleResult) {
-        serializeModule(target, moduleResult)
-    }
-
-    override fun targetConsumed(target: CommonizerTarget) {
-        logger?.log("Written libraries for ${target.identityString}")
-    }
-
-
-    private fun serializeModule(target: CommonizerTarget, moduleResult: ResultsConsumer.ModuleResult) {
         val librariesDestination = outputLayout.getTargetDirectory(destination, target)
-
         when (moduleResult) {
             is ResultsConsumer.ModuleResult.Commonized -> {
                 val libraryName = moduleResult.libraryName
@@ -47,6 +37,10 @@ internal class LibraryResultsConsumer(
                 missingModuleLocation.copyRecursively(librariesDestination.resolve(libraryName))
             }
         }
+    }
+
+    override fun targetConsumed(target: CommonizerTarget) {
+        logger?.log("Written libraries for ${target.identityString}")
     }
 }
 

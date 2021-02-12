@@ -26,6 +26,8 @@ public data class LeafCommonizerTarget public constructor(val name: String) : Co
 
 public data class SharedCommonizerTarget(val targets: Set<CommonizerTarget>) : CommonizerTarget() {
     public constructor(vararg targets: CommonizerTarget) : this(targets.toSet())
+    public constructor(vararg targets: KonanTarget) : this(targets.toSet())
+    public constructor(targets: Iterable<KonanTarget>) : this(targets.map(::LeafCommonizerTarget).toSet())
 
     init {
         require(targets.isNotEmpty())

@@ -9,6 +9,10 @@ import org.jetbrains.kotlin.descriptors.commonizer.konan.NativeSensitiveManifest
 import org.jetbrains.kotlin.library.SerializedMetadata
 import java.io.File
 
+internal fun buildResultsConsumer(init: ResultsConsumerBuilder.() -> Unit): ResultsConsumer {
+    return ResultsConsumerBuilder().apply(init).build()
+}
+
 interface ResultsConsumer {
     enum class Status { NOTHING_TO_DO, DONE }
 
@@ -27,7 +31,7 @@ interface ResultsConsumer {
     /**
      * Consume a single [ModuleResult] for the specified [CommonizerTarget].
      */
-    fun consume(target: CommonizerTarget, moduleResult: ModuleResult)
+    fun consume(target: CommonizerTarget, moduleResult: ModuleResult) = Unit
 
     /**
      * Mark the specified [CommonizerTarget] as fully consumed.
@@ -40,4 +44,49 @@ interface ResultsConsumer {
      * It's forbidden to make any subsequent [consume] and [targetConsumed] calls after this call.
      */
     fun allConsumed(status: Status) = Unit
+}
+
+internal class ResultsConsumerBuilder {
+    private var resultsConsumer: ResultsConsumer? = null
+
+    infix fun add(consumer: ResultsConsumer) {
+        val resultsConsumer = this.resultsConsumer
+        if (resultsConsumer == null) {
+            this.resultsConsumer = consumer
+            return
+        }
+        this.resultsConsumer = resultsConsumer + consumer
+    }
+
+    fun build(): ResultsConsumer {
+        return resultsConsumer ?: object : ResultsConsumer {}
+    }
+}
+
+operator fun ResultsConsumer.plus(other: ResultsConsumer?): ResultsConsumer {
+    if (other == null) return this
+    if (this is CompositeResultsConsumer) {
+        return CompositeResultsConsumer(consumers + other)
+    }
+    return CompositeResultsConsumer(listOf(this, other))
+}
+
+private class CompositeResultsConsumer(val consumers: List<ResultsConsumer>) : ResultsConsumer {
+    override fun consume(target: CommonizerTarget, moduleResult: ResultsConsumer.ModuleResult) {
+        consumers.forEach { consumer ->
+            consumer.consume(target, moduleResult)
+        }
+    }
+
+    override fun targetConsumed(target: CommonizerTarget) {
+        consumers.forEach { consumer ->
+            consumer.targetConsumed(target)
+        }
+    }
+
+    override fun allConsumed(status: ResultsConsumer.Status) {
+        consumers.forEach { consumer ->
+            consumer.allConsumed(status)
+        }
+    }
 }

@@ -49,7 +49,7 @@ class CommonizerTargetTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun sharedTargetNoInnerTargets() {
-        SharedCommonizerTarget(emptySet())
+        SharedCommonizerTarget(emptySet<CommonizerTarget>())
     }
 
     private companion object {

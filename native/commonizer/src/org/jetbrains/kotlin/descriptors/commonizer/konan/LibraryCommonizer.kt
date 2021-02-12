@@ -62,8 +62,7 @@ internal class LibraryCommonizer internal constructor(
 
         val parameters = CommonizerParameters(resultsConsumer, manifestProvider, statsCollector, ::logProgress).apply {
             val storageManager = LockBasedStorageManager("Commonized modules")
-
-            dependeeModulesProvider = NativeDistributionModulesProvider.forStandardLibrary(storageManager, allLibraries.stdlib)
+            dependencyModulesProvider = NativeDistributionModulesProvider.forStandardLibrary(storageManager, allLibraries.stdlib)
 
             allLibraries.librariesByTargets.forEach { (target, librariesToCommonize) ->
                 if (librariesToCommonize.libraries.isEmpty()) return@forEach
@@ -77,7 +76,7 @@ internal class LibraryCommonizer internal constructor(
                     TargetProvider(
                         target = target,
                         modulesProvider = modulesProvider,
-                        dependeeModulesProvider = dependencyModuleProvider
+                        dependencyModulesProvider = dependencyModuleProvider
                     )
                 )
             }
