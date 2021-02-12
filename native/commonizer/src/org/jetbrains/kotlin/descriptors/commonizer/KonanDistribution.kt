@@ -18,4 +18,3 @@ internal val KonanDistribution.klibDir: File
 
 internal val KonanDistribution.platformLibsDir: File
     get() = klibDir.resolve(KONAN_DISTRIBUTION_PLATFORM_LIBS_DIR)
-

@@ -27,5 +27,4 @@ class CliCommonizerTest {
             outputDirectory = temporaryOutputDirectory.root
         )
     }
-
 }

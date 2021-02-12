@@ -19,4 +19,3 @@ public interface Commonizer : Serializable {
         outputDirectory: File
     )
 }
-

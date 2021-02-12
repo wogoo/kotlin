@@ -41,5 +41,4 @@ internal class DefaultNativeLibraryLoader(
 
         return NativeLibrary(library)
     }
-
 }

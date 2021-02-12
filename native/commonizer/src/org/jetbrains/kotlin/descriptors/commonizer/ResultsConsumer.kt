@@ -24,7 +24,7 @@ interface ResultsConsumer {
         }
 
         class Commonized(
-            override val libraryName: String, val metadata: SerializedMetadata, val manifestData: NativeSensitiveManifestData
+            override val libraryName: String, val metadata: SerializedMetadata, val manifest: NativeSensitiveManifestData
         ) : ModuleResult()
     }
 

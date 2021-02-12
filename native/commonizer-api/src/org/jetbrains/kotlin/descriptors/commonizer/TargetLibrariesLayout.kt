@@ -28,4 +28,3 @@ public object HierarchicalCommonizerOutputLayout : CommonizerOutputLayout {
         return root.resolve(target.identityString)
     }
 }
-

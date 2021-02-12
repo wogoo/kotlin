@@ -20,7 +20,6 @@ public fun parseCommonizerTarget(identityString: String): CommonizerTarget {
     }
 }
 
-
 //region Tokens
 
 private fun tokenizeIdentityString(identityString: String): List<IdentityStringToken> {

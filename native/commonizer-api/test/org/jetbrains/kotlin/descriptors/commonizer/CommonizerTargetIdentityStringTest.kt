@@ -10,7 +10,6 @@ import org.jetbrains.kotlin.konan.target.KonanTarget.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-
 class CommonizerTargetIdentityStringTest {
 
     @Test

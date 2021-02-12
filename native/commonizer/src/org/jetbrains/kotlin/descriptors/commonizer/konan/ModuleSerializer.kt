@@ -28,7 +28,7 @@ internal class ModuleSerializer(
             is ResultsConsumer.ModuleResult.Commonized -> {
                 val libraryName = moduleResult.libraryName
                 val libraryDestination = librariesDestination.resolve(libraryName)
-                writeLibrary(moduleResult.metadata, moduleResult.manifestData, libraryDestination)
+                writeLibrary(moduleResult.metadata, moduleResult.manifest, libraryDestination)
             }
             is ResultsConsumer.ModuleResult.Missing -> {
                 val libraryName = moduleResult.libraryName
@@ -62,4 +62,3 @@ private fun writeLibrary(
     manifestData.applyTo(library.base as BaseWriterImpl)
     library.commit()
 }
-
