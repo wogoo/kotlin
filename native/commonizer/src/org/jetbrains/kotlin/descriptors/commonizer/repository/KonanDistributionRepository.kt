@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.descriptors.commonizer.konan.NativeLibrary
 import org.jetbrains.kotlin.descriptors.commonizer.platformLibsDir
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
-// TODO SELLMAIR NOW: Test
 internal class KonanDistributionRepository(
     private val konanDistribution: KonanDistribution,
     private val targets: Set<KonanTarget>,
