@@ -15,8 +15,12 @@ enum class DceMode {
     }
 }
 
-fun DceMode.isNotRemoving(): Boolean {
+fun DceMode.isNotRemovingDeclaration(): Boolean {
     return this != DceMode.REMOVAL_DECLARATION
+}
+
+fun DceMode.removingBody(): Boolean {
+    return this != DceMode.LOGGING
 }
 
 fun DceMode.dceModeToArgumentOfUnreachableMethod(): Int {
