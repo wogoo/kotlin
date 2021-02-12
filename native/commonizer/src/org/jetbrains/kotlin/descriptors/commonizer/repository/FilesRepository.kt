@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.descriptors.commonizer.konan.NativeLibrary
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import java.io.File
 
-// TODO SELLMAIR NOW: Test
 internal class FilesRepository(
     private val libraryFiles: Set<File>,
     private val libraryLoader: NativeLibraryLoader
