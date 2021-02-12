@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.cli.common.arguments.Argument;
 import org.jetbrains.kotlin.cli.common.arguments.CommonToolArguments;
 import org.jetbrains.kotlin.cli.common.arguments.InternalArgument;
+import org.jetbrains.kotlin.cli.common.arguments.SubstituteDefaultIfImplicit;
 import org.jetbrains.kotlin.cli.common.arguments.ParseCommandLineArgumentsKt;
 import org.jetbrains.kotlin.utils.StringsKt;
 
@@ -68,7 +69,10 @@ public class ArgumentUtils {
             Object value = property.get(arguments);
             Object defaultValue = property.get(defaultArguments);
 
-            if (value == null || Objects.equals(value, defaultValue)) continue;
+            if (value == null ||
+                (findInstance(property.getAnnotations(), SubstituteDefaultIfImplicit.class) == null && Objects.equals(value, defaultValue))) {
+                continue;
+            }
 
             Type propertyJavaType = ReflectJvmMapping.getJavaType(property.getReturnType());
 

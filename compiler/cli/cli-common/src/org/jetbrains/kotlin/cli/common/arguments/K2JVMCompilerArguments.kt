@@ -70,6 +70,7 @@ class K2JVMCompilerArguments : CommonCompilerArguments() {
     @Argument(value = "-module-name", valueDescription = "<name>", description = "Name of the generated .kotlin_module file")
     var moduleName: String? by NullableStringFreezableVar(null)
 
+    @SubstituteDefaultIfImplicit(substitute = JvmTargetDefaultSubstitute::class)
     @GradleOption(DefaultValues.JvmTargetVersions::class)
     @Argument(
         value = "-jvm-target",

@@ -19,6 +19,8 @@ package org.jetbrains.kotlin.cli.common.arguments
 import org.jetbrains.kotlin.utils.SmartList
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
+import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 
 @Target(AnnotationTarget.PROPERTY)
@@ -110,12 +112,22 @@ private fun <A : CommonToolArguments> parsePreprocessedCommandLineArguments(args
         return argument.value == arg
     }
 
+    fun exposeImplicitDefaults(args: List<String>, arguments: List<ArgumentField>): List<String> {
+        val argumentsWithSubstitutions = arguments.filter { it.property.findAnnotation<SubstituteDefaultIfImplicit>() != null }
+            .associateWith { it.property.findAnnotation<SubstituteDefaultIfImplicit>()!!.substitute }
+        val implicitArgumentsWithSubstitutions =
+            argumentsWithSubstitutions.filterKeys { argumentField -> args.all { arg -> !argumentField.matches(arg) } }
+        return implicitArgumentsWithSubstitutions.values.mapNotNull { it.objectInstance }.flatMap { it.substitution }
+    }
+
+
     val freeArgs = ArrayList<String>()
     val internalArguments = ArrayList<InternalArgument>()
+    val preparedArgs = exposeImplicitDefaults(args, properties) + args
 
     var i = 0
-    loop@ while (i < args.size) {
-        val arg = args[i++]
+    loop@ while (i < preparedArgs.size) {
+        val arg = preparedArgs[i++]
 
         if (freeArgsStarted) {
             freeArgs.add(arg)
@@ -166,12 +178,12 @@ private fun <A : CommonToolArguments> parsePreprocessedCommandLineArguments(args
             argument.isAdvanced && arg.startsWith(argument.deprecatedName + "=") -> {
                 arg.substring(argument.deprecatedName.length + 1)
             }
-            i == args.size -> {
+            i == preparedArgs.size -> {
                 errors.argumentWithoutValue = arg
                 break@loop
             }
             else -> {
-                args[i++]
+                preparedArgs[i++]
             }
         }
 
@@ -197,6 +209,7 @@ private fun <A : CommonToolArguments> updateField(property: KMutableProperty1<A,
             } else {
                 (value as String).split(delimiter).toTypedArray()
             }
+
             @Suppress("UNCHECKED_CAST")
             val oldValue = property.get(result) as Array<String>?
             property.set(result, if (oldValue != null) arrayOf(*oldValue, *newElements) else newElements)
