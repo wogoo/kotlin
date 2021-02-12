@@ -52,13 +52,11 @@ internal class NativeKlibCommonize(options: Collection<Option<*>>) : Task(option
         val targetLibraries = getMandatory<List<File>, TargetLibrariesOptionType>()
         val dependencyLibraries = getMandatory<List<File>, DependencyLibrariesOptionType>()
         val outputHierarchy = getMandatory<SharedCommonizerTarget, OutputHierarchyOptionType>()
-
         val statsType = getOptional<StatsType, StatsTypeOptionType> { it == "log-stats" } ?: StatsType.NONE
 
         val logger = CliLoggerAdapter(2)
         val libraryLoader = DefaultNativeLibraryLoader(logger)
         val resultsConsumer = LibraryResultsConsumer(destination, HierarchicalCommonizerOutputLayout, logger.toProgressLogger())
-
         val statsCollector = StatsCollector(statsType, outputHierarchy.konanTargets.toList())
 
         LibraryCommonizer(
@@ -70,7 +68,7 @@ internal class NativeKlibCommonize(options: Collection<Option<*>>) : Task(option
             targets = outputHierarchy.konanTargets.toList(),
             resultsConsumer = resultsConsumer,
             statsCollector = statsCollector,
-            logger = CliLoggerAdapter(2)
+            logger = logger
         ).run()
 
         statsCollector?.writeTo(FileStatsOutput(destination, statsType.name.toLowerCase()))
