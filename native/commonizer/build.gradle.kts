@@ -16,6 +16,7 @@ configurations {
 dependencies {
     embedded(project(":kotlinx-metadata-klib")) { isTransitive = false }
     embedded(project(":kotlinx-metadata")) { isTransitive = false }
+    embedded(project(":native:kotlin-klib-commonizer-api"))
 
     // N.B. The order of "kotlinx-metadata*" dependencies makes sense for runtime classpath
     // of the "runCommonizer" task. Please, don't mix them up.
@@ -26,7 +27,6 @@ dependencies {
     compileOnly(project(":compiler:frontend"))
     compileOnly(project(":native:frontend.native"))
     compileOnly(project(":kotlin-util-klib-metadata"))
-    compileOnly(project(":native:kotlin-klib-commonizer-api"))
     compileOnly(intellijCoreDep()) { includeJars("intellij-core") }
     compileOnly(intellijDep()) { includeJars("trove4j") }
 
