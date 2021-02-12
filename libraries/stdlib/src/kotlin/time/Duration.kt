@@ -118,8 +118,29 @@ public inline class Duration internal constructor(internal val storage: Long) : 
      * @throws IllegalArgumentException if the operation results in a `NaN` value.
      */
     public operator fun times(scale: Int): Duration =
-        // TODO:
-        Duration((valueToDouble() * scale).normalizeZero())
+        this * scale.toLong()
+
+    /**
+     * Returns a duration whose value is this duration value multiplied by the given [scale] number.
+     *
+     * @throws IllegalArgumentException if the operation results in a `NaN` value.
+     */
+    @SinceKotlin("1.5")
+    public operator fun times(scale: Long): Duration {
+        if (!isDouble()) {
+            val value = valueAsLong()
+            when {
+                scale == 1L -> return this
+                value == 1L -> return Duration(longToStorage(scale))
+                value == 0L || scale == 0L -> return ZERO
+                scale > Long.MIN_VALUE -> {
+                    val total = value * scale
+                    if (total / scale == value) return Duration(longToStorage(total))
+                }
+            }
+        }
+        return Duration((valueToDouble() * scale).normalizeZero())
+    }
 
     /**
      * Returns a duration whose value is this duration value multiplied by the given [scale] number.
@@ -156,6 +177,7 @@ public inline class Duration internal constructor(internal val storage: Long) : 
     public fun isNegative(): Boolean = storage < 0
 
     /** Returns true, if the duration value is greater than zero. */
+    // TODO: Check what happens with denorm doubles with zero sign, exp, and last one bit in mantissa
     public fun isPositive(): Boolean = (storage shr 1) > 0
 
     /** Returns true, if the duration value is infinite. */
