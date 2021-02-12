@@ -50,6 +50,7 @@ import org.jetbrains.kotlin.load.kotlin.TypeMappingMode
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.isOneSegmentFQN
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.resolve.ArrayFqNames
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.DelegatingBindingTrace
 import org.jetbrains.kotlin.resolve.calls.callUtil.getResolvedCall
@@ -107,6 +108,10 @@ class ClassFileToSourceStubConverter(val kaptContext: KaptContextForStubGenerati
         private val JAVA_KEYWORDS = Tokens.TokenKind.values()
             .filter { JAVA_KEYWORD_FILTER_REGEX.matches(it.toString().orEmpty()) }
             .mapTo(hashSetOf(), Any::toString)
+
+        private val KOTLIN_PACKAGE = FqName("kotlin")
+
+        private val ARRAY_OF_FUNCTIONS = (ArrayFqNames.PRIMITIVE_TYPE_TO_ARRAY.values + ArrayFqNames.ARRAY_OF_FUNCTION).toSet()
     }
 
     private val correctErrorTypes = kaptContext.options[KaptFlag.CORRECT_ERROR_TYPES]
@@ -1260,12 +1265,12 @@ class ClassFileToSourceStubConverter(val kaptContext: KaptContextForStubGenerati
             return treeMaker.Select(typeExpression, treeMaker.name("class"))
         }
 
-        fun unwrapArgumentExpression() =
+        fun unwrapArgumentExpression(): List<KtExpression?>? =
             when (singleArg) {
                 is KtCallExpression -> {
                     val resultingDescriptor = singleArg.getResolvedCall(kaptContext.bindingContext)?.resultingDescriptor
 
-                    if (resultingDescriptor is FunctionDescriptor && resultingDescriptor.fqNameSafe.asString() == "kotlin.arrayOf")
+                    if (resultingDescriptor is FunctionDescriptor && isArrayOfFunction(resultingDescriptor))
                         singleArg.valueArguments.map { it.getArgumentExpression() }
                     else
                         null
@@ -1505,6 +1510,10 @@ class ClassFileToSourceStubConverter(val kaptContext: KaptContextForStubGenerati
             file to importsFromRoot.mapTo(mutableSetOf()) { it.asString() }
         }.toMap()
 
+    private fun isArrayOfFunction(d: FunctionDescriptor): Boolean {
+        val name = d.fqNameSafe
+        return name.parent() == KOTLIN_PACKAGE && ARRAY_OF_FUNCTIONS.contains(name.shortName())
+    }
 
 }
 
