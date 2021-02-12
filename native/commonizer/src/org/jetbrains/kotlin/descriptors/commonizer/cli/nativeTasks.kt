@@ -5,8 +5,15 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.cli
 
+import org.jetbrains.kotlin.descriptors.commonizer.*
+import org.jetbrains.kotlin.descriptors.commonizer.konan.LibraryCommonizer
+import org.jetbrains.kotlin.descriptors.commonizer.konan.LibraryResultsConsumer
 import org.jetbrains.kotlin.descriptors.commonizer.konan.NativeDistributionCommonizer
-import org.jetbrains.kotlin.descriptors.commonizer.konan.NativeDistributionCommonizer.StatsType
+import org.jetbrains.kotlin.descriptors.commonizer.repository.FilesRepository
+import org.jetbrains.kotlin.descriptors.commonizer.repository.KonanDistributionRepository
+import org.jetbrains.kotlin.descriptors.commonizer.repository.plus
+import org.jetbrains.kotlin.descriptors.commonizer.stats.StatsCollector
+import org.jetbrains.kotlin.descriptors.commonizer.stats.StatsType
 import org.jetbrains.kotlin.konan.library.KONAN_DISTRIBUTION_KLIB_DIR
 import org.jetbrains.kotlin.konan.library.KONAN_DISTRIBUTION_PLATFORM_LIBS_DIR
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -32,6 +39,38 @@ internal class NativeDistributionListTargets(options: Collection<Option<*>>) : T
             targets.forEach(::println)
         }
         println()
+    }
+}
+
+internal class NativeKlibCommonize(options: Collection<Option<*>>) : Task(options) {
+    override val category: Category = Category.COMMONIZATION
+
+    override fun execute(logPrefix: String) {
+        val distribution = KonanDistribution(getMandatory<File, NativeDistributionOptionType>())
+        val destination = getMandatory<File, OutputOptionType>()
+        val targetLibraries = getMandatory<List<File>, TargetLibrariesOptionType>()
+        val dependencyLibraries = getMandatory<List<File>, DependencyLibrariesOptionType>()
+        val outputHierarchy = getMandatory<SharedCommonizerTarget, OutputHierarchyOptionType>()
+
+        val statsType = getOptional<StatsType, StatsTypeOptionType> { it == "log-stats" } ?: StatsType.NONE
+
+        val logger = CliLoggerAdapter(2)
+        val libraryLoader = DefaultNativeLibraryLoader(logger)
+        val resultsConsumer = LibraryResultsConsumer(destination, HierarchicalCommonizerOutputLayout, logger.toProgressLogger())
+
+        val statsCollector = StatsCollector(statsType, outputHierarchy.konanTargets.toList())
+
+        LibraryCommonizer(
+            konanDistribution = distribution,
+            repository = FilesRepository(targetLibraries.toSet(), libraryLoader),
+            dependencies = KonanDistributionRepository(distribution, outputHierarchy.konanTargets, libraryLoader) +
+                    FilesRepository(dependencyLibraries.toSet(), libraryLoader),
+            libraryLoader = libraryLoader,
+            targets = outputHierarchy.konanTargets.toList(),
+            resultsConsumer = resultsConsumer,
+            statsCollector = statsCollector,
+            logger = CliLoggerAdapter(2)
+        ).run()
     }
 }
 
@@ -78,4 +117,5 @@ internal class NativeDistributionCommonize(options: Collection<Option<*>>) : Tas
                 ?.size
         }
     }
+
 }

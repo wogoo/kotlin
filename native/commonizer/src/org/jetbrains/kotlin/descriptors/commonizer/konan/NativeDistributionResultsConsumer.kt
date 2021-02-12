@@ -6,12 +6,9 @@
 package org.jetbrains.kotlin.descriptors.commonizer.konan
 
 import com.intellij.util.containers.FactoryMap
-import org.jetbrains.kotlin.descriptors.commonizer.ResultsConsumer
+import org.jetbrains.kotlin.descriptors.commonizer.*
 import org.jetbrains.kotlin.descriptors.commonizer.ResultsConsumer.ModuleResult
 import org.jetbrains.kotlin.descriptors.commonizer.ResultsConsumer.Status
-import org.jetbrains.kotlin.descriptors.commonizer.CommonizerTarget
-import org.jetbrains.kotlin.descriptors.commonizer.LeafTarget
-import org.jetbrains.kotlin.descriptors.commonizer.SharedTarget
 import org.jetbrains.kotlin.konan.library.KONAN_DISTRIBUTION_COMMON_LIBS_DIR
 import org.jetbrains.kotlin.konan.library.KONAN_DISTRIBUTION_KLIB_DIR
 import org.jetbrains.kotlin.konan.library.KONAN_DISTRIBUTION_PLATFORM_LIBS_DIR
@@ -35,21 +32,21 @@ internal class NativeDistributionResultsConsumer(
     private val allLeafTargets = originalLibraries.librariesByTargets.keys
 
     private val allLeafCommonizedTargets = originalLibraries.librariesByTargets.filterValues { it.libraries.isNotEmpty() }.keys
-    private val sharedTarget = SharedTarget(allLeafCommonizedTargets)
+    private val sharedTarget = SharedCommonizerTarget(allLeafCommonizedTargets)
 
     private val consumedTargets = LinkedHashSet<CommonizerTarget>()
 
     private val cachedManifestProviders = FactoryMap.create<CommonizerTarget, NativeManifestDataProvider> { target ->
         when (target) {
-            is LeafTarget -> originalLibraries.librariesByTargets.getValue(target)
-            is SharedTarget -> CommonNativeManifestDataProvider(originalLibraries.librariesByTargets.values)
+            is LeafCommonizerTarget -> originalLibraries.librariesByTargets.getValue(target)
+            is SharedCommonizerTarget -> CommonNativeManifestDataProvider(originalLibraries.librariesByTargets.values)
         }
     }
 
     private val cachedLibrariesDestination = FactoryMap.create<CommonizerTarget, File> { target ->
         val librariesDestination = when (target) {
-            is LeafTarget -> destination.resolve(KONAN_DISTRIBUTION_PLATFORM_LIBS_DIR).resolve(target.name)
-            is SharedTarget -> destination.resolve(KONAN_DISTRIBUTION_COMMON_LIBS_DIR)
+            is LeafCommonizerTarget -> destination.resolve(KONAN_DISTRIBUTION_PLATFORM_LIBS_DIR).resolve(target.name)
+            is SharedCommonizerTarget -> destination.resolve(KONAN_DISTRIBUTION_COMMON_LIBS_DIR)
         }
 
         librariesDestination.mkdirs() // always create an empty directory even if there is nothing to copy
@@ -66,7 +63,7 @@ internal class NativeDistributionResultsConsumer(
     override fun targetConsumed(target: CommonizerTarget) {
         check(target in consumedTargets)
 
-        logProgress("Written libraries for ${target.prettyCommonizedName(sharedTarget)}")
+        logProgress("Written libraries for ${sharedTarget.contextualIdentityString(target)}")
     }
 
     override fun allConsumed(status: Status) {
@@ -83,7 +80,7 @@ internal class NativeDistributionResultsConsumer(
             }
             Status.DONE -> {
                 // 'targetsToCopy' are some leaf targets with empty set of platform libraries
-                val targetsToCopy = allLeafTargets - consumedTargets.filterIsInstance<LeafTarget>()
+                val targetsToCopy = allLeafTargets - consumedTargets.filterIsInstance<LeafCommonizerTarget>()
                 targetsToCopy.forEach(::copyTargetAsIs)
             }
         }
@@ -114,14 +111,14 @@ internal class NativeDistributionResultsConsumer(
         }
     }
 
-    private fun copyTargetAsIs(leafTarget: LeafTarget) {
+    private fun copyTargetAsIs(leafTarget: LeafCommonizerTarget) {
         val librariesCount = originalLibraries.librariesByTargets.getValue(leafTarget).libraries.size
         val librariesDestination = cachedLibrariesDestination.getValue(leafTarget)
 
         val librariesSource = leafTarget.platformLibrariesSource
         if (librariesSource.isDirectory) librariesSource.copyRecursively(librariesDestination)
 
-        logProgress("Copied $librariesCount libraries for ${leafTarget.prettyName}")
+        logProgress("Copied $librariesCount libraries for ${leafTarget.identityString}")
     }
 
     private fun serializeModule(target: CommonizerTarget, moduleResult: ModuleResult) {
@@ -165,7 +162,7 @@ internal class NativeDistributionResultsConsumer(
         library.commit()
     }
 
-    private val LeafTarget.platformLibrariesSource: File
+    private val LeafCommonizerTarget.platformLibrariesSource: File
         get() = repository.resolve(KONAN_DISTRIBUTION_KLIB_DIR)
             .resolve(KONAN_DISTRIBUTION_PLATFORM_LIBS_DIR)
             .resolve(name)

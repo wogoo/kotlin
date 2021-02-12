@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer
 
+import org.jetbrains.kotlin.descriptors.commonizer.konan.NativeSensitiveManifestData
 import org.jetbrains.kotlin.library.SerializedMetadata
 import java.io.File
 
@@ -18,7 +19,9 @@ interface ResultsConsumer {
             override val libraryName: String get() = originalLocation.name
         }
 
-        class Commonized(override val libraryName: String, val metadata: SerializedMetadata) : ModuleResult()
+        class Commonized(
+            override val libraryName: String, val metadata: SerializedMetadata, val manifestData: NativeSensitiveManifestData
+        ) : ModuleResult()
     }
 
     /**
@@ -30,11 +33,11 @@ interface ResultsConsumer {
      * Mark the specified [CommonizerTarget] as fully consumed.
      * It's forbidden to make subsequent [consume] calls for fully consumed targets.
      */
-    fun targetConsumed(target: CommonizerTarget)
+    fun targetConsumed(target: CommonizerTarget) = Unit
 
     /**
      * Notify that all results have been consumed.
      * It's forbidden to make any subsequent [consume] and [targetConsumed] calls after this call.
      */
-    fun allConsumed(status: Status)
+    fun allConsumed(status: Status) = Unit
 }

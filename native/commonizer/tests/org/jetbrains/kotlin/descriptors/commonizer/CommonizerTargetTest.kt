@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer
 
-import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -14,12 +13,12 @@ class CommonizerTargetTest {
     @Test
     fun leafTargetNames() {
         listOf(
-            Triple("foo", "[foo]", FOO),
-            Triple("bar", "[bar]", BAR),
-            Triple("baz_123", "[baz_123]", BAZ),
-        ).forEach { (name, prettyName, target: LeafTarget) ->
+            Triple("foo", "foo", FOO),
+            Triple("bar", "bar", BAR),
+            Triple("baz_123", "baz_123", BAZ),
+        ).forEach { (name, prettyName, target: LeafCommonizerTarget) ->
             assertEquals(name, target.name)
-            assertEquals(prettyName, target.prettyName)
+            assertEquals(prettyName, target.identityString)
         }
     }
 
@@ -27,12 +26,11 @@ class CommonizerTargetTest {
     fun sharedTargetNames() {
         listOf(
             "[foo]" to SharedTarget(FOO),
-            "[foo, bar]" to SharedTarget(FOO, BAR),
-            "[foo, bar, baz_123]" to SharedTarget(FOO, BAR, BAZ),
-            "[foo, bar, baz_123, [foo, bar]]" to SharedTarget(FOO, BAR, BAZ, SharedTarget(FOO, BAR))
-        ).forEach { (prettyName, target: SharedTarget) ->
-            assertEquals(prettyName, target.prettyName)
-            assertEquals(prettyName, target.name)
+            "[bar, foo]" to SharedTarget(FOO, BAR),
+            "[bar, baz_123, foo]" to SharedTarget(FOO, BAR, BAZ),
+            "[[bar, foo], bar, baz_123, foo]" to SharedTarget(FOO, BAR, BAZ, SharedTarget(FOO, BAR))
+        ).forEach { (prettyName, target: SharedCommonizerTarget) ->
+            assertEquals(prettyName, target.identityString)
         }
     }
 
@@ -45,26 +43,21 @@ class CommonizerTargetTest {
             "[foo, bar, baz_123(*)]" to BAZ,
             "[foo, bar, baz_123]" to sharedTarget
         ).forEach { (prettyCommonizerName, target: CommonizerTarget) ->
-            assertEquals(prettyCommonizerName, target.prettyCommonizedName(sharedTarget))
+            assertEquals(prettyCommonizerName, sharedTarget.contextualIdentityString(target))
         }
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun prettyCommonizedNameFailure() {
-        FOO.prettyCommonizedName(SharedTarget(BAR, BAZ))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun sharedTargetNoInnerTargets() {
-        SharedTarget(emptySet())
+        SharedCommonizerTarget(emptySet())
     }
 
     private companion object {
-        val FOO = LeafTarget("foo")
-        val BAR = LeafTarget("bar", KonanTarget.IOS_X64)
-        val BAZ = LeafTarget("baz_123", KonanTarget.MACOS_X64)
+        val FOO = LeafCommonizerTarget("foo")
+        val BAR = LeafCommonizerTarget("bar")
+        val BAZ = LeafCommonizerTarget("baz_123")
 
         @Suppress("TestFunctionName")
-        fun SharedTarget(vararg targets: CommonizerTarget) = SharedTarget(linkedSetOf(*targets))
+        fun SharedTarget(vararg targets: CommonizerTarget) = SharedCommonizerTarget(linkedSetOf(*targets))
     }
 }

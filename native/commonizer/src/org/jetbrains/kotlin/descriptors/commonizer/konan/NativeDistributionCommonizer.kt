@@ -5,10 +5,10 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.konan
 
+import com.intellij.util.containers.FactoryMap
 import org.jetbrains.kotlin.backend.common.serialization.metadata.KlibMetadataVersion
 import org.jetbrains.kotlin.backend.common.serialization.metadata.metadataVersion
 import org.jetbrains.kotlin.descriptors.commonizer.*
-import org.jetbrains.kotlin.descriptors.commonizer.konan.NativeDistributionCommonizer.StatsType.*
 import org.jetbrains.kotlin.descriptors.commonizer.stats.*
 import org.jetbrains.kotlin.descriptors.commonizer.utils.ResettableClockMark
 import org.jetbrains.kotlin.konan.library.*
@@ -30,7 +30,6 @@ class NativeDistributionCommonizer(
     private val statsType: StatsType,
     private val logger: Logger
 ) {
-    enum class StatsType { RAW, AGGREGATED, NONE }
 
     private val clockMark = ResettableClockMark()
 
@@ -72,7 +71,7 @@ class NativeDistributionCommonizer(
         val stdlib = NativeLibrary(loadLibrary(stdlibPath))
 
         val librariesByTargets = targets.associate { target ->
-            val leafTarget = LeafTarget(target.name, target)
+            val leafTarget = LeafCommonizerTarget(target)
 
             val platformLibs = leafTarget.platformLibrariesSource
                 .takeIf { it.isDirectory }
@@ -82,7 +81,7 @@ class NativeDistributionCommonizer(
                 .orEmpty()
 
             if (platformLibs.isEmpty())
-                logger.warning("No platform libraries found for target ${leafTarget.prettyName}. This target will be excluded from commonization.")
+                logger.warning("No platform libraries found for target ${leafTarget.identityString}. This target will be excluded from commonization.")
 
             leafTarget to NativeLibrariesToCommonize(platformLibs)
         }
@@ -119,22 +118,26 @@ class NativeDistributionCommonizer(
 
     private fun commonizeAndSaveResults(allLibraries: AllNativeLibraries) {
         val statsCollector = when (statsType) {
-            RAW -> RawStatsCollector(targets)
-            AGGREGATED -> AggregatedStatsCollector(targets)
-            NONE -> null
+            StatsType.RAW -> RawStatsCollector(targets)
+            StatsType.AGGREGATED -> AggregatedStatsCollector(targets)
+            StatsType.NONE -> null
         }
 
-        val parameters = CommonizerParameters(statsCollector, ::logProgress).apply {
-            val storageManager = LockBasedStorageManager("Commonized modules")
+        val resultsConsumer = NativeDistributionResultsConsumer(
+            repository = repository,
+            originalLibraries = allLibraries,
+            destination = destination,
+            copyStdlib = copyStdlib,
+            copyEndorsedLibs = copyEndorsedLibs,
+            logProgress = ::logProgress
+        )
 
-            resultsConsumer = NativeDistributionResultsConsumer(
-                repository = repository,
-                originalLibraries = allLibraries,
-                destination = destination,
-                copyStdlib = copyStdlib,
-                copyEndorsedLibs = copyEndorsedLibs,
-                logProgress = ::logProgress
-            )
+        val manifestProvider = TargetedNativeManifestDataProvider(allLibraries)
+
+        val parameters = CommonizerParameters(
+            resultsConsumer, manifestProvider, statsCollector, ::logProgress
+        ).apply {
+            val storageManager = LockBasedStorageManager("Commonized modules")
             dependencyModulesProvider = NativeDistributionModulesProvider.forStandardLibrary(storageManager, allLibraries.stdlib)
 
             allLibraries.librariesByTargets.forEach { (target, librariesToCommonize) ->
@@ -157,7 +160,7 @@ class NativeDistributionCommonizer(
         statsCollector?.writeTo(FileStatsOutput(destination, statsType.name.toLowerCase()))
     }
 
-    private val LeafTarget.platformLibrariesSource: File
+    private val LeafCommonizerTarget.platformLibrariesSource: File
         get() = repository.resolve(KONAN_DISTRIBUTION_KLIB_DIR)
             .resolve(KONAN_DISTRIBUTION_PLATFORM_LIBS_DIR)
             .resolve(name)

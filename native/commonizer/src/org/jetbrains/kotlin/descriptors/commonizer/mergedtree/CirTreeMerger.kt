@@ -6,7 +6,7 @@
 package org.jetbrains.kotlin.descriptors.commonizer.mergedtree
 
 import org.jetbrains.kotlin.descriptors.*
-import org.jetbrains.kotlin.descriptors.commonizer.LeafTarget
+import org.jetbrains.kotlin.descriptors.commonizer.LeafCommonizerTarget
 import org.jetbrains.kotlin.descriptors.commonizer.ModulesProvider.ModuleInfo
 import org.jetbrains.kotlin.descriptors.commonizer.CommonizerParameters
 import org.jetbrains.kotlin.descriptors.commonizer.TargetProvider
@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.descriptors.commonizer.cir.CirEntityId
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirName
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirPackageName
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.*
+import org.jetbrains.kotlin.descriptors.commonizer.identityString
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
 import org.jetbrains.kotlin.storage.StorageManager
 
@@ -49,7 +50,7 @@ class CirTreeMerger(
 ) {
     class CirTreeMergeResult(
         val root: CirRootNode,
-        val missingModuleInfos: Map<LeafTarget, Collection<ModuleInfo>>
+        val missingModuleInfos: Map<LeafCommonizerTarget, Collection<ModuleInfo>>
     )
 
     private val size = parameters.targetProviders.size
@@ -77,7 +78,7 @@ class CirTreeMerger(
         parameters.targetProviders.forEachIndexed { targetIndex, targetProvider ->
             val commonModuleInfos = allModuleInfos[targetIndex].filterKeys { it in commonModuleNames }
             processTarget(rootNode, targetIndex, targetProvider, commonModuleInfos, dependencyModules)
-            parameters.progressLogger?.invoke("Loaded declarations for ${targetProvider.target.prettyName}")
+            parameters.progressLogger?.invoke("Loaded declarations for ${targetProvider.target.identityString}")
             System.gc()
         }
 

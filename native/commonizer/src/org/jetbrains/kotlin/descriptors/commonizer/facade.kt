@@ -9,6 +9,7 @@ import kotlinx.metadata.klib.ChunkedKlibModuleFragmentWriteStrategy
 import org.jetbrains.kotlin.descriptors.commonizer.ResultsConsumer.ModuleResult
 import org.jetbrains.kotlin.descriptors.commonizer.ResultsConsumer.Status
 import org.jetbrains.kotlin.descriptors.commonizer.core.CommonizationVisitor
+import org.jetbrains.kotlin.descriptors.commonizer.konan.CommonNativeManifestDataProvider
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.*
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirNode.Companion.dimension
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirTreeMerger.CirTreeMergeResult
@@ -67,11 +68,11 @@ private fun serializeTarget(mergeResult: CirTreeMergeResult, targetIndex: Int, p
         val serializedMetadata = with(metadataModule.write(KLIB_FRAGMENT_WRITE_STRATEGY)) {
             SerializedMetadata(header, fragments, fragmentNames)
         }
-
-        parameters.resultsConsumer.consume(target, ModuleResult.Commonized(libraryName, serializedMetadata))
+        val manifestData = parameters.manifestDataProvider.getManifest(target, libraryName)
+        parameters.resultsConsumer.consume(target, ModuleResult.Commonized(libraryName, serializedMetadata, manifestData))
     }
 
-    if (target is LeafTarget) {
+    if (target is LeafCommonizerTarget) {
         mergeResult.missingModuleInfos.getValue(target).forEach {
             parameters.resultsConsumer.consume(target, ModuleResult.Missing(it.originalLocation))
         }
