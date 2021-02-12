@@ -27,9 +27,9 @@ class CommonizeLibcurlTest {
 
         commonizer.commonizeLibraries(
             konanHome = konanHome,
-            targetLibraries = libraries,
+            inputLibraries = libraries,
             dependencyLibraries = emptySet(),
-            outputHierarchy = CommonizerTarget(MACOS_X64, LINUX_X64),
+            outputCommonizerTarget = CommonizerTarget(MACOS_X64, LINUX_X64),
             outputDirectory = temporaryOutputDirectory.root
         )
 

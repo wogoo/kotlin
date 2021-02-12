@@ -13,9 +13,9 @@ public interface Commonizer : Serializable {
     @Throws(Throwable::class)
     public fun commonizeLibraries(
         konanHome: File,
-        targetLibraries: Set<File>,
+        inputLibraries: Set<File>,
         dependencyLibraries: Set<File>,
-        outputHierarchy: SharedCommonizerTarget,
+        outputCommonizerTarget: SharedCommonizerTarget,
         outputDirectory: File
     )
 }
