@@ -346,11 +346,18 @@ internal val AbstractInsnNode?.insnText: String
 internal val AbstractInsnNode?.insnOpcodeText: String
     get() = if (this == null) "null" else Printer.OPCODES[opcode]
 
+// In loadClassByInternalName, outputFile.asByteArray() call eventually leads to ClassWriter.toByteArray() invocation, which,
+// if performed concurrently for the same class, leads to errors. We need to protect the call by a lock; moreover, here we have
+// no way to get a separate lock for each class, so have to use a global one.
+private val classWriterLock = Any()
+
 internal fun loadClassBytesByInternalName(state: GenerationState, internalName: String): ByteArray {
     //try to find just compiled classes then in dependencies
     val outputFile = state.factory.get("$internalName.class")
     if (outputFile != null) {
-        return outputFile.asByteArray()
+        synchronized(classWriterLock) {
+            return outputFile.asByteArray()
+        }
     }
 
     val file = findVirtualFileImprecise(state, internalName) ?: throw RuntimeException("Couldn't find virtual file for $internalName")
