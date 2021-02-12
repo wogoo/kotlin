@@ -48,9 +48,9 @@ internal enum class TaskType(
         listOf(
             NativeDistributionOptionType,
             OutputOptionType,
-            TargetLibrariesOptionType,
+            InputLibrariesOptionType,
             DependencyLibrariesOptionType,
-            OutputHierarchyOptionType,
+            OutputCommonizerTargetOptionType,
         ),
         ::NativeKlibCommonize
     )

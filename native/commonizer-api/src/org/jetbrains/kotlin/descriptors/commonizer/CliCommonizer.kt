@@ -26,9 +26,9 @@ public class CliCommonizer(private val commonizerClassLoader: ClassLoader) : Com
         val arguments = mutableListOf<String>().apply {
             add("native-klib-commonize")
             add("-distribution-path"); add(konanHome.absolutePath)
-            add("-target-libraries"); add(targetLibraries.joinToString(";") { it.absolutePath })
+            add("-input-libraries"); add(targetLibraries.joinToString(";") { it.absolutePath })
             add("-dependency-libraries"); add(dependencyLibraries.joinToString(";") { it.absolutePath })
-            add("-output-hierarchy"); add(outputHierarchy.identityString)
+            add("-output-commonizer-target"); add(outputHierarchy.identityString)
             add("-output-path"); add(outputDirectory.absolutePath)
         }
 

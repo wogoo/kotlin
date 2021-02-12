@@ -5,8 +5,8 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.cli
 
-internal object TargetLibrariesOptionType : LibrariesSetOptionType(
+internal object InputLibrariesOptionType : LibrariesSetOptionType(
     mandatory = true,
-    alias = "target-libraries",
+    alias = "input-libraries",
     description = "';' separated list of klib file paths that will get commonized"
 )

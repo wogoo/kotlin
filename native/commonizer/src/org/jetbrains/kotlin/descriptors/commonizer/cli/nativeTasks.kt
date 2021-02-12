@@ -53,26 +53,25 @@ internal class NativeKlibCommonize(options: Collection<Option<*>>) : Task(option
     override fun execute(logPrefix: String) {
         val distribution = KonanDistribution(getMandatory<File, NativeDistributionOptionType>())
         val destination = getMandatory<File, OutputOptionType>()
-        val targetLibraries = getMandatory<List<File>, TargetLibrariesOptionType>()
+        val targetLibraries = getMandatory<List<File>, InputLibrariesOptionType>()
         val dependencyLibraries = getMandatory<List<File>, DependencyLibrariesOptionType>()
-        val outputHierarchy = getMandatory<SharedCommonizerTarget, OutputHierarchyOptionType>()
+        val outputHierarchy = getMandatory<SharedCommonizerTarget, OutputCommonizerTargetOptionType>()
         val statsType = getOptional<StatsType, StatsTypeOptionType> { it == "log-stats" } ?: StatsType.NONE
 
+        val konanTargets = outputHierarchy.konanTargets
         val logger = CliLoggerAdapter(2)
         val libraryLoader = DefaultNativeLibraryLoader(logger)
         val statsCollector = StatsCollector(statsType, outputHierarchy.konanTargets.toList())
-        val respository = FilesRepository(targetLibraries.toSet(), libraryLoader)
+        val repository = FilesRepository(targetLibraries.toSet(), libraryLoader)
 
         val resultsConsumer = buildResultsConsumer {
             this add ModuleSerializer(destination, HierarchicalCommonizerOutputLayout, logger.toProgressLogger())
-            this add CopyUnconsumedModulesAsIsConsumer(
-                respository, destination, outputHierarchy.konanTargets, NativeDistributionCommonizerOutputLayout
-            )
+            this add CopyUnconsumedModulesAsIsConsumer(repository, destination, konanTargets, NativeDistributionCommonizerOutputLayout)
         }
 
         LibraryCommonizer(
             konanDistribution = distribution,
-            repository = respository,
+            repository = repository,
             dependencies = KonanDistributionRepository(distribution, outputHierarchy.konanTargets, libraryLoader) +
                     FilesRepository(dependencyLibraries.toSet(), libraryLoader),
             libraryLoader = libraryLoader,
@@ -113,8 +112,6 @@ internal class NativeDistributionCommonize(options: Collection<Option<*>>) : Tas
         val targetNames = targets.joinToString { "[${it.name}]" }
         val descriptionSuffix = estimateLibrariesCount(repository, targets).let { " ($it items)" }
         val description = "${logPrefix}Preparing commonized Kotlin/Native libraries for targets $targetNames$descriptionSuffix"
-        println(description)
-
         println(description)
 
         LibraryCommonizer(

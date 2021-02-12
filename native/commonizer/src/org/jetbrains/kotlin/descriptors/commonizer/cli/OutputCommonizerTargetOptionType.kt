@@ -8,8 +8,8 @@ package org.jetbrains.kotlin.descriptors.commonizer.cli
 import org.jetbrains.kotlin.descriptors.commonizer.SharedCommonizerTarget
 import org.jetbrains.kotlin.descriptors.commonizer.parseCommonizerTarget
 
-internal object OutputHierarchyOptionType : OptionType<SharedCommonizerTarget>(
-    alias = "output-hierarchy",
+internal object OutputCommonizerTargetOptionType : OptionType<SharedCommonizerTarget>(
+    alias = "output-commonizer-target",
     description = "Shared commonizer target representing the commonized output hierarchy",
     mandatory = true
 ) {
@@ -17,7 +17,7 @@ internal object OutputHierarchyOptionType : OptionType<SharedCommonizerTarget>(
         return try {
             Option(this, parseCommonizerTarget(rawValue) as SharedCommonizerTarget)
         } catch (t: Throwable) {
-            onError("Failed parsing output-hierarchy ($rawValue): ${t.message}")
+            onError("Failed parsing output-commonizer-target ($rawValue): ${t.message}")
         }
     }
 }
