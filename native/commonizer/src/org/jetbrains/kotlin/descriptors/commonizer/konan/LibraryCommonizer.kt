@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.konan
 
+import org.jetbrains.kotlin.builtins.StandardNames.FqNames.target
 import org.jetbrains.kotlin.descriptors.commonizer.LeafCommonizerTarget
 import org.jetbrains.kotlin.descriptors.commonizer.*
 import org.jetbrains.kotlin.descriptors.commonizer.cli.toProgressLogger
@@ -41,19 +42,16 @@ internal class LibraryCommonizer internal constructor(
     private fun loadLibraries(): AllNativeLibraries {
         val stdlib = libraryLoader(konanDistribution.stdlib)
 
-        val librariesByTargets = targets.associate { target ->
-            val leafTarget = LeafCommonizerTarget(target)
-
-            val platformLibs = repository.getLibraries(leafTarget)
-
-            if (platformLibs.isEmpty())
-                logger.warning("No platform libraries found for target $target. This target will be excluded from commonization.")
-
-            leafTarget to NativeLibrariesToCommonize(platformLibs.toList())
+        val librariesByTargets = targets.map(::LeafCommonizerTarget).associateWith { target ->
+            NativeLibrariesToCommonize(repository.getLibraries(target).toList())
         }
 
+        librariesByTargets.forEach { (target, librariesToCommonize) ->
+            if (librariesToCommonize.libraries.isEmpty()) {
+                logger.warning("No platform libraries found for target $target. This target will be excluded from commonization.")
+            }
+        }
         logProgress("Read lazy (uninitialized) libraries")
-
         return AllNativeLibraries(stdlib, librariesByTargets)
     }
 
