@@ -33,7 +33,6 @@ internal class ModuleSerializer(
             is ResultsConsumer.ModuleResult.Missing -> {
                 val libraryName = moduleResult.libraryName
                 val missingModuleLocation = moduleResult.originalLocation
-
                 missingModuleLocation.copyRecursively(librariesDestination.resolve(libraryName))
             }
         }
