@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.config.SourceKotlinRootType
 import org.jetbrains.kotlin.config.TestResourceKotlinRootType
 import org.jetbrains.kotlin.config.TestSourceKotlinRootType
 import org.jetbrains.kotlin.idea.codeInsight.gradle.MultiplePluginVersionGradleImportingTestCase
-import org.jetbrains.kotlin.idea.codeInsight.gradle.mppImportTestMinVersionForMaster
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.platform.js.JsPlatforms
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
@@ -41,7 +40,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testImportHMPPFlag() {
         configureByFiles()
         importProject()
@@ -56,7 +55,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testImportIntermediateModules() {
         configureByFiles()
         importProject()
@@ -232,7 +231,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testJvmWithJavaOnHMPP() {
         configureByFiles()
         importProject()
@@ -344,7 +343,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testPrecisePlatformsHmpp() {
         configureByFiles()
         importProject()
@@ -377,7 +376,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testPrecisePlatformsWithUnrelatedModuleHmpp() {
         configureByFiles()
         importProject()
@@ -425,7 +424,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testOrphanSourceSet() {
         configureByFiles()
         importProject()
@@ -450,7 +449,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testSourceSetIncludedIntoCompilationDirectly() {
         configureByFiles()
         importProject()
@@ -475,7 +474,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testDefaultSourceSetDependsOnDefaultSourceSet() {
         configureByFiles()
         importProject()
@@ -504,7 +503,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testDefaultSourceSetIncludedIntoAnotherCompilationDirectly() {
         configureByFiles()
         importProject()
@@ -524,7 +523,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testSourceSetsWithDependsOnButNotIncludedIntoCompilation() {
         configureByFiles()
         importProject()
@@ -559,7 +558,7 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     }
 
     @Test
-    @PluginTargetVersions(gradleVersionForLatestPlugin = mppImportTestMinVersionForMaster)
+    @PluginTargetVersions()
     fun testCustomAddToCompilationPlusDependsOn() {
         configureByFiles()
         importProject()
@@ -597,12 +596,9 @@ class HierarchicalMultiplatformProjectImportingTest : MultiplePluginVersionGradl
     override fun importProject() {
         val isUseQualifiedModuleNames = currentExternalProjectSettings.isUseQualifiedModuleNames
         currentExternalProjectSettings.isUseQualifiedModuleNames = true
-        val isCreateEmptyContentRootDirectories = currentExternalProjectSettings.isCreateEmptyContentRootDirectories
-        currentExternalProjectSettings.isCreateEmptyContentRootDirectories = true
         try {
-            super.importProject()
+            super.importProject(true)
         } finally {
-            currentExternalProjectSettings.isCreateEmptyContentRootDirectories = isCreateEmptyContentRootDirectories
             currentExternalProjectSettings.isUseQualifiedModuleNames = isUseQualifiedModuleNames
         }
     }
