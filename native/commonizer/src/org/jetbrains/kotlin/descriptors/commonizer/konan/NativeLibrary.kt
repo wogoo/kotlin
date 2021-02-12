@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.descriptors.commonizer.LeafCommonizerTarget
 import org.jetbrains.kotlin.descriptors.commonizer.SharedCommonizerTarget
 import org.jetbrains.kotlin.library.KotlinLibrary
 
-// TODO NOW: make internal
 fun interface TargetedNativeManifestDataProvider {
     fun getManifest(target: CommonizerTarget, libraryName: String): NativeSensitiveManifestData
 }
@@ -20,7 +19,6 @@ fun interface TargetedNativeManifestDataProvider {
 internal interface NativeManifestDataProvider {
     fun getManifest(libraryName: String): NativeSensitiveManifestData
 }
-
 
 internal fun TargetedNativeManifestDataProvider(libraries: AllNativeLibraries): TargetedNativeManifestDataProvider {
     val cachedManifestProviders: Map<CommonizerTarget, NativeManifestDataProvider> = FactoryMap.create { target ->
