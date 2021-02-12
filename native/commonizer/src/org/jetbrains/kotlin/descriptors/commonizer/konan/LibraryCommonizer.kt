@@ -83,7 +83,6 @@ internal class LibraryCommonizer internal constructor(
         }
 
         runCommonization(parameters)
-        // TODO NOW! statsCollector?.writeTo(FileStatsOutput(destination, statsType.name.toLowerCase()))
     }
 
     private fun checkPreconditions() {

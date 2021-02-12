@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.descriptors.commonizer.konan.NativeDistributionCommo
 import org.jetbrains.kotlin.descriptors.commonizer.repository.FilesRepository
 import org.jetbrains.kotlin.descriptors.commonizer.repository.KonanDistributionRepository
 import org.jetbrains.kotlin.descriptors.commonizer.repository.plus
+import org.jetbrains.kotlin.descriptors.commonizer.stats.FileStatsOutput
 import org.jetbrains.kotlin.descriptors.commonizer.stats.StatsCollector
 import org.jetbrains.kotlin.descriptors.commonizer.stats.StatsType
 import org.jetbrains.kotlin.konan.library.KONAN_DISTRIBUTION_KLIB_DIR
@@ -71,6 +72,8 @@ internal class NativeKlibCommonize(options: Collection<Option<*>>) : Task(option
             statsCollector = statsCollector,
             logger = CliLoggerAdapter(2)
         ).run()
+
+        statsCollector?.writeTo(FileStatsOutput(destination, statsType.name.toLowerCase()))
     }
 }
 
