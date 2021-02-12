@@ -99,7 +99,7 @@ internal class FirModuleResolveStateForCompletion(
 
     @OptIn(InternalForInline::class)
     override fun findSourceFirDeclaration(ktDeclaration: KtDeclaration): FirDeclaration {
-        error("Should not be used in completion")
+        return originalState.findSourceFirDeclaration(ktDeclaration)
     }
 
     @OptIn(InternalForInline::class)
