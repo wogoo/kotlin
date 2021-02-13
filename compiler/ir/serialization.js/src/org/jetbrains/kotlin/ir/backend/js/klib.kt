@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.analyzer.AnalysisResult
 import org.jetbrains.kotlin.backend.common.LoggingContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContextImpl
+import org.jetbrains.kotlin.backend.common.isMultiThreaded
 import org.jetbrains.kotlin.backend.common.overrides.FakeOverrideChecker
 import org.jetbrains.kotlin.backend.common.serialization.DeserializationStrategy
 import org.jetbrains.kotlin.backend.common.serialization.ICData
@@ -262,12 +263,13 @@ fun loadIr(
             val moduleDescriptor = depsDescriptors.getModuleDescriptor(mainModule.lib)
             val mangler = JsManglerDesc
             val signaturer = IdSignatureDescriptor(mangler)
-            val symbolTable = SymbolTable(signaturer, irFactory)
+            val symbolTable = SymbolTable(signaturer, irFactory, isMultiThreaded = configuration.isMultiThreaded)
             val constantValueGenerator = ConstantValueGenerator(moduleDescriptor, symbolTable)
             val typeTranslator = TypeTranslator(
                 symbolTable,
                 depsDescriptors.compilerConfiguration.languageVersionSettings,
-                builtIns = moduleDescriptor.builtIns
+                builtIns = moduleDescriptor.builtIns,
+                isMultiThreaded = configuration.isMultiThreaded,
             )
             typeTranslator.constantValueGenerator = constantValueGenerator
             constantValueGenerator.typeTranslator = typeTranslator

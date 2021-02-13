@@ -33,10 +33,11 @@ class TypeTranslator(
     builtIns: KotlinBuiltIns,
     typeParametersResolverBuilder: () -> TypeParametersResolver = { ScopedTypeParametersResolver() },
     private val enterTableScope: Boolean = false,
-    private val extensions: StubGeneratorExtensions = StubGeneratorExtensions.EMPTY
+    private val extensions: StubGeneratorExtensions = StubGeneratorExtensions.EMPTY,
+    isMultiThreaded: Boolean
 ) {
 
-    private val typeParametersResolver by threadLocal { typeParametersResolverBuilder() }
+    private val typeParametersResolver by threadLocal(isMultiThreaded) { typeParametersResolverBuilder() }
 
     private val erasureStack = Stack<PropertyDescriptor>()
 

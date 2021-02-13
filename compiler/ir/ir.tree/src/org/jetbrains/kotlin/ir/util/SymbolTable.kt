@@ -62,7 +62,8 @@ interface ReferenceSymbolTable {
 class SymbolTable(
     val signaturer: IdSignatureComposer,
     val irFactory: IrFactory,
-    val nameProvider: NameProvider = NameProvider.DEFAULT
+    val nameProvider: NameProvider = NameProvider.DEFAULT,
+    isMultiThreaded: Boolean = false,
 ) : ReferenceSymbolTable {
 
     @Suppress("LeakingThis")
@@ -339,19 +340,19 @@ class SymbolTable(
     private val typeAliasSymbolTable = FlatSymbolTable<TypeAliasDescriptor, IrTypeAlias, IrTypeAliasSymbol>()
 
     private val globalTypeParameterSymbolTable = FlatSymbolTable<TypeParameterDescriptor, IrTypeParameter, IrTypeParameterSymbol>()
-    private val scopedTypeParameterSymbolTable by threadLocal {
+    private val scopedTypeParameterSymbolTable by threadLocal(isMultiThreaded) {
         ScopedSymbolTable<TypeParameterDescriptor, IrTypeParameter, IrTypeParameterSymbol>()
     }
-    private val valueParameterSymbolTable by threadLocal {
+    private val valueParameterSymbolTable by threadLocal(isMultiThreaded) {
         ScopedSymbolTable<ParameterDescriptor, IrValueParameter, IrValueParameterSymbol>()
     }
-    private val variableSymbolTable by threadLocal {
+    private val variableSymbolTable by threadLocal(isMultiThreaded) {
         ScopedSymbolTable<VariableDescriptor, IrVariable, IrVariableSymbol>()
     }
-    private val localDelegatedPropertySymbolTable by threadLocal {
+    private val localDelegatedPropertySymbolTable by threadLocal(isMultiThreaded) {
         ScopedSymbolTable<VariableDescriptorWithAccessors, IrLocalDelegatedProperty, IrLocalDelegatedPropertySymbol>()
     }
-    private val scopedSymbolTables by threadLocal {
+    private val scopedSymbolTables by threadLocal(isMultiThreaded) {
         listOf(valueParameterSymbolTable, variableSymbolTable, scopedTypeParameterSymbolTable, localDelegatedPropertySymbolTable)
     }
 

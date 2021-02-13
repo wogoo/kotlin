@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.test.frontend.fir
 
+import org.jetbrains.kotlin.backend.common.isMultiThreaded
 import org.jetbrains.kotlin.backend.common.phaser.PhaseConfig
 import org.jetbrains.kotlin.backend.jvm.JvmGeneratorExtensions
 import org.jetbrains.kotlin.backend.jvm.JvmIrCodegenFactory
@@ -41,12 +42,14 @@ class Fir2IrResultsConverter(
         module: TestModule,
         inputArtifact: FirOutputArtifact
     ): IrBackendInput {
-        val extensions = JvmGeneratorExtensions()
-        val (irModuleFragment, symbolTable, sourceManager, components) = inputArtifact.firAnalyzerFacade.convertToIr(extensions)
-        val dummyBindingContext = NoScopeRecordCliBindingTrace().bindingContext
-
         val compilerConfigurationProvider = testServices.compilerConfigurationProvider
         val configuration = compilerConfigurationProvider.getCompilerConfiguration(module)
+
+        val extensions = JvmGeneratorExtensions()
+        val (irModuleFragment, symbolTable, sourceManager, components) = inputArtifact.firAnalyzerFacade.convertToIr(
+            extensions, isMultiThreaded = configuration.isMultiThreaded,
+        )
+        val dummyBindingContext = NoScopeRecordCliBindingTrace().bindingContext
 
         val phaseConfig = configuration.get(CLIConfigurationKeys.PHASE_CONFIG) ?: PhaseConfig(jvmPhases)
         val codegenFactory = JvmIrCodegenFactory(phaseConfig)
@@ -79,7 +82,8 @@ class Fir2IrResultsConverter(
         val irProviders = codegenFactory.configureBuiltInsAndgenerateIrProvidersInFrontendIRMode(
             irModuleFragment,
             symbolTable,
-            extensions
+            extensions,
+            isMultiThreaded = false,
         )
 
         return IrBackendInput(

@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElementFinder
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.asJava.finder.JavaElementFinder
+import org.jetbrains.kotlin.backend.common.isMultiThreaded
 import org.jetbrains.kotlin.backend.jvm.JvmGeneratorExtensions
 import org.jetbrains.kotlin.cli.jvm.compiler.TopDownAnalyzerFacadeForJVM
 import org.jetbrains.kotlin.config.languageVersionSettings
@@ -56,6 +57,9 @@ abstract class AbstractFir2IrTextTest : AbstractIrTextTestCase() {
             .uniteWith(TopDownAnalyzerFacadeForJVM.AllJavaSourcesInProjectScope(project))
         val session = createSession(myEnvironment, scope)
         val firAnalyzerFacade = FirAnalyzerFacade(session, myEnvironment.configuration.languageVersionSettings, psiFiles)
-        return firAnalyzerFacade.convertToIr(JvmGeneratorExtensions(generateFacades = false)).irModuleFragment
+        return firAnalyzerFacade.convertToIr(
+            JvmGeneratorExtensions(generateFacades = false),
+            isMultiThreaded = myEnvironment.configuration.isMultiThreaded,
+        ).irModuleFragment
     }
 }

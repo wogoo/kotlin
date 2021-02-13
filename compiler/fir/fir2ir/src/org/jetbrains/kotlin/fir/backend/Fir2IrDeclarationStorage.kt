@@ -59,7 +59,8 @@ import java.util.concurrent.ConcurrentHashMap
 class Fir2IrDeclarationStorage(
     private val components: Fir2IrComponents,
     private val visitor: Fir2IrVisitor,
-    private val moduleDescriptor: FirModuleDescriptor
+    private val moduleDescriptor: FirModuleDescriptor,
+    isMultiThreaded: Boolean = false,
 ) : Fir2IrComponents by components {
 
     private val firProvider = session.firProvider
@@ -85,7 +86,7 @@ class Fir2IrDeclarationStorage(
 
     private val fieldCache = ConcurrentHashMap<FirField, IrField>()
 
-    private val localStorage by threadLocal { Fir2IrLocalStorage() }
+    private val localStorage by threadLocal(isMultiThreaded) { Fir2IrLocalStorage() }
 
     private val delegatedMemberGenerator = DelegatedMemberGenerator(components)
 

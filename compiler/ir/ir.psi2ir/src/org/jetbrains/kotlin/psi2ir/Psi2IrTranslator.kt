@@ -51,9 +51,16 @@ class Psi2IrTranslator(
         moduleDescriptor: ModuleDescriptor,
         bindingContext: BindingContext,
         symbolTable: SymbolTable,
-        extensions: GeneratorExtensions = GeneratorExtensions()
+        extensions: GeneratorExtensions = GeneratorExtensions(),
+        isMultiThreaded: Boolean = false,
     ): GeneratorContext {
-        val typeTranslator = TypeTranslator(symbolTable, languageVersionSettings, moduleDescriptor.builtIns, extensions = extensions)
+        val typeTranslator = TypeTranslator(
+            symbolTable,
+            languageVersionSettings,
+            moduleDescriptor.builtIns,
+            extensions = extensions,
+            isMultiThreaded = isMultiThreaded
+        )
         val constantValueGenerator = ConstantValueGenerator(moduleDescriptor, symbolTable)
         typeTranslator.constantValueGenerator = constantValueGenerator
         constantValueGenerator.typeTranslator = typeTranslator

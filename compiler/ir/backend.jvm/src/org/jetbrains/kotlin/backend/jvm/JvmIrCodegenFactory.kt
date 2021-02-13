@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.backend.common.CodegenUtil
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContextImpl
 import org.jetbrains.kotlin.backend.common.ir.BuiltinSymbolsBase
+import org.jetbrains.kotlin.backend.common.isMultiThreaded
 import org.jetbrains.kotlin.backend.common.phaser.PhaseConfig
 import org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen
 import org.jetbrains.kotlin.backend.jvm.lower.MultifileFacadeFileEntry
@@ -58,17 +59,22 @@ class JvmIrCodegenFactory(private val phaseConfig: PhaseConfig) : CodegenFactory
     }
 
     fun convertToIr(state: GenerationState, files: Collection<KtFile>): JvmIrBackendInput {
+        val isMultiThreaded = state.configuration.isMultiThreaded
         val extensions = JvmGeneratorExtensions()
         val mangler = JvmManglerDesc(MainFunctionDetector(state.bindingContext, state.languageVersionSettings))
         val psi2ir = Psi2IrTranslator(state.languageVersionSettings, Psi2IrConfiguration())
-        val symbolTable = SymbolTable(JvmIdSignatureDescriptor(mangler), IrFactoryImpl, JvmNameProvider)
-        val psi2irContext = psi2ir.createGeneratorContext(state.module, state.bindingContext, symbolTable, extensions)
+        val symbolTable = SymbolTable(JvmIdSignatureDescriptor(mangler), IrFactoryImpl, JvmNameProvider, isMultiThreaded)
+        val psi2irContext = psi2ir.createGeneratorContext(state.module, state.bindingContext, symbolTable, extensions, isMultiThreaded)
         val pluginExtensions = IrGenerationExtension.getInstances(state.project)
         val functionFactory = IrFunctionFactory(psi2irContext.irBuiltIns, symbolTable)
         psi2irContext.irBuiltIns.functionFactory = functionFactory
 
         val stubGenerator = DeclarationStubGenerator(
-            psi2irContext.moduleDescriptor, symbolTable, psi2irContext.irBuiltIns.languageVersionSettings, extensions
+            psi2irContext.moduleDescriptor,
+            symbolTable,
+            psi2irContext.irBuiltIns.languageVersionSettings,
+            extensions,
+            isMultiThreaded = state.configuration.isMultiThreaded,
         )
         val frontEndContext = object : TranslationPluginContext {
             override val moduleDescriptor: ModuleDescriptor
@@ -200,7 +206,12 @@ class JvmIrCodegenFactory(private val phaseConfig: PhaseConfig) : CodegenFactory
         extensions: JvmGeneratorExtensions,
         backendExtension: JvmBackendExtension,
     ) {
-        val irProviders = configureBuiltInsAndgenerateIrProvidersInFrontendIRMode(irModuleFragment, symbolTable, extensions)
+        val irProviders = configureBuiltInsAndgenerateIrProvidersInFrontendIRMode(
+            irModuleFragment,
+            symbolTable,
+            extensions,
+            isMultiThreaded = state.configuration.isMultiThreaded,
+        )
         doGenerateFilesInternal(
             JvmIrBackendInput(state, irModuleFragment, symbolTable, sourceManager, phaseConfig, irProviders, extensions, backendExtension)
         )
@@ -209,11 +220,16 @@ class JvmIrCodegenFactory(private val phaseConfig: PhaseConfig) : CodegenFactory
     fun configureBuiltInsAndgenerateIrProvidersInFrontendIRMode(
         irModuleFragment: IrModuleFragment,
         symbolTable: SymbolTable,
-        extensions: JvmGeneratorExtensions
+        extensions: JvmGeneratorExtensions,
+        isMultiThreaded: Boolean
     ): List<IrProvider> {
         irModuleFragment.irBuiltins.functionFactory = IrFunctionFactory(irModuleFragment.irBuiltins, symbolTable)
         return generateTypicalIrProviderList(
-            irModuleFragment.descriptor, irModuleFragment.irBuiltins, symbolTable, extensions = extensions
+            irModuleFragment.descriptor,
+            irModuleFragment.irBuiltins,
+            symbolTable,
+            extensions = extensions,
+            isMultiThreaded = isMultiThreaded,
         )
     }
 }
