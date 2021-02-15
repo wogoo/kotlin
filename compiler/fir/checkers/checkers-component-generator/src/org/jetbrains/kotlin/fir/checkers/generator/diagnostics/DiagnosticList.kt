@@ -7,24 +7,32 @@ package org.jetbrains.kotlin.fir.checkers.generator.diagnostics
 
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.fir.PrivateForInline
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
-class DiagnosticListBuilder private constructor() {
+abstract class DiagnosticList {
+    @Suppress("PropertyName")
     @PrivateForInline
-    val diagnosticGroups = mutableListOf<DiagnosticGroup>()
+    val _groups = mutableListOf<DiagnosticGroup>()
 
     @OptIn(PrivateForInline::class)
-    inline fun group(groupName: String, init: DiagnosticGroupBuilder.() -> Unit) {
-        diagnosticGroups += DiagnosticGroupBuilder.build(groupName, init)
-    }
+    val groups: List<DiagnosticGroup>
+        get() = _groups
+
+    val allDiagnostics: List<DiagnosticData>
+        get() = groups.flatMap { it.diagnostics }
+
 
     @OptIn(PrivateForInline::class)
-    private fun build() = DiagnosticList(diagnosticGroups)
-
-    companion object {
-        fun buildDiagnosticList(init: DiagnosticListBuilder.() -> Unit) =
-            DiagnosticListBuilder().apply(init).build()
+    operator fun DiagnosticGroup.provideDelegate(
+        thisRef: DiagnosticList,
+        prop: KProperty<*>
+    ): ReadOnlyProperty<DiagnosticList, DiagnosticGroup> {
+        val group = this
+        _groups += group
+        return ReadOnlyProperty { _, _ -> group }
     }
 }
 

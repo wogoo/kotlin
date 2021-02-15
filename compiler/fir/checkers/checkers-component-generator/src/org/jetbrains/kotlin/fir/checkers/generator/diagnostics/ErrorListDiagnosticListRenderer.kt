@@ -33,18 +33,18 @@ object ErrorListDiagnosticListRenderer : DiagnosticListRenderer() {
 
     private fun SmartPrinter.printErrorsObject(diagnosticList: DiagnosticList) {
         inBracketsWithIndent("object FirErrors") {
-            for ((group, diagnostics) in diagnosticList.groups) {
-                printDiagnosticGroup(group, diagnostics)
+            for (group in diagnosticList.groups) {
+                printDiagnosticGroup(group.name, group.diagnostics)
                 println()
             }
         }
     }
 
     private fun SmartPrinter.printDiagnosticGroup(
-        group: String?,
+        group: String,
         diagnostics: List<DiagnosticData>
     ) {
-        println("// ${group ?: "NO GROUP"}")
+        println("// $group")
         for (it in diagnostics) {
             printDiagnostic(it)
         }

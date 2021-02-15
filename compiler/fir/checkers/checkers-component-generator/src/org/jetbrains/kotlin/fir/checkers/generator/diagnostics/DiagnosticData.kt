@@ -22,8 +22,6 @@ data class DiagnosticParameter(
     val type: KType
 )
 
-data class DiagnosticGroup(val name: String, val diagnostics: List<DiagnosticData>)
-
 enum class PositioningStrategy(private val strategy: String) {
     DEFAULT("DEFAULT"),
     VAL_OR_VAR_NODE("VAL_OR_VAR_NODE"),
@@ -56,10 +54,3 @@ enum class PositioningStrategy(private val strategy: String) {
 
 fun DiagnosticData.hasDefaultPositioningStrategy(): Boolean =
     positioningStrategy == PositioningStrategy.DEFAULT
-
-data class DiagnosticList(
-    val groups: List<DiagnosticGroup>,
-) {
-    val allDiagnostics: List<DiagnosticData>
-        get() = groups.flatMap { it.diagnostics }
-}

@@ -14,9 +14,14 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.typeOf
 
-class DiagnosticGroupBuilder @PrivateForInline constructor(private val name: String) {
+abstract class DiagnosticGroup @PrivateForInline constructor(val name: String) {
+    @Suppress("PropertyName")
     @PrivateForInline
-    val diagnostics = mutableListOf<DiagnosticData>()
+    val _diagnostics = mutableListOf<DiagnosticData>()
+
+    @OptIn(PrivateForInline::class)
+    val diagnostics: List<DiagnosticData>
+        get() = _diagnostics
 
     @OptIn(PrivateForInline::class)
     inline fun <reified E : FirSourceElement, reified P : PsiElement> error(
@@ -37,28 +42,15 @@ class DiagnosticGroupBuilder @PrivateForInline constructor(private val name: Str
         severity: Severity,
         positioningStrategy: PositioningStrategy,
         crossinline init: DiagnosticBuilder.() -> Unit = {}
-    ) = PropertyDelegateProvider<Any?, AlwaysReturningUnitPropertyDelegate> { _, property ->
-        diagnostics += DiagnosticBuilder(
+    ) = PropertyDelegateProvider<Any?, ReadOnlyProperty<DiagnosticGroup, DiagnosticData>> { _, property ->
+        val diagnostic = DiagnosticBuilder(
             severity,
             name = property.name,
             sourceElementType = typeOf<E>(),
             psiType = typeOf<P>(),
             positioningStrategy,
         ).apply(init).build()
-        AlwaysReturningUnitPropertyDelegate
-    }
-
-    @PrivateForInline
-    object AlwaysReturningUnitPropertyDelegate : ReadOnlyProperty<Any?, Unit> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>) = Unit
-    }
-
-    @PrivateForInline
-    fun build(): DiagnosticGroup = DiagnosticGroup(name, diagnostics)
-
-    companion object {
-        @OptIn(PrivateForInline::class)
-        inline fun build(name: String, init: DiagnosticGroupBuilder.() -> Unit): DiagnosticGroup =
-            DiagnosticGroupBuilder(name).apply(init).build()
+        _diagnostics += diagnostic
+        ReadOnlyProperty { _, _ -> diagnostic }
     }
 }
