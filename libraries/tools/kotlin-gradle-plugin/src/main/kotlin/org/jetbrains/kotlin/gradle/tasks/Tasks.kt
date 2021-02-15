@@ -603,7 +603,18 @@ internal open class KotlinCompileWithWorkers @Inject constructor(
     private val workerExecutor: WorkerExecutor
 ) : KotlinCompile() {
 
-    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(GradleCompileTaskProvider(this), workerExecutor)
+    override fun compilerRunner() =
+        if (GradleCompilerRunnerWithGradle56Workers.shouldBeUsedWithCurrentGradleVersion(project)) {
+            GradleCompilerRunnerWithGradle56Workers(
+                GradleCompileTaskProvider(this),
+                workerExecutor
+            )
+        } else {
+            GradleCompilerRunnerWithWorkers(
+                GradleCompileTaskProvider(this),
+                workerExecutor
+            )
+        }
 }
 
 @CacheableTask
@@ -611,14 +622,36 @@ internal open class Kotlin2JsCompileWithWorkers @Inject constructor(
     private val workerExecutor: WorkerExecutor
 ) : Kotlin2JsCompile() {
 
-    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(GradleCompileTaskProvider(this), workerExecutor)
+    override fun compilerRunner() =
+        if (GradleCompilerRunnerWithGradle56Workers.shouldBeUsedWithCurrentGradleVersion(project)) {
+            GradleCompilerRunnerWithGradle56Workers(
+                GradleCompileTaskProvider(this),
+                workerExecutor
+            )
+        } else {
+            GradleCompilerRunnerWithWorkers(
+                GradleCompileTaskProvider(this),
+                workerExecutor
+            )
+        }
 }
 
 @CacheableTask
 internal open class KotlinCompileCommonWithWorkers @Inject constructor(
     private val workerExecutor: WorkerExecutor
 ) : KotlinCompileCommon() {
-    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(GradleCompileTaskProvider(this), workerExecutor)
+    override fun compilerRunner() =
+        if (GradleCompilerRunnerWithGradle56Workers.shouldBeUsedWithCurrentGradleVersion(project)) {
+            GradleCompilerRunnerWithGradle56Workers(
+                GradleCompileTaskProvider(this),
+                workerExecutor
+            )
+        } else {
+            GradleCompilerRunnerWithWorkers(
+                GradleCompileTaskProvider(this),
+                workerExecutor
+            )
+        }
 }
 
 @CacheableTask

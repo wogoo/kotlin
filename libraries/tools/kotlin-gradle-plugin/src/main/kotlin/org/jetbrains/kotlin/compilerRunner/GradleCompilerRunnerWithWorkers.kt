@@ -10,6 +10,11 @@ import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.gradle.logging.kotlinDebug
 import org.jetbrains.kotlin.gradle.tasks.GradleCompileTaskProvider
 
+/**
+ * Uses Gradle worker api to run kotlin compilation.
+ *
+ * This class should be used only up-to Gradle 5.6 version, otherwise, please, use [GradleCompilerRunnerWithGradle56Workers].
+ */
 internal class GradleCompilerRunnerWithWorkers(
     taskProvider: GradleCompileTaskProvider,
     private val workersExecutor: WorkerExecutor
