@@ -27,7 +27,7 @@ public class FirVisualizerForRawFirDataGenerated extends AbstractFirVisualizer {
     @Nested
     @TestMetadata("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations")
     @TestDataPath("$PROJECT_ROOT")
-    public class Declarations extends AbstractFirVisualizer {
+    public class Declarations {
         @Test
         public void testAllFilesPresentInDeclarations() throws Exception {
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations"), Pattern.compile("^(.+)\\.kt$"), null, true);
@@ -186,7 +186,7 @@ public class FirVisualizerForRawFirDataGenerated extends AbstractFirVisualizer {
         @Nested
         @TestMetadata("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contracts")
         @TestDataPath("$PROJECT_ROOT")
-        public class Contracts extends AbstractFirVisualizer {
+        public class Contracts {
             @Test
             public void testAllFilesPresentInContracts() throws Exception {
                 KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contracts"), Pattern.compile("^(.+)\\.kt$"), null, true);
@@ -195,7 +195,7 @@ public class FirVisualizerForRawFirDataGenerated extends AbstractFirVisualizer {
             @Nested
             @TestMetadata("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contracts/newSyntax")
             @TestDataPath("$PROJECT_ROOT")
-            public class NewSyntax extends AbstractFirVisualizer {
+            public class NewSyntax {
                 @Test
                 public void testAllFilesPresentInNewSyntax() throws Exception {
                     KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contracts/newSyntax"), Pattern.compile("^(.+)\\.kt$"), null, true);
@@ -223,7 +223,7 @@ public class FirVisualizerForRawFirDataGenerated extends AbstractFirVisualizer {
             @Nested
             @TestMetadata("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contracts/oldSyntax")
             @TestDataPath("$PROJECT_ROOT")
-            public class OldSyntax extends AbstractFirVisualizer {
+            public class OldSyntax {
                 @Test
                 public void testAllFilesPresentInOldSyntax() throws Exception {
                     KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/declarations/contracts/oldSyntax"), Pattern.compile("^(.+)\\.kt$"), null, true);
@@ -241,7 +241,7 @@ public class FirVisualizerForRawFirDataGenerated extends AbstractFirVisualizer {
     @Nested
     @TestMetadata("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/expressions")
     @TestDataPath("$PROJECT_ROOT")
-    public class Expressions extends AbstractFirVisualizer {
+    public class Expressions {
         @Test
         public void testAllFilesPresentInExpressions() throws Exception {
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/raw-fir/psi2fir/testData/rawBuilder/expressions"), Pattern.compile("^(.+)\\.kt$"), null, true);
