@@ -80,6 +80,8 @@ fun KotlinType.isPrimitiveNumberOrNullableType(): Boolean =
 
 fun KotlinType.isTypeParameter(): Boolean = TypeUtils.isTypeParameter(this)
 
+fun KotlinType.containsTypeParameter(): Boolean = TypeUtils.contains(this) { t -> TypeUtils.isTypeParameter(t) }
+
 fun KotlinType.upperBoundedByPrimitiveNumberOrNullableType(): Boolean =
     TypeUtils.getTypeParameterDescriptorOrNull(this)?.upperBounds?.any { it.isPrimitiveNumberOrNullableType() } == true
 
