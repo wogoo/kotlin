@@ -8,11 +8,11 @@ package org.jetbrains.kotlin.descriptors.commonizer
 import java.io.File
 import java.net.URLClassLoader
 
-public fun GradleCliCommonizer(classpath: Iterable<File>): CliCommonizer {
-    return GradleCliCommonizer(URLClassLoader(classpath.map { it.absoluteFile.toURI().toURL() }.toTypedArray()))
+public fun CliCommonizer(classpath: Iterable<File>): CliCommonizer {
+    return CliCommonizer(URLClassLoader(classpath.map { it.absoluteFile.toURI().toURL() }.toTypedArray()))
 }
 
-public fun GradleCliCommonizer(classLoader: ClassLoader): CliCommonizer {
+public fun CliCommonizer(classLoader: ClassLoader): CliCommonizer {
     return CliCommonizer(CommonizerClassLoaderExecutor(classLoader))
 }
 

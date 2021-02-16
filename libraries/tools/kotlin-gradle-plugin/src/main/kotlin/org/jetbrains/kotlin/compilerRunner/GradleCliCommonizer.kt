@@ -9,10 +9,9 @@ package org.jetbrains.kotlin.compilerRunner
 
 import org.gradle.api.Project
 import org.jetbrains.kotlin.descriptors.commonizer.CliCommonizer
-import org.jetbrains.kotlin.descriptors.commonizer.GradleCliCommonizer
 
 /**
- * Creates an instance of [GradleCliCommonizer] that is backed by [KotlinNativeCommonizerToolRunner] to adhere to user defined settings
+ * Creates an instance of [CliCommonizer] that is backed by [KotlinNativeCommonizerToolRunner] to adhere to user defined settings
  * when executing the commonizer (like jvm arguments, running in separate process, etc)
  */
 internal fun GradleCliCommonizer(project: Project): CliCommonizer {
