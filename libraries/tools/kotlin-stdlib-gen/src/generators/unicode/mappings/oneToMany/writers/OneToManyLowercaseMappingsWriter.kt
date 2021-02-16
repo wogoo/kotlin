@@ -10,7 +10,7 @@ import generators.unicode.toHexCharLiteral
 import generators.unicode.hexCharsToStringLiteral
 import java.io.FileWriter
 
-internal class LowercaseSpecialMappingsWriter(private val strategy: RangesWritingStrategy) : SpecialMappingsWriter {
+internal class OneToManyLowercaseMappingsWriter(private val strategy: RangesWritingStrategy) : OneToManyMappingsWriter {
     override fun write(mappings: Map<Int, List<String>>, writer: FileWriter) {
         check(mappings.size == 1) { "Number of multi-char lowercase mappings has changed." }
 
@@ -21,10 +21,10 @@ internal class LowercaseSpecialMappingsWriter(private val strategy: RangesWritin
         writer.appendLine(lowercaseImpl(char, result))
     }
 
-    private fun lowercaseImpl(specialCasingChar: String, specialCasingResult: String): String = """
+    private fun lowercaseImpl(char: String, oneToManyResult: String): String = """
         internal fun Char.lowercaseImpl(): String {
-            if (this == $specialCasingChar) {
-                return $specialCasingResult
+            if (this == $char) {
+                return $oneToManyResult
             }
             return lowercaseCharImpl().toString()
         }

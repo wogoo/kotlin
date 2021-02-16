@@ -8,7 +8,7 @@ package generators.unicode.mappings.oneToMany.builders
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
 
-internal class TitlecaseSpecialMappingsBuilder(unicodeDataLines: List<UnicodeDataLine>) : SpecialMappingsBuilder(unicodeDataLines) {
-    override fun SpecialCasingLine.mapping(): List<String> = titlecaseMapping
-    override fun UnicodeDataLine.mapping(): String = titlecaseMapping
+internal class OneToManyUppercaseMappingsBuilder(unicodeDataLines: List<UnicodeDataLine>) : OneToManyMappingsBuilder(unicodeDataLines) {
+    override fun SpecialCasingLine.mapping(): List<String> = uppercaseMapping
+    override fun UnicodeDataLine.mapping(): String = uppercaseMapping
 }

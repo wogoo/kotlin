@@ -6,7 +6,7 @@
 package generators.unicode
 
 import generators.unicode.mappings.MappingsGenerator
-import generators.unicode.mappings.oneToMany.SpecialMappingsGenerator
+import generators.unicode.mappings.oneToMany.OneToManyMappingsGenerator
 import generators.unicode.ranges.CharCategoryTestGenerator
 import generators.unicode.ranges.RangesGenerator
 import generators.unicode.ranges.RangesWritingStrategy
@@ -98,15 +98,15 @@ fun main(args: Array<String>) {
         caseMappingsGenerators.add(titlecase)
     }
 
-    val specialCasingGenerators = mutableListOf<SpecialCasingGenerator>()
+    val oneToManyMappingsGenerators = mutableListOf<SpecialCasingGenerator>()
 
-    fun addSpecialMappingsGenerators(generatedDir: File, target: KotlinTarget) {
-        val uppercase = SpecialMappingsGenerator.forUppercase(generatedDir.resolve("_UppercaseSpecialMappings.kt"), target, bmpUnicodeDataLines)
-        val lowercase = SpecialMappingsGenerator.forLowercase(generatedDir.resolve("_LowercaseSpecialMappings.kt"), target, bmpUnicodeDataLines)
-        val titlecase = SpecialMappingsGenerator.forTitlecase(generatedDir.resolve("_TitlecaseSpecialMappings.kt"), target, bmpUnicodeDataLines)
-        specialCasingGenerators.add(uppercase)
-        specialCasingGenerators.add(lowercase)
-        specialCasingGenerators.add(titlecase)
+    fun addOneToManyMappingsGenerators(generatedDir: File, target: KotlinTarget) {
+        val uppercase = OneToManyMappingsGenerator.forUppercase(generatedDir.resolve("_OneToManyUppercaseMappings.kt"), target, bmpUnicodeDataLines)
+        val lowercase = OneToManyMappingsGenerator.forLowercase(generatedDir.resolve("_OneToManyLowercaseMappings.kt"), target, bmpUnicodeDataLines)
+        val titlecase = OneToManyMappingsGenerator.forTitlecase(generatedDir.resolve("_OneToManyTitlecaseMappings.kt"), target, bmpUnicodeDataLines)
+        oneToManyMappingsGenerators.add(uppercase)
+        oneToManyMappingsGenerators.add(lowercase)
+        oneToManyMappingsGenerators.add(titlecase)
     }
 
     var stringUppercaseGenerator: StringUppercaseGenerator? = null
@@ -146,7 +146,7 @@ fun main(args: Array<String>) {
 
             if (target == KotlinTarget.Native) {
                 addMappingsGenerators(generatedDir, target)
-                addSpecialMappingsGenerators(generatedDir, target)
+                addOneToManyMappingsGenerators(generatedDir, target)
                 stringUppercaseGenerator = StringUppercaseGenerator(generatedDir.resolve("_StringUppercase.kt"), bmpUnicodeDataLines)
                 stringLowercaseGenerator = StringLowercaseGenerator(generatedDir.resolve("_StringLowercase.kt"), RangesWritingStrategy.of(target), unicodeDataLines)
             }
@@ -176,9 +176,9 @@ fun main(args: Array<String>) {
     caseMappingsGenerators.forEach { it.close() }
 
     specialCasingLines.forEach { line ->
-        specialCasingGenerators.forEach { it.appendLine(line) }
+        oneToManyMappingsGenerators.forEach { it.appendLine(line) }
     }
-    specialCasingGenerators.forEach { it.close() }
+    oneToManyMappingsGenerators.forEach { it.close() }
 
     stringUppercaseGenerator?.let {
         specialCasingLines.forEach { line -> it.appendSpecialCasingLine(line) }

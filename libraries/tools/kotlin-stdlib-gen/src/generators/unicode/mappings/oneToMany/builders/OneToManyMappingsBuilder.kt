@@ -10,7 +10,7 @@ import generators.unicode.UnicodeDataLine
 import generators.unicode.hexToInt
 import java.util.TreeMap
 
-internal abstract class SpecialMappingsBuilder(unicodeDataLines: List<UnicodeDataLine>) {
+internal abstract class OneToManyMappingsBuilder(unicodeDataLines: List<UnicodeDataLine>) {
     private val unicodeDataLines = unicodeDataLines.associateBy { it.char.hexToInt() }
     private val mappings = TreeMap<Int, List<String>>()
 

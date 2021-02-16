@@ -7,6 +7,6 @@ package generators.unicode.mappings.oneToMany.writers
 
 import java.io.FileWriter
 
-internal interface SpecialMappingsWriter {
+internal interface OneToManyMappingsWriter {
     fun write(mappings: Map<Int, List<String>>, writer: FileWriter)
 }

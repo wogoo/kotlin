@@ -71,7 +71,7 @@ internal class StringUppercaseGenerator(
             var unchangedIndex = 0
             while (unchangedIndex < this.length) {
                 val codePoint = codePointAt(unchangedIndex)
-                if (this[unchangedIndex].uppercaseSpecialCasing() != null || codePoint.uppercaseCodePoint() != codePoint) {
+                if (this[unchangedIndex].oneToManyUppercase() != null || codePoint.uppercaseCodePoint() != codePoint) {
                     break
                 }
                 unchangedIndex += codePoint.charCount()
@@ -86,7 +86,7 @@ internal class StringUppercaseGenerator(
             var index = unchangedIndex
 
             while (index < this.length) {
-                val specialCasing = this[index].uppercaseSpecialCasing()
+                val specialCasing = this[index].oneToManyUppercase()
                 if (specialCasing != null) {
                     sb.append(specialCasing)
                     index++
