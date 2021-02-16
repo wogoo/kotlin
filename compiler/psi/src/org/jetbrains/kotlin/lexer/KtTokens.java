@@ -150,6 +150,7 @@ public interface KtTokens {
     KtKeywordToken CONSTRUCTOR_KEYWORD = KtKeywordToken.softKeyword("constructor");
     KtKeywordToken INIT_KEYWORD        = KtKeywordToken.softKeyword("init");
     KtKeywordToken CONTEXT_KEYWORD     = KtKeywordToken.softKeyword("context");
+    KtKeywordToken WITH_KEYWORD        = KtKeywordToken.softKeyword("with");
 
     KtModifierKeywordToken ABSTRACT_KEYWORD  = KtModifierKeywordToken.softKeywordModifier("abstract");
     KtModifierKeywordToken ENUM_KEYWORD      = KtModifierKeywordToken.softKeywordModifier("enum");
@@ -218,7 +219,7 @@ public interface KtTokens {
                                              DATA_KEYWORD, INLINE_KEYWORD, NOINLINE_KEYWORD, TAILREC_KEYWORD, EXTERNAL_KEYWORD,
                                              ANNOTATION_KEYWORD, CROSSINLINE_KEYWORD, CONST_KEYWORD, OPERATOR_KEYWORD, INFIX_KEYWORD,
                                              SUSPEND_KEYWORD, HEADER_KEYWORD, IMPL_KEYWORD, EXPECT_KEYWORD, ACTUAL_KEYWORD,
-                                             VALUE_KEYWORD, CONTEXT_KEYWORD
+                                             VALUE_KEYWORD, CONTEXT_KEYWORD, WITH_KEYWORD
     );
 
     /*

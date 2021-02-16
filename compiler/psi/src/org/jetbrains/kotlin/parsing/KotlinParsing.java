@@ -652,6 +652,36 @@ public class KotlinParsing extends AbstractKotlinParsing {
     }
 
     /*
+     * receiverExpressionList
+     *   : "with" "(" expression{","}+ ")"
+     */
+    private void parseReceiverExpressionList() {
+        assert _at(WITH_KEYWORD);
+        PsiBuilder.Marker receiverExpressionList = mark();
+        advance();
+        if (expect(LPAR, "Expecting an expression list")) {
+            if (!at(RPAR)) {
+                while (true) {
+                    while (at(COMMA)) errorAndAdvance("Expecting an expression");
+                    myExpressionParsing.parseExpression();
+                    if (!at(COMMA)) {
+                        break;
+                    }
+                    advance(); // COMMA
+                    if (at(RPAR)) {
+                        break;
+                    }
+                }
+            }
+            expect(RPAR, "Expecting ')'");
+            receiverExpressionList.done(RECEIVER_EXPRESSION_LIST);
+        } else {
+            errorWithRecovery("Expecting receiver list", TokenSet.EMPTY);
+            receiverExpressionList.drop();
+        }
+    }
+
+    /*
      * fileAnnotationList
      *   : ("[" "file:" annotationEntry+ "]")*
      *   ;
@@ -1722,6 +1752,9 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         if (!functionContractOccurred) {
             parseFunctionContract();
+        }
+        if (at(WITH_KEYWORD)) {
+            parseReceiverExpressionList();
         }
 
         if (at(SEMICOLON)) {
