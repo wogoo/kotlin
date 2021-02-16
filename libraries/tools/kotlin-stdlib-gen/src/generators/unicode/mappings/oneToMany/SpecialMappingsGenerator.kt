@@ -3,13 +3,13 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.specialMappings
+package generators.unicode.mappings.oneToMany
 
 import generators.unicode.SpecialCasingGenerator
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
-import generators.unicode.specialMappings.builders.*
-import generators.unicode.specialMappings.writers.*
+import generators.unicode.mappings.oneToMany.builders.*
+import generators.unicode.mappings.oneToMany.writers.*
 import generators.unicode.ranges.RangesWritingStrategy
 import generators.unicode.writeHeader
 import templates.KotlinTarget
