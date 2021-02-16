@@ -62,7 +62,7 @@ public class FileCopier {
                     Files.copy(path, target);
                 }
 
-                log.debug("Copied " + path + " to " + target);
+                log.debug"Copied " + path + " to " + target);
             }
             newSnapshots.put(relativePath, snapshot);
         }

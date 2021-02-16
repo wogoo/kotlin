@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.descriptors.commonizer.konan
 import org.jetbrains.kotlin.descriptors.commonizer.*
 import org.jetbrains.kotlin.descriptors.commonizer.repository.Repository
 import org.jetbrains.kotlin.konan.target.KonanTarget
+import org.jetbrains.kotlin.util.Logger
 import java.io.File
 
 internal class CopyUnconsumedModulesAsIsConsumer(
@@ -15,6 +16,7 @@ internal class CopyUnconsumedModulesAsIsConsumer(
     private val destination: File,
     private val targets: Set<KonanTarget>,
     private val outputLayout: CommonizerOutputLayout,
+    private val logger: Logger? = null
 ) : ResultsConsumer {
 
     private val consumedTargets = mutableSetOf<KonanTarget>()
@@ -40,5 +42,7 @@ internal class CopyUnconsumedModulesAsIsConsumer(
         libraries.map { it.library.libraryFile.absolutePath }.map(::File).forEach { libraryFile ->
             libraryFile.copyRecursively(destination.resolve(libraryFile.name))
         }
+
+        logger?.log("Copied ${libraries.size} libraries for ${commonizerTarget.prettyName}")
     }
 }
