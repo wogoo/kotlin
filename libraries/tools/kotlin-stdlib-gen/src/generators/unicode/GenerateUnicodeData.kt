@@ -43,10 +43,6 @@ fun main(args: Array<String>) {
         return URL(url).openStream().reader().readLines()
     }
 
-    fun downloadFile(fromUrl: String, dest: File) {
-        dest.writeText(readLines(fromUrl).joinToString(separator = "\n"))
-    }
-
     val unicodeDataLines = readLines(unicodeDataUrl).map { line -> UnicodeDataLine(line.split(";")) }
     val bmpUnicodeDataLines = unicodeDataLines.filter { line -> line.char.length <= 4 } // Basic Multilingual Plane (BMP)
 
@@ -123,12 +119,13 @@ fun main(args: Array<String>) {
             addRangesGenerators(jsIrGeneratedDir, KotlinTarget.JS_IR)
 
             // For debugging. To see the file content
-            fun downloadFile(url: String, fileName: String) {
-                val file = baseDir.resolve("libraries/tools/kotlin-stdlib-gen/src/generators/unicode/$fileName")
-                downloadFile(url, file)
+            fun downloadFile(fromUrl: String) {
+                val fileName = File(fromUrl).name
+                val dest = baseDir.resolve("libraries/tools/kotlin-stdlib-gen/src/generators/unicode/$fileName")
+                dest.writeText(readLines(fromUrl).joinToString(separator = "\n"))
             }
-            downloadFile(unicodeDataUrl, "UnicodeData.txt")
-            downloadFile(specialCasingUrl, "SpecialCasing.txt")
+            downloadFile(unicodeDataUrl)
+            downloadFile(specialCasingUrl)
         }
         2 -> {
             val (targetName, targetDir) = args
