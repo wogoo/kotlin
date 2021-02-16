@@ -49,7 +49,11 @@ private class CommonizerClassLoaderExecutor(private val commonizerClassLoader: C
 
     override fun invoke(arguments: List<String>) {
         val commonizerMainClass = commonizerClassLoader.loadClass(commonizerMainClass)
-        val commonizerMainMethod = commonizerMainClass.methods.single { it.name == commonizerMainFunction }
+        val commonizerMainMethod = commonizerMainClass.methods.singleOrNull { it.name == commonizerMainFunction }
+            ?: throw IllegalArgumentException(
+                "Missing or conflicting $commonizerMainFunction function in " +
+                        "Class ${commonizerMainClass.name} from ClassLoader $commonizerClassLoader"
+            )
         commonizerMainMethod.invoke(null, arguments.toTypedArray())
     }
 }
