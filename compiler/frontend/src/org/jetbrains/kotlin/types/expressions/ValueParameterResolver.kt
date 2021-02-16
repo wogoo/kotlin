@@ -47,7 +47,7 @@ class ValueParameterResolver(
         trace: BindingTrace
     ) {
         val scopeForDefaultValue =
-            LexicalScopeImpl(declaringScope, declaringScope.ownerDescriptor, false, null, LexicalScopeKind.DEFAULT_VALUE)
+            LexicalScopeImpl(declaringScope, declaringScope.ownerDescriptor, false, listOf(), LexicalScopeKind.DEFAULT_VALUE)
 
         val contextForDefaultValue = ExpressionTypingContext.newContext(
             trace, scopeForDefaultValue, dataFlowInfo, TypeUtils.NO_EXPECTED_TYPE,
