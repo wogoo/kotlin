@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.mappings.patterns
+package generators.unicode.mappings.oneToOne.patterns
 
 /**
  * A range of consequent chars that fit within a particular mapping pattern.

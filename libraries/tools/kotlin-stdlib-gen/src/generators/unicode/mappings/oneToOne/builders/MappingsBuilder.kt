@@ -3,11 +3,11 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.mappings.builders
+package generators.unicode.mappings.oneToOne.builders
 
 import generators.unicode.UnicodeDataLine
-import generators.unicode.mappings.patterns.EqualDistanceMappingPattern
-import generators.unicode.mappings.patterns.MappingPattern
+import generators.unicode.mappings.oneToOne.patterns.EqualDistanceMappingPattern
+import generators.unicode.mappings.oneToOne.patterns.MappingPattern
 import generators.unicode.hexToInt
 
 /**

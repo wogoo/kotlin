@@ -3,13 +3,13 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.mappings
+package generators.unicode.mappings.oneToOne
 
 import generators.requireExistingDir
 import generators.unicode.UnicodeDataGenerator
 import generators.unicode.UnicodeDataLine
-import generators.unicode.mappings.builders.*
-import generators.unicode.mappings.writers.*
+import generators.unicode.mappings.oneToOne.builders.*
+import generators.unicode.mappings.oneToOne.writers.*
 import generators.unicode.ranges.RangesWritingStrategy
 import generators.unicode.writeHeader
 import templates.KotlinTarget

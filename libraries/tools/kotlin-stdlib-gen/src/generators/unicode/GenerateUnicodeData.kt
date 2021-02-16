@@ -5,7 +5,7 @@
 
 package generators.unicode
 
-import generators.unicode.mappings.MappingsGenerator
+import generators.unicode.mappings.oneToOne.MappingsGenerator
 import generators.unicode.mappings.oneToMany.OneToManyMappingsGenerator
 import generators.unicode.ranges.CharCategoryTestGenerator
 import generators.unicode.ranges.RangesGenerator
@@ -87,15 +87,15 @@ fun main(args: Array<String>) {
         categoryRangesGenerators.add(whitespace)
     }
 
-    val caseMappingsGenerators = mutableListOf<UnicodeDataGenerator>()
+    val oneToOneMappingsGenerators = mutableListOf<UnicodeDataGenerator>()
 
-    fun addMappingsGenerators(generatedDir: File, target: KotlinTarget) {
+    fun addOneToOneMappingsGenerators(generatedDir: File, target: KotlinTarget) {
         val uppercase = MappingsGenerator.forUppercase(generatedDir.resolve("_UppercaseMappings.kt"), target)
         val lowercase = MappingsGenerator.forLowercase(generatedDir.resolve("_LowercaseMappings.kt"), target)
         val titlecase = MappingsGenerator.forTitlecase(generatedDir.resolve("_TitlecaseMappings.kt"))
-        caseMappingsGenerators.add(uppercase)
-        caseMappingsGenerators.add(lowercase)
-        caseMappingsGenerators.add(titlecase)
+        oneToOneMappingsGenerators.add(uppercase)
+        oneToOneMappingsGenerators.add(lowercase)
+        oneToOneMappingsGenerators.add(titlecase)
     }
 
     val oneToManyMappingsGenerators = mutableListOf<SpecialCasingGenerator>()
@@ -145,7 +145,7 @@ fun main(args: Array<String>) {
             addRangesGenerators(generatedDir, target)
 
             if (target == KotlinTarget.Native) {
-                addMappingsGenerators(generatedDir, target)
+                addOneToOneMappingsGenerators(generatedDir, target)
                 addOneToManyMappingsGenerators(generatedDir, target)
                 stringUppercaseGenerator = StringUppercaseGenerator(generatedDir.resolve("_StringUppercase.kt"), bmpUnicodeDataLines)
                 stringLowercaseGenerator = StringLowercaseGenerator(generatedDir.resolve("_StringLowercase.kt"), RangesWritingStrategy.of(target), unicodeDataLines)
@@ -171,9 +171,9 @@ fun main(args: Array<String>) {
     categoryRangesGenerators.forEach { it.close() }
 
     unicodeDataLines.forEach { line ->
-        caseMappingsGenerators.forEach { it.appendLine(line) }
+        oneToOneMappingsGenerators.forEach { it.appendLine(line) }
     }
-    caseMappingsGenerators.forEach { it.close() }
+    oneToOneMappingsGenerators.forEach { it.close() }
 
     specialCasingLines.forEach { line ->
         oneToManyMappingsGenerators.forEach { it.appendLine(line) }

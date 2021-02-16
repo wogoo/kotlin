@@ -3,9 +3,9 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.mappings.writers
+package generators.unicode.mappings.oneToOne.writers
 
-import generators.unicode.mappings.patterns.MappingPattern
+import generators.unicode.mappings.oneToOne.patterns.MappingPattern
 import java.io.FileWriter
 
 internal interface MappingsWriter {
