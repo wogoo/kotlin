@@ -85,7 +85,7 @@ private class PerformByIrFilePhase<Context : CommonBackendContext>(
 
         // Each thread needs its own copy of phaserState.alreadyDone
         val filesAndStates = input.files.map {
-            it.copySavingMappings(remappedFiles, remappedFunctions, remappedClasses) to phaserState.clone()
+            it.copySavingMappings(remappedFiles, remappedFunctions, remappedClasses) to phaserState.copyOf()
         }
 
         val executor = Executors.newFixedThreadPool(nThreads)
