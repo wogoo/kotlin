@@ -39,7 +39,7 @@ internal class ModuleSerializer(
     }
 
     override fun targetConsumed(target: CommonizerTarget) {
-        logger?.log("Written libraries for ${target.identityString}")
+        logger?.log("   Written libraries for ${target.identityString}")
     }
 }
 

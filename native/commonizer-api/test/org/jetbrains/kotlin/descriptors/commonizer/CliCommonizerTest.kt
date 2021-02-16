@@ -18,7 +18,7 @@ class CliCommonizerTest {
 
     @Test
     fun invokeCliWithEmptyArguments() {
-        val commonizer = CliCommonizer(this::class.java.classLoader)
+        val commonizer = GradleCliCommonizer(this::class.java.classLoader)
         commonizer.commonizeLibraries(
             konanHome = konanHome,
             inputLibraries = emptySet(),

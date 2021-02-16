@@ -8,14 +8,20 @@ package org.jetbrains.kotlin.descriptors.commonizer
 import java.io.File
 import java.net.URLClassLoader
 
-private const val commonizerMainClass = "org.jetbrains.kotlin.descriptors.commonizer.cli.CommonizerCLI"
-private const val commonizerMainFunction = "main"
-
-public fun CliCommonizer(classpath: Iterable<File>): CliCommonizer {
-    return CliCommonizer(URLClassLoader(classpath.map { it.absoluteFile.toURI().toURL() }.toTypedArray()))
+public fun GradleCliCommonizer(classpath: Iterable<File>): CliCommonizer {
+    return GradleCliCommonizer(URLClassLoader(classpath.map { it.absoluteFile.toURI().toURL() }.toTypedArray()))
 }
 
-public class CliCommonizer(private val commonizerClassLoader: ClassLoader) : Commonizer {
+public fun GradleCliCommonizer(classLoader: ClassLoader): CliCommonizer {
+    return CliCommonizer(CommonizerClassLoaderExecutor(classLoader))
+}
+
+public class CliCommonizer(private val executor: Executor) : Commonizer {
+
+    public fun interface Executor {
+        public operator fun invoke(arguments: List<String>)
+    }
+
     override fun commonizeLibraries(
         konanHome: File,
         inputLibraries: Set<File>,
@@ -31,7 +37,17 @@ public class CliCommonizer(private val commonizerClassLoader: ClassLoader) : Com
             add("-output-commonizer-target"); add(outputCommonizerTarget.identityString)
             add("-output-path"); add(outputDirectory.absolutePath)
         }
+        executor(arguments)
+    }
+}
 
+private class CommonizerClassLoaderExecutor(private val commonizerClassLoader: ClassLoader) : CliCommonizer.Executor {
+    companion object {
+        private const val commonizerMainClass = "org.jetbrains.kotlin.descriptors.commonizer.cli.CommonizerCLI"
+        private const val commonizerMainFunction = "main"
+    }
+
+    override fun invoke(arguments: List<String>) {
         val commonizerMainClass = commonizerClassLoader.loadClass(commonizerMainClass)
         val commonizerMainMethod = commonizerMainClass.methods.single { it.name == commonizerMainFunction }
         commonizerMainMethod.invoke(null, arguments.toTypedArray())

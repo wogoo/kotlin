@@ -6,12 +6,13 @@
 package org.jetbrains.kotlin.compilerRunner
 
 import org.gradle.api.Project
+import org.jetbrains.kotlin.descriptors.commonizer.GradleCliCommonizer
 import org.jetbrains.kotlin.gradle.plugin.KLIB_COMMONIZER_CLASSPATH_CONFIGURATION_NAME
 import org.jetbrains.kotlin.gradle.plugin.PropertiesProvider
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import java.io.File
 
-internal class KotlinNativeKlibCommonizerToolRunner(project: Project) : KotlinToolRunner(project) {
+internal class KotlinNativeCommonizerToolRunner(project: Project) : KotlinToolRunner(project) {
     override val displayName get() = "Kotlin/Native KLIB commonizer"
 
     override val mainClass: String get() = "org.jetbrains.kotlin.descriptors.commonizer.cli.CommonizerCLI"

@@ -23,7 +23,7 @@ class CommonizeLibcurlTest {
     @Test
     fun commonizeSuccessfully() {
         val libraries = File("testData/libcurl").walkTopDown().filter { it.isFile && it.extension == "klib" }.toSet()
-        val commonizer = CliCommonizer(this::class.java.classLoader)
+        val commonizer = GradleCliCommonizer(this::class.java.classLoader)
 
         commonizer.commonizeLibraries(
             konanHome = konanHome,
