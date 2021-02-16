@@ -37,7 +37,7 @@ class ValueParameterResolver(
     private val expressionTypingServices: ExpressionTypingServices,
     private val constantExpressionEvaluator: ConstantExpressionEvaluator,
     private val languageVersionSettings: LanguageVersionSettings,
-    private val dataFlowValueFactory: DataFlowValueFactory
+    val dataFlowValueFactory: DataFlowValueFactory
 ) {
     fun resolveValueParameters(
         valueParameters: List<KtParameter>,

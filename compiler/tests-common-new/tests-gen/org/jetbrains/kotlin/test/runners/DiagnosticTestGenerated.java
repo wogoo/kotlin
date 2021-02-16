@@ -9510,6 +9510,32 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                     runTest("compiler/testData/diagnostics/tests/extensions/contextReceivers/withExplicitReceiverError.kt");
                 }
             }
+
+            @Nested
+            @TestMetadata("compiler/testData/diagnostics/tests/extensions/receiverExpressions")
+            @TestDataPath("$PROJECT_ROOT")
+            public class ReceiverExpressions {
+                @Test
+                public void testAllFilesPresentInReceiverExpressions() throws Exception {
+                    KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/receiverExpressions"), Pattern.compile("^(.*)\\.kts?$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                }
+
+                @Nested
+                @TestMetadata("compiler/testData/diagnostics/tests/extensions/receiverExpressions/functions")
+                @TestDataPath("$PROJECT_ROOT")
+                public class Functions {
+                    @Test
+                    public void testAllFilesPresentInFunctions() throws Exception {
+                        KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/extensions/receiverExpressions/functions"), Pattern.compile("^(.*)\\.kts?$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                    }
+
+                    @Test
+                    @TestMetadata("simple.kt")
+                    public void testSimple() throws Exception {
+                        runTest("compiler/testData/diagnostics/tests/extensions/receiverExpressions/functions/simple.kt");
+                    }
+                }
+            }
         }
 
         @Nested
