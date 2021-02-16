@@ -169,22 +169,22 @@ fun main(args: Array<String>) {
     bmpUnicodeDataLines.forEach { line ->
         categoryRangesGenerators.forEach { it.appendLine(line) }
     }
-    categoryRangesGenerators.forEach { it.close() }
+    categoryRangesGenerators.forEach { it.generate() }
 
     categoryTestGenerator?.let {
         bmpUnicodeDataLines.forEach { line -> it.appendLine(line) }
-        it.close()
+        it.generate()
     }
 
     unicodeDataLines.forEach { line ->
         oneToOneMappingsGenerators.forEach { it.appendLine(line) }
     }
-    oneToOneMappingsGenerators.forEach { it.close() }
+    oneToOneMappingsGenerators.forEach { it.generate() }
 
     specialCasingLines.forEach { line ->
         oneToManyMappingsGenerators.forEach { it.appendLine(line) }
     }
-    oneToManyMappingsGenerators.forEach { it.close() }
+    oneToManyMappingsGenerators.forEach { it.generate() }
 
     stringUppercaseGenerator?.let {
         specialCasingLines.forEach { line -> it.appendSpecialCasingLine(line) }

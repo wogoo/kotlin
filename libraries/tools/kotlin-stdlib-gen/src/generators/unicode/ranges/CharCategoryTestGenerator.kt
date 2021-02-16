@@ -38,7 +38,7 @@ internal class CharCategoryTestGenerator(private val outputFile: File) {
         }
     }
 
-    fun close() {
+    fun generate() {
         writer?.appendLine(")")
         writer?.close()
 

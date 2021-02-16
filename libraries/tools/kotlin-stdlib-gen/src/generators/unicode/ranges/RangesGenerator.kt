@@ -29,7 +29,7 @@ internal class RangesGenerator private constructor(
         rangesBuilder.append(line.char, line.name, line.categoryCode)
     }
 
-    fun close() {
+    fun generate() {
         val (rangeStart, rangeEnd, rangeCategory) = rangesBuilder.build()
 
         FileWriter(outputFile).use { writer ->

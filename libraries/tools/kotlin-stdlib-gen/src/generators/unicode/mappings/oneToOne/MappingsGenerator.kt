@@ -29,7 +29,7 @@ internal class MappingsGenerator private constructor(
         mappingsBuilder.append(line)
     }
 
-    fun close() {
+    fun generate() {
         val mappings = mappingsBuilder.build()
 
         FileWriter(outputFile).use { writer ->
