@@ -102,6 +102,7 @@ fun main(args: Array<String>) {
 
     var stringUppercaseGenerator: StringUppercaseGenerator? = null
     var stringLowercaseGenerator: StringLowercaseGenerator? = null
+
     var stringCasingTestGenerator: StringCasingTestGenerator? = null
 
     when (args.size) {
@@ -126,8 +127,8 @@ fun main(args: Array<String>) {
             downloadFile(unicodeDataUrl)
             downloadFile(specialCasingUrl)
         }
-        2 -> {
-            val (targetName, targetDir) = args
+        3 -> {
+            val (targetName, targetDir, testDir) = args
 
             val target = KotlinTarget.values.singleOrNull { it.name.equals(targetName, ignoreCase = true) }
                 ?: error("Invalid target: $targetName")
@@ -140,13 +141,15 @@ fun main(args: Array<String>) {
                 addOneToManyMappingsGenerators(generatedDir, target)
                 stringUppercaseGenerator = StringUppercaseGenerator(generatedDir.resolve("_StringUppercase.kt"), unicodeDataLines)
                 stringLowercaseGenerator = StringLowercaseGenerator(generatedDir.resolve("_StringLowercase.kt"), unicodeDataLines)
+
+                stringCasingTestGenerator = StringCasingTestGenerator(File(testDir))
             }
         }
         else -> {
             println(
                 """Parameters:
-    <kotlin-base-dir> - generates UnicodeData.txt sources for js and js-ir targets using paths derived from specified base path
-    <UnicodeData.txt-path> <target> <target-dir> - generates UnicodeData.txt sources for the specified target in the specified target directory
+    <kotlin-base-dir> - generates sources for js and js-ir targets using paths derived from specified base path
+    <target> <target-dir> <test-dir> - generates sources for the specified target in the specified target directory
 """
             )
             exitProcess(1)
