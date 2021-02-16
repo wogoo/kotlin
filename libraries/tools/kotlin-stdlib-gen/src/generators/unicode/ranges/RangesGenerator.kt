@@ -6,7 +6,6 @@
 package generators.unicode.ranges
 
 import generators.requireExistingDir
-import generators.unicode.UnicodeDataGenerator
 import generators.unicode.UnicodeDataLine
 import generators.unicode.ranges.builders.*
 import generators.unicode.ranges.writers.*
@@ -20,17 +19,17 @@ internal class RangesGenerator private constructor(
     private val outputFile: File,
     private val rangesBuilder: RangesBuilder,
     private val rangesWriter: RangesWriter,
-) : UnicodeDataGenerator {
+) {
 
     init {
         outputFile.parentFile.requireExistingDir()
     }
 
-    override fun appendLine(line: UnicodeDataLine) {
+    fun appendLine(line: UnicodeDataLine) {
         rangesBuilder.append(line.char, line.name, line.categoryCode)
     }
 
-    override fun close() {
+    fun close() {
         val (rangeStart, rangeEnd, rangeCategory) = rangesBuilder.build()
 
         FileWriter(outputFile).use { writer ->

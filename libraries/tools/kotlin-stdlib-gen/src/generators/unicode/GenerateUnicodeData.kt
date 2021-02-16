@@ -74,7 +74,7 @@ fun main(args: Array<String>) {
         PropertyLine(line.split("; ").map { it.trim() })
     }
 
-    val categoryRangesGenerators = mutableListOf<UnicodeDataGenerator>()
+    val categoryRangesGenerators = mutableListOf<RangesGenerator>()
 
     fun addRangesGenerators(generatedDir: File, target: KotlinTarget) {
         val category = RangesGenerator.forCharCategory(generatedDir.resolve("_CharCategories.kt"), target)
@@ -87,7 +87,7 @@ fun main(args: Array<String>) {
         categoryRangesGenerators.add(whitespace)
     }
 
-    val oneToOneMappingsGenerators = mutableListOf<UnicodeDataGenerator>()
+    val oneToOneMappingsGenerators = mutableListOf<MappingsGenerator>()
 
     fun addOneToOneMappingsGenerators(generatedDir: File, target: KotlinTarget) {
         val uppercase = MappingsGenerator.forUppercase(generatedDir.resolve("_UppercaseMappings.kt"), target)
@@ -98,7 +98,7 @@ fun main(args: Array<String>) {
         oneToOneMappingsGenerators.add(titlecase)
     }
 
-    val oneToManyMappingsGenerators = mutableListOf<SpecialCasingGenerator>()
+    val oneToManyMappingsGenerators = mutableListOf<OneToManyMappingsGenerator>()
 
     fun addOneToManyMappingsGenerators(generatedDir: File, target: KotlinTarget) {
         val uppercase = OneToManyMappingsGenerator.forUppercase(generatedDir.resolve("_OneToManyUppercaseMappings.kt"), target, bmpUnicodeDataLines)
@@ -109,6 +109,8 @@ fun main(args: Array<String>) {
         oneToManyMappingsGenerators.add(titlecase)
     }
 
+    var categoryTestGenerator: CharCategoryTestGenerator? = null
+
     var stringUppercaseGenerator: StringUppercaseGenerator? = null
     var stringLowercaseGenerator: StringLowercaseGenerator? = null
     var stringCasingTestGenerator: StringCasingTestGenerator? = null
@@ -118,8 +120,7 @@ fun main(args: Array<String>) {
             val baseDir = File(args.first())
 
             val categoryTestFile = baseDir.resolve("libraries/stdlib/js/test/text/unicodeData/_CharCategoryTest.kt")
-            val categoryTestGenerator = CharCategoryTestGenerator(categoryTestFile)
-            categoryRangesGenerators.add(categoryTestGenerator)
+            categoryTestGenerator = CharCategoryTestGenerator(categoryTestFile)
 
             val jsGeneratedDir = baseDir.resolve("libraries/stdlib/js/src/generated/")
             addRangesGenerators(jsGeneratedDir, KotlinTarget.JS)
@@ -170,6 +171,11 @@ fun main(args: Array<String>) {
     }
     categoryRangesGenerators.forEach { it.close() }
 
+    categoryTestGenerator?.let {
+        bmpUnicodeDataLines.forEach { line -> it.appendLine(line) }
+        it.close()
+    }
+
     unicodeDataLines.forEach { line ->
         oneToOneMappingsGenerators.forEach { it.appendLine(line) }
     }
@@ -195,15 +201,4 @@ fun main(args: Array<String>) {
         it.generate()
     }
 
-}
-
-
-internal interface UnicodeDataGenerator {
-    fun appendLine(line: UnicodeDataLine)
-    fun close()
-}
-
-internal interface SpecialCasingGenerator {
-    fun appendLine(line: SpecialCasingLine)
-    fun close()
 }

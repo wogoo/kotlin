@@ -6,7 +6,6 @@
 package generators.unicode.mappings.oneToOne
 
 import generators.requireExistingDir
-import generators.unicode.UnicodeDataGenerator
 import generators.unicode.UnicodeDataLine
 import generators.unicode.mappings.oneToOne.builders.*
 import generators.unicode.mappings.oneToOne.writers.*
@@ -20,17 +19,17 @@ internal class MappingsGenerator private constructor(
     private val outputFile: File,
     private val mappingsBuilder: MappingsBuilder,
     private val mappingsWriter: MappingsWriter,
-) : UnicodeDataGenerator {
+) {
 
     init {
         outputFile.parentFile.requireExistingDir()
     }
 
-    override fun appendLine(line: UnicodeDataLine) {
+    fun appendLine(line: UnicodeDataLine) {
         mappingsBuilder.append(line)
     }
 
-    override fun close() {
+    fun close() {
         val mappings = mappingsBuilder.build()
 
         FileWriter(outputFile).use { writer ->

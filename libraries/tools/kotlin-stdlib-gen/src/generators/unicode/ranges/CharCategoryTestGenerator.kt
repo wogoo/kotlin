@@ -5,13 +5,12 @@
 
 package generators.unicode.ranges
 
-import generators.unicode.UnicodeDataGenerator
 import generators.unicode.UnicodeDataLine
 import generators.unicode.writeHeader
 import java.io.File
 import java.io.FileWriter
 
-internal class CharCategoryTestGenerator(private val outputFile: File) : UnicodeDataGenerator {
+internal class CharCategoryTestGenerator(private val outputFile: File) {
     private var arrayIndex = 0
     private var arraySize = 0
     private var writer: FileWriter? = null
@@ -20,7 +19,7 @@ internal class CharCategoryTestGenerator(private val outputFile: File) : Unicode
         outputFile.parentFile.mkdirs()
     }
 
-    override fun appendLine(line: UnicodeDataLine) {
+    fun appendLine(line: UnicodeDataLine) {
         if (arraySize == 0) {
             writer?.appendLine(")")
             writer?.close()
@@ -39,7 +38,7 @@ internal class CharCategoryTestGenerator(private val outputFile: File) : Unicode
         }
     }
 
-    override fun close() {
+    fun close() {
         writer?.appendLine(")")
         writer?.close()
 

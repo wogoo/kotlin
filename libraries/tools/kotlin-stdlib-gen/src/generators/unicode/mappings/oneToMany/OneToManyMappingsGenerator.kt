@@ -5,7 +5,6 @@
 
 package generators.unicode.mappings.oneToMany
 
-import generators.unicode.SpecialCasingGenerator
 import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
 import generators.unicode.mappings.oneToMany.builders.*
@@ -20,12 +19,12 @@ internal class OneToManyMappingsGenerator private constructor(
     private val outputFile: File,
     private val mappingsBuilder: OneToManyMappingsBuilder,
     private val mappingsWriter: OneToManyMappingsWriter
-) : SpecialCasingGenerator {
-    override fun appendLine(line: SpecialCasingLine) {
+) {
+    fun appendLine(line: SpecialCasingLine) {
         mappingsBuilder.append(line)
     }
 
-    override fun close() {
+    fun close() {
         val mappings = mappingsBuilder.build()
 
         FileWriter(outputFile).use { writer ->
