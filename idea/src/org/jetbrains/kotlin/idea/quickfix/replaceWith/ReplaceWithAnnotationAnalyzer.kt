@@ -228,7 +228,7 @@ object ReplaceWithAnnotationAnalyzer {
                     outerScope,
                     descriptor,
                     false,
-                    null,
+                    listOf(),
                     LexicalScopeKind.TYPE_ALIAS_HEADER,
                     LocalRedeclarationChecker.DO_NOTHING
                 ) {
@@ -254,7 +254,7 @@ object ReplaceWithAnnotationAnalyzer {
                     propertyHeader,
                     descriptor,
                     false,
-                    descriptor.extensionReceiverParameter,
+                    listOfNotNull(descriptor.extensionReceiverParameter),
                     LexicalScopeKind.PROPERTY_ACCESSOR_BODY
                 )
             }
