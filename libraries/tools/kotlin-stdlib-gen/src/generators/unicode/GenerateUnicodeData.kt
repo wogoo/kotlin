@@ -50,27 +50,21 @@ fun main(args: Array<String>) {
     val unicodeDataLines = readLines(unicodeDataUrl).map { line -> UnicodeDataLine(line.split(";")) }
     val bmpUnicodeDataLines = unicodeDataLines.filter { line -> line.char.length <= 4 } // Basic Multilingual Plane (BMP)
 
-    val specialCasingLines = readLines(specialCasingUrl).filterNot {
-        it.isEmpty() || it.startsWith("#")
-    }.map { line ->
+    fun String.isEmptyOrComment(): Boolean = isEmpty() || startsWith("#")
+
+    val specialCasingLines = readLines(specialCasingUrl).filterNot(String::isEmptyOrComment).map { line ->
         SpecialCasingLine(line.split("; "))
     }
 
-    val propListLines = URL(propListUrl).openStream().reader().readLines().filterNot {
-        it.isEmpty() || it.startsWith("#")
-    }.map { line ->
+    val propListLines = readLines(propListUrl).filterNot(String::isEmptyOrComment).map { line ->
         PropertyLine(line.split("; ").map { it.trim() })
     }
 
-    val wordBreakPropertyLines = URL(wordBreakPropertyUrl).openStream().reader().readLines().filterNot {
-        it.isEmpty() || it.startsWith("#")
-    }.map { line ->
+    val wordBreakPropertyLines = readLines(wordBreakPropertyUrl).filterNot(String::isEmptyOrComment).map { line ->
         PropertyLine(line.split("; ").map { it.trim() })
     }
 
-    val derivedCorePropertiesLines = URL(derivedCorePropertiesUrl).openStream().reader().readLines().filterNot {
-        it.isEmpty() || it.startsWith("#")
-    }.map { line ->
+    val derivedCorePropertiesLines = readLines(derivedCorePropertiesUrl).filterNot(String::isEmptyOrComment).map { line ->
         PropertyLine(line.split("; ").map { it.trim() })
     }
 
