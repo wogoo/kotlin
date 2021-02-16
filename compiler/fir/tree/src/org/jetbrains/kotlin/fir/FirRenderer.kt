@@ -86,6 +86,14 @@ class FirRenderer(builder: StringBuilder, private val mode: RenderMode = RenderM
             renderDeclarationResolvePhase = true,
             renderAnnotation = true,
         )
+
+        object Full : RenderMode(
+            renderLambdaBodies = true,
+            renderCallArguments = true,
+            renderCallableFqNames = true,
+            renderDeclarationResolvePhase = true,
+            renderAnnotation = true,
+        )
     }
 
     private val printer = Printer(builder)
