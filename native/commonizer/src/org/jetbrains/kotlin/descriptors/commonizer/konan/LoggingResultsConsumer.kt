@@ -11,7 +11,9 @@ import org.jetbrains.kotlin.descriptors.commonizer.SharedCommonizerTarget
 import org.jetbrains.kotlin.descriptors.commonizer.prettyName
 import org.jetbrains.kotlin.util.Logger
 
-internal class LoggingResultsConsumer(private val logger: Logger, private val outputCommonizerTarget: SharedCommonizerTarget) : ResultsConsumer {
+internal class LoggingResultsConsumer(
+    private val outputCommonizerTarget: SharedCommonizerTarget, private val logger: Logger
+) : ResultsConsumer {
     override fun targetConsumed(target: CommonizerTarget) {
         logger.log("Written libraries for ${outputCommonizerTarget.prettyName(target)}")
     }

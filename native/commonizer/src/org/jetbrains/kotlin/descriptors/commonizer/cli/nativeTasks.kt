@@ -66,8 +66,10 @@ internal class NativeKlibCommonize(options: Collection<Option<*>>) : Task(option
 
         val resultsConsumer = buildResultsConsumer {
             this add ModuleSerializer(destination, HierarchicalCommonizerOutputLayout)
-            this add CopyUnconsumedModulesAsIsConsumer(repository, destination, konanTargets, NativeDistributionCommonizerOutputLayout)
-            this add LoggingResultsConsumer(logger.toProgressLogger(), outputCommonizerTarget)
+            this add CopyUnconsumedModulesAsIsConsumer(
+                repository, destination, konanTargets, NativeDistributionCommonizerOutputLayout, logger.toProgressLogger()
+            )
+            this add LoggingResultsConsumer(outputCommonizerTarget, logger.toProgressLogger())
         }
 
         LibraryCommonizer(
@@ -105,10 +107,12 @@ internal class NativeDistributionCommonize(options: Collection<Option<*>>) : Tas
 
         val resultsConsumer = buildResultsConsumer {
             this add ModuleSerializer(destination, NativeDistributionCommonizerOutputLayout)
-            this add CopyUnconsumedModulesAsIsConsumer(repository, destination, targets.toSet(), NativeDistributionCommonizerOutputLayout)
+            this add CopyUnconsumedModulesAsIsConsumer(
+                repository, destination, targets.toSet(), NativeDistributionCommonizerOutputLayout, logger.toProgressLogger()
+            )
             if (copyStdlib) this add CopyStdlibResultsConsumer(distribution, destination, logger.toProgressLogger())
             if (copyEndorsedLibs) this add CopyEndorsedLibrairesResultsConsumer(distribution, destination, logger.toProgressLogger())
-            this add LoggingResultsConsumer(logger.toProgressLogger(), SharedCommonizerTarget(targets))
+            this add LoggingResultsConsumer(SharedCommonizerTarget(targets), logger.toProgressLogger())
         }
 
         val targetNames = targets.joinToString { "[${it.name}]" }
