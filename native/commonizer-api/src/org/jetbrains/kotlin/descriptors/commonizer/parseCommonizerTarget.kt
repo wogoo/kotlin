@@ -84,10 +84,10 @@ private data class RegexIdentityStringTokenizer(
 }
 
 private val sharedTargetStartTokenizer =
-    RegexIdentityStringTokenizer(Regex.fromLiteral("[")) { SharedTargetStart }
+    RegexIdentityStringTokenizer(Regex.fromLiteral("(")) { SharedTargetStart }
 
 private val sharedTargetEndTokenizer =
-    RegexIdentityStringTokenizer(Regex.fromLiteral("]")) { SharedTargetEnd }
+    RegexIdentityStringTokenizer(Regex.fromLiteral(")")) { SharedTargetEnd }
 
 private val separatorTokenizer =
     RegexIdentityStringTokenizer(Regex("""\s*,\s*""")) { Separator }

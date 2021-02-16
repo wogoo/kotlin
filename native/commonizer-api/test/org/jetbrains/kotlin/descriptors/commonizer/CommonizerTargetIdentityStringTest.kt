@@ -64,7 +64,7 @@ class CommonizerTargetIdentityStringTest {
 
     @Test
     fun `parsing CommonizerTarget`() {
-        val target = parseCommonizerTarget("[x, [x, y, [a, b], [b, c]]]")
+        val target = parseCommonizerTarget("(x, (x, y, (a, b), (b, c)))")
         assertEquals(
             SharedCommonizerTarget(
                 LeafCommonizerTarget("x"),
@@ -97,27 +97,27 @@ class CommonizerTargetIdentityStringTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `fail parsing CommonizerTarget 3`() {
-        parseCommonizerTarget("[]")
+        parseCommonizerTarget("()")
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `fail parsing CommonizerTarget 4`() {
-        parseCommonizerTarget("[xxx")
+        parseCommonizerTarget("(xxx")
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `fail parsing CommonizerTarget 5`() {
-        parseCommonizerTarget("xxx]")
+        parseCommonizerTarget("xxx)")
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `fail parsing CommonizerTarget 6`() {
-        parseCommonizerTarget("[xxx")
+        parseCommonizerTarget("(xxx")
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `fail parsing CommonizerTarget 7`() {
-        parseCommonizerTarget("[xxx yyy]")
+        parseCommonizerTarget("(xxx yyy)")
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -132,6 +132,6 @@ class CommonizerTargetIdentityStringTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `fail parsing CommonizerTarget 10`() {
-        parseCommonizerTarget("[x, [x, y]")
+        parseCommonizerTarget("(x, (x, y)")
     }
 }

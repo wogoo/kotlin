@@ -5,10 +5,7 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.konan
 
-import org.jetbrains.kotlin.descriptors.commonizer.CommonizerOutputLayout
-import org.jetbrains.kotlin.descriptors.commonizer.CommonizerTarget
-import org.jetbrains.kotlin.descriptors.commonizer.ResultsConsumer
-import org.jetbrains.kotlin.descriptors.commonizer.identityString
+import org.jetbrains.kotlin.descriptors.commonizer.*
 import org.jetbrains.kotlin.library.SerializedMetadata
 import org.jetbrains.kotlin.library.impl.BaseWriterImpl
 import org.jetbrains.kotlin.library.impl.BuiltInsPlatform
@@ -20,7 +17,6 @@ import java.io.File
 internal class ModuleSerializer(
     private val destination: File,
     private val outputLayout: CommonizerOutputLayout,
-    private val logger: Logger? = null
 ) : ResultsConsumer {
     override fun consume(target: CommonizerTarget, moduleResult: ResultsConsumer.ModuleResult) {
         val librariesDestination = outputLayout.getTargetDirectory(destination, target)
@@ -36,10 +32,6 @@ internal class ModuleSerializer(
                 missingModuleLocation.copyRecursively(librariesDestination.resolve(libraryName))
             }
         }
-    }
-
-    override fun targetConsumed(target: CommonizerTarget) {
-        logger?.log("   Written libraries for ${target.identityString}")
     }
 }
 

@@ -63,19 +63,24 @@ private val SharedCommonizerTarget.identityString: String
     get() {
         val segments = targets.map(CommonizerTarget::identityString).sorted()
         return segments.joinToString(
-            separator = ", ", prefix = "[", postfix = "]"
+            separator = ", ", prefix = "(", postfix = ")"
         )
     }
 
-public fun SharedCommonizerTarget.contextualIdentityString(child: CommonizerTarget): String {
-    val segments = targets.map { target ->
-        when (target) {
-            child -> target.identityString + "(*)"
-            is LeafCommonizerTarget -> target.identityString
-            is SharedCommonizerTarget -> target.contextualIdentityString(child)
-        }
+public val CommonizerTarget.prettyName: String
+    get() = when (this) {
+        is LeafCommonizerTarget -> "[$name]"
+        is SharedCommonizerTarget -> prettyName(null)
     }
-    return segments.joinToString(", ", prefix = "[", postfix = "]")
+
+public fun SharedCommonizerTarget.prettyName(highlightedChild: CommonizerTarget?): String {
+    return targets
+        .sortedWith(compareBy<CommonizerTarget> { it.level }.thenBy { it.identityString }).joinToString(", ", "[", "]") { child ->
+            when (child) {
+                is LeafCommonizerTarget -> child.name
+                is SharedCommonizerTarget -> child.prettyName(highlightedChild)
+            } + if (child == highlightedChild) "(*)" else ""
+        }
 }
 
 public val CommonizerTarget.konanTargets: Set<KonanTarget>

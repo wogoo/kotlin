@@ -55,27 +55,28 @@ internal class NativeKlibCommonize(options: Collection<Option<*>>) : Task(option
         val destination = getMandatory<File, OutputOptionType>()
         val targetLibraries = getMandatory<List<File>, InputLibrariesOptionType>()
         val dependencyLibraries = getMandatory<List<File>, DependencyLibrariesOptionType>()
-        val outputHierarchy = getMandatory<SharedCommonizerTarget, OutputCommonizerTargetOptionType>()
+        val outputCommonizerTarget = getMandatory<SharedCommonizerTarget, OutputCommonizerTargetOptionType>()
         val statsType = getOptional<StatsType, StatsTypeOptionType> { it == "log-stats" } ?: StatsType.NONE
 
-        val konanTargets = outputHierarchy.konanTargets
+        val konanTargets = outputCommonizerTarget.konanTargets
         val logger = CliLoggerAdapter(2)
         val libraryLoader = DefaultNativeLibraryLoader(logger)
-        val statsCollector = StatsCollector(statsType, outputHierarchy.konanTargets.toList())
+        val statsCollector = StatsCollector(statsType, outputCommonizerTarget.konanTargets.toList())
         val repository = FilesRepository(targetLibraries.toSet(), libraryLoader)
 
         val resultsConsumer = buildResultsConsumer {
-            this add ModuleSerializer(destination, HierarchicalCommonizerOutputLayout, logger.toProgressLogger())
+            this add ModuleSerializer(destination, HierarchicalCommonizerOutputLayout)
             this add CopyUnconsumedModulesAsIsConsumer(repository, destination, konanTargets, NativeDistributionCommonizerOutputLayout)
+            this add LoggingResultsConsumer(logger.toProgressLogger(), outputCommonizerTarget)
         }
 
         LibraryCommonizer(
             konanDistribution = distribution,
             repository = repository,
-            dependencies = KonanDistributionRepository(distribution, outputHierarchy.konanTargets, libraryLoader) +
+            dependencies = KonanDistributionRepository(distribution, outputCommonizerTarget.konanTargets, libraryLoader) +
                     FilesRepository(dependencyLibraries.toSet(), libraryLoader),
             libraryLoader = libraryLoader,
-            targets = outputHierarchy.konanTargets.toList(),
+            targets = outputCommonizerTarget.konanTargets.toList(),
             resultsConsumer = resultsConsumer,
             statsCollector = statsCollector,
             logger = logger
@@ -103,10 +104,11 @@ internal class NativeDistributionCommonize(options: Collection<Option<*>>) : Tas
         val statsCollector = StatsCollector(statsType, targets.toList())
 
         val resultsConsumer = buildResultsConsumer {
-            this add ModuleSerializer(destination, NativeDistributionCommonizerOutputLayout, logger.toProgressLogger())
+            this add ModuleSerializer(destination, NativeDistributionCommonizerOutputLayout)
             this add CopyUnconsumedModulesAsIsConsumer(repository, destination, targets.toSet(), NativeDistributionCommonizerOutputLayout)
             if (copyStdlib) this add CopyStdlibResultsConsumer(distribution, destination, logger.toProgressLogger())
             if (copyEndorsedLibs) this add CopyEndorsedLibrairesResultsConsumer(distribution, destination, logger.toProgressLogger())
+            this add LoggingResultsConsumer(logger.toProgressLogger(), SharedCommonizerTarget(targets))
         }
 
         val targetNames = targets.joinToString { "[${it.name}]" }

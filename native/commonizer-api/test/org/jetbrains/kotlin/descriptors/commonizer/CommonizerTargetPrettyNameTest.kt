@@ -8,17 +8,17 @@ package org.jetbrains.kotlin.descriptors.commonizer
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class CommonizerTargetTest {
+class CommonizerTargetPrettyNameTest {
 
     @Test
     fun leafTargetNames() {
         listOf(
-            Triple("foo", "foo", FOO),
-            Triple("bar", "bar", BAR),
-            Triple("baz_123", "baz_123", BAZ),
+            Triple("foo", "[foo]", FOO),
+            Triple("bar", "[bar]", BAR),
+            Triple("baz_123", "[baz_123]", BAZ),
         ).forEach { (name, prettyName, target: LeafCommonizerTarget) ->
             assertEquals(name, target.name)
-            assertEquals(prettyName, target.identityString)
+            assertEquals(prettyName, target.prettyName)
         }
     }
 
@@ -28,9 +28,9 @@ class CommonizerTargetTest {
             "[foo]" to SharedTarget(FOO),
             "[bar, foo]" to SharedTarget(FOO, BAR),
             "[bar, baz_123, foo]" to SharedTarget(FOO, BAR, BAZ),
-            "[[bar, foo], bar, baz_123, foo]" to SharedTarget(FOO, BAR, BAZ, SharedTarget(FOO, BAR))
+            "[bar, baz_123, foo, [bar, foo]]" to SharedTarget(FOO, BAR, BAZ, SharedTarget(FOO, BAR))
         ).forEach { (prettyName, target: SharedCommonizerTarget) ->
-            assertEquals(prettyName, target.identityString)
+            assertEquals(prettyName, target.prettyName)
         }
     }
 
@@ -38,13 +38,38 @@ class CommonizerTargetTest {
     fun prettyCommonizedName() {
         val sharedTarget = SharedTarget(FOO, BAR, BAZ)
         listOf(
-            "[foo(*), bar, baz_123]" to FOO,
-            "[foo, bar(*), baz_123]" to BAR,
-            "[foo, bar, baz_123(*)]" to BAZ,
-            "[foo, bar, baz_123]" to sharedTarget
+            "[bar, baz_123, foo(*)]" to FOO,
+            "[bar(*), baz_123, foo]" to BAR,
+            "[bar, baz_123(*), foo]" to BAZ,
+            "[bar, baz_123, foo]" to sharedTarget,
         ).forEach { (prettyCommonizerName, target: CommonizerTarget) ->
-            assertEquals(prettyCommonizerName, sharedTarget.contextualIdentityString(target))
+            assertEquals(prettyCommonizerName, sharedTarget.prettyName(target))
         }
+    }
+
+    @Test
+    fun prettyNestedName() {
+        val target = parseCommonizerTarget("(a, b, (c, (d, e)))") as SharedCommonizerTarget
+
+        assertEquals(
+            "[a, b, [c, [d, e]]]", target.prettyName
+        )
+
+        assertEquals(
+            "[a, b, [c, [d, e(*)]]]", target.prettyName(LeafCommonizerTarget("e"))
+        )
+
+        assertEquals(
+            "[a, b, [c, [d, e](*)]]", target.prettyName(parseCommonizerTarget("(d, e)"))
+        )
+
+        assertEquals(
+            "[a, b, [c, [d, e]](*)]", target.prettyName(parseCommonizerTarget("(c, (d, e))"))
+        )
+
+        assertEquals(
+            "[a, b(*), [c, [d, e]]]", target.prettyName(LeafCommonizerTarget("b"))
+        )
     }
 
     @Test(expected = IllegalArgumentException::class)
