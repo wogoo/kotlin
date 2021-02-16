@@ -105,7 +105,7 @@ private class PerformByIrFilePhase<Context : CommonBackendContext>(
         executor.awaitTermination(1, TimeUnit.DAYS) // Wait long enough
 
         thrownFromThread.get()?.let { (e, irFile) ->
-            CodegenUtil.reportBackendException(e, "IrLowering", irFile.fileEntry.name)
+            CodegenUtil.reportBackendException(e, "Experimental parallel IR backend", irFile.fileEntry.name)
         }
 
         // Presumably each thread has run through the same list of phases.
