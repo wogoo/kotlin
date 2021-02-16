@@ -19,13 +19,22 @@ package org.jetbrains.kotlin.resolve;
 import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.descriptors.*;
+import org.jetbrains.kotlin.descriptors.annotations.Annotations;
+import org.jetbrains.kotlin.descriptors.impl.ReceiverParameterDescriptorImpl;
 import org.jetbrains.kotlin.descriptors.impl.ValueParameterDescriptorImpl;
+import org.jetbrains.kotlin.psi.KtExpression;
+import org.jetbrains.kotlin.psi.KtReceiverExpressionList;
 import org.jetbrains.kotlin.resolve.scopes.*;
+import org.jetbrains.kotlin.resolve.scopes.receivers.ExpressionImplicitReceiver;
 import org.jetbrains.kotlin.types.*;
+import org.jetbrains.kotlin.types.expressions.ExpressionTypingContext;
+import org.jetbrains.kotlin.types.expressions.ExpressionTypingServices;
 import org.jetbrains.kotlin.types.typeUtil.TypeUtilsKt;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class FunctionDescriptorUtil {
     private static final TypeSubstitutor MAKE_TYPE_PARAMETERS_FRESH = TypeSubstitutor.create(new TypeSubstitution() {
@@ -50,6 +59,36 @@ public class FunctionDescriptorUtil {
         if (functionDescriptor.getTypeParameters().isEmpty()) return TypeSubstitution.EMPTY;
 
         return new IndexedParametersSubstitution(functionDescriptor.getTypeParameters(), TypeUtilsKt.defaultProjections(typeArguments));
+    }
+
+    @NotNull
+    public static LexicalScope makeFunctionInnerScopeWithAdditionalReceiverObjects(
+            @NotNull KtReceiverExpressionList receiverExpressionList,
+            @NotNull FunctionDescriptor functionDescriptor,
+            @NotNull LexicalScope innerScope,
+            @NotNull ExpressionTypingContext context,
+            @NotNull ExpressionTypingServices expressionTypingServices
+    ) {
+        List<KtExpression> expressions = receiverExpressionList.expressions();
+        List<ReceiverParameterDescriptor> implicitObjectReceivers = expressions.stream().map(expression -> {
+            KotlinType kotlinType = expressionTypingServices.getTypeInfo(expression, context.replaceExpectedType(null)).getType();
+            if (kotlinType != null) {
+                return new ReceiverParameterDescriptorImpl(
+                        functionDescriptor,
+                        new ExpressionImplicitReceiver(functionDescriptor, expression, kotlinType, null),
+                        Annotations.Companion.getEMPTY()
+                );
+            } else {
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        return new LexicalScopeImpl(
+                innerScope,
+                innerScope.getOwnerDescriptor(),
+                innerScope.isOwnerDescriptorAccessibleByLabel(),
+                implicitObjectReceivers,
+                innerScope.getKind()
+        );
     }
 
     @NotNull

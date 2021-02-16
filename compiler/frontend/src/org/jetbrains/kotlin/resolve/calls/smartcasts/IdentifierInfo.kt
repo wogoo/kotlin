@@ -29,9 +29,7 @@ import org.jetbrains.kotlin.resolve.calls.callUtil.getResolvedCall
 import org.jetbrains.kotlin.resolve.calls.callUtil.isSafeCall
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue.Kind.OTHER
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValue.Kind.STABLE_VALUE
-import org.jetbrains.kotlin.resolve.scopes.receivers.ImplicitReceiver
-import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValue
-import org.jetbrains.kotlin.resolve.scopes.receivers.TransientReceiver
+import org.jetbrains.kotlin.resolve.scopes.receivers.*
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.checker.KotlinTypeRefiner
 
@@ -257,6 +255,8 @@ private fun getIdForSimpleNameExpression(
 
 private fun getIdForImplicitReceiver(receiverValue: ReceiverValue?, expression: KtExpression?) =
     when (receiverValue) {
+        is ExpressionImplicitReceiver -> IdentifierInfo.NO
+
         is ImplicitReceiver -> getIdForThisReceiver(receiverValue.declarationDescriptor)
 
         is TransientReceiver ->
