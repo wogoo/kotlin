@@ -42,6 +42,8 @@ abstract class KtConstructor<T : KtConstructor<T>> : KtDeclarationStub<KotlinPla
 
     override fun getContextReceiverTypeReferences(): List<KtTypeReference> = emptyList()
 
+    override fun getReceiverExpressionList(): KtReceiverExpressionList? = null
+
     override fun getTypeReference() = null
 
     @Throws(IncorrectOperationException::class)

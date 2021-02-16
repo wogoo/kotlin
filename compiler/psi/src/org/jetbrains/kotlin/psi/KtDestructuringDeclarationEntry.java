@@ -83,6 +83,12 @@ public class KtDestructuringDeclarationEntry extends KtNamedDeclarationNotStubbe
 
     @Nullable
     @Override
+    public KtReceiverExpressionList getReceiverExpressionList() {
+        return null;
+    }
+
+    @Nullable
+    @Override
     public KtTypeParameterList getTypeParameterList() {
         return null;
     }
