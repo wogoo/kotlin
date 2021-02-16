@@ -23,10 +23,11 @@ import org.jetbrains.kotlin.extensions.AnnotationBasedExtension
 import org.jetbrains.kotlin.extensions.DeclarationAttributeAltererExtension
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtModifierListOwner
+import org.jetbrains.kotlin.psi.psiUtil.isPrivate
 import org.jetbrains.kotlin.resolve.BindingContext
 
 class CliAllOpenDeclarationAttributeAltererExtension(
-        private val allOpenAnnotationFqNames: List<String>
+    private val allOpenAnnotationFqNames: List<String>
 ) : AbstractAllOpenDeclarationAttributeAltererExtension() {
     override fun getAnnotationFqNames(modifierListOwner: KtModifierListOwner?) = allOpenAnnotationFqNames
 }
@@ -37,13 +38,13 @@ abstract class AbstractAllOpenDeclarationAttributeAltererExtension : Declaration
     }
 
     override fun refineDeclarationModality(
-            modifierListOwner: KtModifierListOwner,
-            declaration: DeclarationDescriptor?,
-            containingDeclaration: DeclarationDescriptor?,
-            currentModality: Modality,
-            isImplicitModality: Boolean
+        modifierListOwner: KtModifierListOwner,
+        declaration: DeclarationDescriptor?,
+        containingDeclaration: DeclarationDescriptor?,
+        currentModality: Modality,
+        isImplicitModality: Boolean
     ): Modality? {
-        if (currentModality != Modality.FINAL) {
+        if (currentModality != Modality.FINAL || modifierListOwner.isPrivate()) {
             return null
         }
 
