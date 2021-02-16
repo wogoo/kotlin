@@ -11,12 +11,12 @@ import generators.unicode.SpecialCasingLine
 import generators.unicode.UnicodeDataLine
 import generators.unicode.ranges.RangesWritingStrategy
 import generators.unicode.ranges.builders.RangesBuilder
+import templates.KotlinTarget
 import java.io.File
 import java.io.FileWriter
 
 internal class StringLowercaseGenerator(
     private val outputFile: File,
-    private val strategy: RangesWritingStrategy,
     unicodeDataLines: List<UnicodeDataLine>,
 ) : StringCasingGenerator(unicodeDataLines) {
 
@@ -66,6 +66,8 @@ internal class StringLowercaseGenerator(
 
         casedRanges.sortBy { it.first }
         caseIgnorableRanges.sortBy { it.first }
+
+        val strategy = RangesWritingStrategy.of(KotlinTarget.Native)
 
         FileWriter(outputFile).use { writer ->
             writer.writeHeader(outputFile, "kotlin.text")

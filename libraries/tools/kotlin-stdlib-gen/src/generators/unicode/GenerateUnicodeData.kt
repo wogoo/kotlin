@@ -9,7 +9,6 @@ import generators.unicode.mappings.oneToOne.MappingsGenerator
 import generators.unicode.mappings.oneToMany.OneToManyMappingsGenerator
 import generators.unicode.ranges.CharCategoryTestGenerator
 import generators.unicode.ranges.RangesGenerator
-import generators.unicode.ranges.RangesWritingStrategy
 import generators.unicode.mappings.string.StringCasingTestGenerator
 import generators.unicode.mappings.string.StringLowercaseGenerator
 import generators.unicode.mappings.string.StringUppercaseGenerator
@@ -139,8 +138,8 @@ fun main(args: Array<String>) {
             if (target == KotlinTarget.Native) {
                 addOneToOneMappingsGenerators(generatedDir, target)
                 addOneToManyMappingsGenerators(generatedDir, target)
-                stringUppercaseGenerator = StringUppercaseGenerator(generatedDir.resolve("_StringUppercase.kt"), bmpUnicodeDataLines)
-                stringLowercaseGenerator = StringLowercaseGenerator(generatedDir.resolve("_StringLowercase.kt"), RangesWritingStrategy.of(target), unicodeDataLines)
+                stringUppercaseGenerator = StringUppercaseGenerator(generatedDir.resolve("_StringUppercase.kt"), unicodeDataLines)
+                stringLowercaseGenerator = StringLowercaseGenerator(generatedDir.resolve("_StringLowercase.kt"), unicodeDataLines)
             }
         }
         else -> {
