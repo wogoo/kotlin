@@ -88,12 +88,10 @@ class JvmBackendContext(
 
     internal val isEnclosedInConstructor = ConcurrentHashMap.newKeySet<IrAttributeContainer>()
 
-    // Only used from codegen, no need for synchronization for now
     internal val classCodegens = mutableMapOf<IrClass, ClassCodegen>()
 
     val localDelegatedProperties = ConcurrentHashMap<IrAttributeContainer, List<IrLocalDelegatedPropertySymbol>>()
 
-    // Not used in by-file lowerings.
     internal val multifileFacadesToAdd = mutableMapOf<JvmClassName, MutableList<IrClass>>()
     val multifileFacadeForPart = mutableMapOf<IrClass, JvmClassName>()
     internal val multifileFacadeClassForPart = mutableMapOf<IrClass, IrClass>()
