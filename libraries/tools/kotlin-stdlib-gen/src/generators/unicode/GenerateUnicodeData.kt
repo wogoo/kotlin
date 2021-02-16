@@ -166,25 +166,25 @@ fun main(args: Array<String>) {
     COPYRIGHT_NOTICE =
         readCopyrightNoticeFromProfile { Thread.currentThread().contextClassLoader.getResourceAsStream("apache.xml").reader() }
 
-    bmpUnicodeDataLines.forEach { line ->
-        categoryRangesGenerators.forEach { it.appendLine(line) }
+    categoryRangesGenerators.forEach {
+        bmpUnicodeDataLines.forEach { line -> it.appendLine(line) }
+        it.generate()
     }
-    categoryRangesGenerators.forEach { it.generate() }
 
     categoryTestGenerator?.let {
         bmpUnicodeDataLines.forEach { line -> it.appendLine(line) }
         it.generate()
     }
 
-    unicodeDataLines.forEach { line ->
-        oneToOneMappingsGenerators.forEach { it.appendLine(line) }
+    oneToOneMappingsGenerators.forEach {
+        unicodeDataLines.forEach { line -> it.appendLine(line) }
+        it.generate()
     }
-    oneToOneMappingsGenerators.forEach { it.generate() }
 
-    specialCasingLines.forEach { line ->
-        oneToManyMappingsGenerators.forEach { it.appendLine(line) }
+    oneToManyMappingsGenerators.forEach {
+        specialCasingLines.forEach { line -> it.appendLine(line) }
+        it.generate()
     }
-    oneToManyMappingsGenerators.forEach { it.generate() }
 
     stringUppercaseGenerator?.let {
         specialCasingLines.forEach { line -> it.appendSpecialCasingLine(line) }
