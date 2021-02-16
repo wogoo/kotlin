@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.gradle.plugin.PropertiesProvider.Companion.KOTLIN_NA
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.targets.metadata.isKotlinGranularMetadataEnabled
 import org.jetbrains.kotlin.gradle.targets.native.*
+import org.jetbrains.kotlin.gradle.targets.native.internal.CInteropCommonizerTask
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeHostTest
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
@@ -299,6 +300,14 @@ open class KotlinNativeTargetConfigurator<T : KotlinNativeTarget>(
                         "of target '${it.konanTarget.name}'."
                 it.enabled = compilation.konanTarget.enabledOnCurrentHost
             }
+
+            // TODO NOW!
+            locateOrRegisterTask<CInteropCommonizerTask>("commonizeCInterop") {
+                it.group = "interop"
+            }.configure {
+                it.from(interopTask.get())
+            }
+            // END TODO NOW!
 
             val interopOutput = project.files(interopTask.map { it.outputFileProvider })
             with(compilation) {

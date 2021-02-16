@@ -25,7 +25,7 @@ import java.nio.file.attribute.*
 import java.time.*
 import java.util.*
 
-internal const val COMMONIZER_TASK_NAME = "runCommonizer"
+internal const val NATIVE_DISTRIBUTION_COMMONIZER_TASK_NAME = "commonizeNativeDistribution"
 
 internal typealias KonanTargetGroup = Set<KonanTarget>
 

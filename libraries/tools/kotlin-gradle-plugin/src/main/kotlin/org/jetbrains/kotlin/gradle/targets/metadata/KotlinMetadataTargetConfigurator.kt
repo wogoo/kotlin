@@ -23,6 +23,8 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.CompilationSourceSetUtil.compilationsBySourceSets
 import org.jetbrains.kotlin.gradle.plugin.sources.*
 import org.jetbrains.kotlin.gradle.plugin.statistics.KotlinBuildStatsService
+import org.jetbrains.kotlin.gradle.targets.native.internal.CInteropCommonizerTask
+import org.jetbrains.kotlin.gradle.targets.native.internal.runCommonizerTask
 import org.jetbrains.kotlin.gradle.tasks.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinTasksProvider
 import org.jetbrains.kotlin.gradle.tasks.locateTask
@@ -320,6 +322,25 @@ class KotlinMetadataTargetConfigurator(kotlinPluginVersion: String) :
                     compileDependencyFiles = project.files()
                 }
             }
+
+            // TODO NOW!!!
+            if (this is KotlinSharedNativeCompilation) {
+                val commonizeCInteropTask = project.locateOrRegisterTask<CInteropCommonizerTask>("commonizeCInterop") {
+                    it.group = "interop"
+                }
+                project.runCommonizerTask.configure {
+                    it.dependsOn(commonizeCInteropTask)
+                }
+                val commonizerOutput = project.files(project.provider {
+                    commonizeCInteropTask.get().commonizedOutputDirectory(this)
+                }).builtBy(commonizeCInteropTask)
+
+                compileDependencyFiles = compileDependencyFiles.plus(commonizerOutput)
+
+                // TODO NOW // MAKE IDE HAPPY FOR NOW
+                project.dependencies.add(defaultSourceSet.implementationMetadataConfigurationName, commonizerOutput)
+            }
+            // END TODO NOW!!!
         }
     }
 
