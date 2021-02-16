@@ -5,9 +5,8 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.konan
 
-import org.jetbrains.kotlin.builtins.StandardNames.FqNames.target
-import org.jetbrains.kotlin.descriptors.commonizer.LeafCommonizerTarget
 import org.jetbrains.kotlin.descriptors.commonizer.*
+import org.jetbrains.kotlin.descriptors.commonizer.LeafCommonizerTarget
 import org.jetbrains.kotlin.descriptors.commonizer.cli.toProgressLogger
 import org.jetbrains.kotlin.descriptors.commonizer.konan.LibraryCommonizer.*
 import org.jetbrains.kotlin.descriptors.commonizer.repository.Repository
