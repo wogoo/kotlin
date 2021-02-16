@@ -34,7 +34,7 @@ class TypeTranslator(
     typeParametersResolverBuilder: () -> TypeParametersResolver = { ScopedTypeParametersResolver() },
     private val enterTableScope: Boolean = false,
     private val extensions: StubGeneratorExtensions = StubGeneratorExtensions.EMPTY,
-    isMultiThreaded: Boolean = false,
+    isMultiThreaded: Boolean
 ) {
 
     private val typeParametersResolver by threadLocal(isMultiThreaded) { typeParametersResolverBuilder() }
