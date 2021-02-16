@@ -10,9 +10,9 @@ import generators.unicode.specialMappings.SpecialMappingsGenerator
 import generators.unicode.ranges.CharCategoryTestGenerator
 import generators.unicode.ranges.RangesGenerator
 import generators.unicode.ranges.RangesWritingStrategy
-import generators.unicode.stringMappings.StringCasingTestGenerator
-import generators.unicode.stringMappings.StringLowercaseGenerator
-import generators.unicode.stringMappings.StringUppercaseGenerator
+import generators.unicode.mappings.string.StringCasingTestGenerator
+import generators.unicode.mappings.string.StringLowercaseGenerator
+import generators.unicode.mappings.string.StringUppercaseGenerator
 import templates.COPYRIGHT_NOTICE
 import templates.KotlinTarget
 import templates.readCopyrightNoticeFromProfile

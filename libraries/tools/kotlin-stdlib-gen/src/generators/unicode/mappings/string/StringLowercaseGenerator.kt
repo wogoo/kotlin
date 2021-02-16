@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package generators.unicode.stringMappings
+package generators.unicode.mappings.string
 
 import generators.unicode.*
 import generators.unicode.PropertyLine
