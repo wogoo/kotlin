@@ -66,11 +66,10 @@ fun generateTypicalIrProviderList(
     irBuiltins: IrBuiltIns,
     symbolTable: SymbolTable,
     deserializer: IrDeserializer? = null,
-    extensions: StubGeneratorExtensions = StubGeneratorExtensions.EMPTY,
-    isMultiThreaded: Boolean = false,
+    extensions: StubGeneratorExtensions = StubGeneratorExtensions.EMPTY
 ): List<IrProvider> {
     val stubGenerator = DeclarationStubGenerator(
-        moduleDescriptor, symbolTable, irBuiltins.languageVersionSettings, extensions, isMultiThreaded
+        moduleDescriptor, symbolTable, irBuiltins.languageVersionSettings, extensions
     )
     return listOfNotNull(deserializer, stubGenerator)
 }

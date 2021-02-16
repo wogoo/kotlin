@@ -26,7 +26,6 @@ import com.intellij.psi.search.ProjectScope
 import org.jetbrains.kotlin.analyzer.AnalysisResult
 import org.jetbrains.kotlin.asJava.FilteredJvmDiagnostics
 import org.jetbrains.kotlin.asJava.finder.JavaElementFinder
-import org.jetbrains.kotlin.backend.common.isMultiThreaded
 import org.jetbrains.kotlin.backend.common.output.OutputFileCollection
 import org.jetbrains.kotlin.backend.common.output.SimpleOutputFileCollection
 import org.jetbrains.kotlin.backend.common.phaser.PhaseConfig
@@ -354,10 +353,7 @@ object KotlinToJVMBytecodeCompiler {
 
             performanceManager?.notifyIRTranslationStarted()
             val extensions = JvmGeneratorExtensions()
-            val (moduleFragment, symbolTable, sourceManager, components) = firAnalyzerFacade.convertToIr(
-                extensions,
-                environment.configuration.isMultiThreaded
-            )
+            val (moduleFragment, symbolTable, sourceManager, components) = firAnalyzerFacade.convertToIr(extensions)
 
             performanceManager?.notifyIRTranslationFinished()
 

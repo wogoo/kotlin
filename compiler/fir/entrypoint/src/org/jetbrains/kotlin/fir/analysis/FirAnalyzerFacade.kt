@@ -82,7 +82,7 @@ class FirAnalyzerFacade(
         return collectedDiagnostics!!
     }
 
-    fun convertToIr(extensions: GeneratorExtensions, isMultiThreaded: Boolean = false): Fir2IrResult {
+    fun convertToIr(extensions: GeneratorExtensions): Fir2IrResult {
         if (scopeSession == null) runResolution()
         val signaturer = JvmIdSignatureDescriptor(JvmManglerDesc())
 
@@ -91,8 +91,7 @@ class FirAnalyzerFacade(
             languageVersionSettings, signaturer,
             extensions, FirJvmKotlinMangler(session), IrFactoryImpl,
             FirJvmVisibilityConverter,
-            Fir2IrJvmSpecialAnnotationSymbolProvider(),
-            isMultiThreaded = isMultiThreaded,
+            Fir2IrJvmSpecialAnnotationSymbolProvider()
         )
     }
 }

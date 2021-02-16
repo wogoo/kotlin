@@ -252,18 +252,16 @@ class Fir2IrConverter(
             mangler: FirMangler,
             irFactory: IrFactory,
             visibilityConverter: Fir2IrVisibilityConverter,
-            specialSymbolProvider: Fir2IrSpecialSymbolProvider?,
-            isMultiThreaded: Boolean
+            specialSymbolProvider: Fir2IrSpecialSymbolProvider?
         ): Fir2IrResult {
             val moduleDescriptor = FirModuleDescriptor(session)
-            val symbolTable = SymbolTable(signaturer, irFactory, isMultiThreaded = isMultiThreaded)
+            val symbolTable = SymbolTable(signaturer, irFactory)
             val constantValueGenerator = ConstantValueGenerator(moduleDescriptor, symbolTable)
             val typeTranslator = TypeTranslator(
                 symbolTable,
                 languageVersionSettings,
                 moduleDescriptor.builtIns,
-                extensions = generatorExtensions,
-                isMultiThreaded = isMultiThreaded
+                extensions = generatorExtensions
             )
             constantValueGenerator.typeTranslator = typeTranslator
             typeTranslator.constantValueGenerator = constantValueGenerator
@@ -275,7 +273,7 @@ class Fir2IrConverter(
             val classifierStorage = Fir2IrClassifierStorage(components)
             val converter = Fir2IrConverter(moduleDescriptor, sourceManager, components)
             val fir2irVisitor = Fir2IrVisitor(converter, components, conversionScope)
-            val declarationStorage = Fir2IrDeclarationStorage(components, fir2irVisitor, moduleDescriptor, isMultiThreaded)
+            val declarationStorage = Fir2IrDeclarationStorage(components, fir2irVisitor, moduleDescriptor)
             val typeConverter = Fir2IrTypeConverter(components)
             val builtIns = Fir2IrBuiltIns(components, specialSymbolProvider)
             val annotationGenerator = AnnotationGenerator(components)

@@ -43,7 +43,7 @@ class JsScriptDependencyCompiler(
             it.initialize(PackageFragmentProvider.Empty)
         }
 
-        val typeTranslator = TypeTranslator(symbolTable, languageVersionSettings, moduleDescriptor.builtIns, isMultiThreaded = false).also {
+        val typeTranslator = TypeTranslator(symbolTable, languageVersionSettings, moduleDescriptor.builtIns).also {
             it.constantValueGenerator = ConstantValueGenerator(moduleDescriptor, symbolTable)
         }
 

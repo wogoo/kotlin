@@ -16,17 +16,12 @@
 
 package org.jetbrains.kotlin.backend.common
 
-import org.jetbrains.kotlin.config.CommonConfigurationKeys
-import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrFile
 
 fun CommonBackendContext.reportWarning(message: String, irFile: IrFile?, irElement: IrElement) {
     report(irElement, irFile, message, false)
 }
-
-val CompilerConfiguration.isMultiThreaded: Boolean
-    get() = get(CommonConfigurationKeys.THREADS_FOR_FILE_LOWERINGS).let { it != null && it != 1 }
 
 fun <E> MutableList<E>.push(element: E) = this.add(element)
 

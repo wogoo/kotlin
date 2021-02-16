@@ -45,7 +45,6 @@ class DeclarationStubGenerator(
     val symbolTable: SymbolTable,
     languageVersionSettings: LanguageVersionSettings,
     val extensions: StubGeneratorExtensions = StubGeneratorExtensions.EMPTY,
-    isMultiThreaded: Boolean = false,
 ) : IrProvider {
     private val lazyTable = symbolTable.lazyWrapper
 
@@ -62,8 +61,7 @@ class DeclarationStubGenerator(
             moduleDescriptor.builtIns,
             { LazyScopedTypeParametersResolver(lazyTable) },
             true,
-            extensions,
-            isMultiThreaded = isMultiThreaded,
+            extensions
         )
     private val constantValueGenerator = ConstantValueGenerator(moduleDescriptor, lazyTable)
 

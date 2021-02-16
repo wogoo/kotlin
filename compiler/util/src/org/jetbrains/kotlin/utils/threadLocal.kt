@@ -9,13 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-fun <T> threadLocal(
-    isMultiThreaded: Boolean = true,
-    initializer: () -> T
-): ReadWriteProperty<Any?, T> = if (isMultiThreaded)
-    ThreadLocalDelegate(initializer)
-else
-    DummyReadWriteProperty(initializer)
+fun <T> threadLocal(initializer: () -> T): ReadWriteProperty<Any?, T> = ThreadLocalDelegate(initializer)
 
 private class ThreadLocalDelegate<T>(private val initializer: () -> T) : ReadWriteProperty<Any?, T> {
     private val map = ConcurrentHashMap<Thread, T>()
@@ -28,14 +22,5 @@ private class ThreadLocalDelegate<T>(private val initializer: () -> T) : ReadWri
 
     override operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
         map[Thread.currentThread()] = value
-    }
-}
-
-private class DummyReadWriteProperty<T>(initializer: () -> T) : ReadWriteProperty<Any?, T> {
-    var value = initializer()
-
-    override fun getValue(thisRef: Any?, property: KProperty<*>): T = value
-    override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
-        this.value = value
     }
 }
