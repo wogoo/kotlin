@@ -21,7 +21,7 @@ actual interface Foo2
 
 actual var s: String = "value"
 
-fun foo2(): Int = 0
+<!CONFLICTING_OVERLOADS!>fun foo2(): Int<!> = 0
 
 <!REDECLARATION!>actual class Foo3<!>
 
