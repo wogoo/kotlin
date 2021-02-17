@@ -351,6 +351,7 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKo
             System.clearProperty(it)
             oldValue
         }
+        CompilerSystemProperties.KOTLIN_COMPILER_ENVIRONMENT_KEEPALIVE_PROPERTY.value = "true"
 
         // If task throws exception, but its outputs are changed during execution,
         // then Gradle forces next build to be non-incremental (see Gradle's DefaultTaskArtifactStateRepository#persistNewOutputs)
@@ -448,7 +449,8 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKo
     val kotlinDaemonProperties: MutableMap<String, String?> by lazy {
         if (isGradleVersionAtLeast(6, 5)) {
             CompilerSystemProperties.values()
-                .associate { it.property to project.providers.systemProperty(it.property).forUseAtConfigurationTime().orNull }.toMutableMap()
+                .associate { it.property to project.providers.systemProperty(it.property).forUseAtConfigurationTime().orNull }
+                .toMutableMap()
         } else mutableMapOf()
     }
 }

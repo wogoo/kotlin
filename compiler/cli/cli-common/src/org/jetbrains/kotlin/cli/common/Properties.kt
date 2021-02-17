@@ -19,7 +19,7 @@ package org.jetbrains.kotlin.cli.common
 import com.intellij.util.LineSeparator
 import java.util.*
 
-enum class CompilerSystemProperties(val property: String, val defaultValue: String? = null) {
+enum class CompilerSystemProperties(val property: String) {
     COMPILE_DAEMON_ENABLED_PROPERTY("kotlin.daemon.enabled"),
     COMPILE_DAEMON_JVM_OPTIONS_PROPERTY("kotlin.daemon.jvm.options"),
     COMPILE_DAEMON_OPTIONS_PROPERTY("kotlin.daemon.options"),
@@ -33,14 +33,14 @@ enum class CompilerSystemProperties(val property: String, val defaultValue: Stri
     DAEMON_RMI_SOCKET_BACKLOG_SIZE_PROPERTY("kotlin.daemon.socket.backlog.size"),
     DAEMON_RMI_SOCKET_CONNECT_ATTEMPTS_PROPERTY("kotlin.daemon.socket.connect.attempts"),
     DAEMON_RMI_SOCKET_CONNECT_INTERVAL_PROPERTY("kotlin.daemon.socket.connect.interval"),
-    KOTLIN_COMPILER_ENVIRONMENT_KEEPALIVE_PROPERTY("kotlin.environment.keepalive", "true"),
+    KOTLIN_COMPILER_ENVIRONMENT_KEEPALIVE_PROPERTY("kotlin.environment.keepalive"),
     COMPILE_DAEMON_CUSTOM_RUN_FILES_PATH_FOR_TESTS("kotlin.daemon.custom.run.files.path.for.tests"),
     KOTLIN_COLORS_ENABLED_PROPERTY("kotlin.colors.enabled"),
     OS_NAME("os.name")
     ;
 
     var value
-        get() = systemPropertyGetter(property) ?: defaultValue
+        get() = systemPropertyGetter(property)
         set(value) {
             systemPropertySetter(property, value!!)
         }
