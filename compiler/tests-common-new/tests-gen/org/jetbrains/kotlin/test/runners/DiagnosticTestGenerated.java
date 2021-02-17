@@ -12359,6 +12359,18 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                 public void testSpecialCallsWithLambdas() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/inference/builderInference/specialCallsWithLambdas.kt");
                 }
+
+                @Test
+                @TestMetadata("stubTypeInLambdasParameter.kt")
+                public void testStubTypeInLambdasParameter() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/builderInference/stubTypeInLambdasParameter.kt");
+                }
+
+                @Test
+                @TestMetadata("stubTypeInLambdasReceiver.kt")
+                public void testStubTypeInLambdasReceiver() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/builderInference/stubTypeInLambdasReceiver.kt");
+                }
             }
 
             @Nested

@@ -29,8 +29,7 @@ import org.jetbrains.kotlin.resolve.calls.callResolverUtil.getEffectiveExpectedT
 import org.jetbrains.kotlin.resolve.calls.callResolverUtil.hasUnknownFunctionParameter
 import org.jetbrains.kotlin.resolve.calls.context.*
 import org.jetbrains.kotlin.resolve.calls.inference.constraintPosition.ConstraintPositionKind
-import org.jetbrains.kotlin.resolve.calls.model.ArgumentMatch
-import org.jetbrains.kotlin.resolve.calls.model.isReallySuccess
+import org.jetbrains.kotlin.resolve.calls.model.*
 import org.jetbrains.kotlin.resolve.calls.results.OverloadResolutionResultsImpl
 import org.jetbrains.kotlin.resolve.calls.tasks.TracingStrategy
 import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
@@ -226,7 +225,8 @@ class CoroutineInferenceSupport(
         if (!resultingCall.isReallySuccess()) return
 
         val resultingDescriptor = resultingCall.resultingDescriptor
-        if (!isApplicableCallForBuilderInference(resultingDescriptor, languageVersionSettings)) {
+        // Resolved atom is needed for extra checks for the new inference
+        if (!isApplicableCallForBuilderInference(resultingDescriptor, languageVersionSettings, null)) {
             inferenceData.badCallHappened()
         }
 
@@ -299,28 +299,45 @@ class CoroutineInferenceSupport(
     }
 }
 
-private fun KotlinType.containsTypeTemplate() = contains { it is TypeTemplate || it is StubType }
+private fun KotlinType.containsStubType() = contains { it is TypeTemplate || it is StubType }
 
-fun isApplicableCallForBuilderInference(descriptor: CallableDescriptor, languageVersionSettings: LanguageVersionSettings): Boolean {
+fun ResolvedAtom.areThereLambdasWithStubTypeInParameterOrReceiver(): Boolean {
+    val atoms = subResolvedAtoms ?: return false
+
+    return atoms.any { atom ->
+        val doParametersContainStubType = atom is ResolvedLambdaAtom && atom.parameters.any { it.containsStubType() }
+        val doesReceiverContainStubType = atom is ResolvedLambdaAtom && atom.receiver?.containsStubType() == true
+        doParametersContainStubType || doesReceiverContainStubType || atom.areThereLambdasWithStubTypeInParameterOrReceiver()
+    }
+}
+
+fun isApplicableCallForBuilderInference(
+    descriptor: CallableDescriptor,
+    languageVersionSettings: LanguageVersionSettings,
+    resolvedAtom: ResolvedCallAtom?,
+): Boolean {
     if (!languageVersionSettings.supportsFeature(LanguageFeature.ExperimentalBuilderInference)) {
         return isGoodCallForOldCoroutines(descriptor)
     }
 
     if (descriptor.isExtension && !descriptor.hasBuilderInferenceAnnotation()) {
-        return descriptor.extensionReceiverParameter?.type?.containsTypeTemplate() == false
+        return descriptor.extensionReceiverParameter?.type?.containsStubType() == false
     }
 
     val returnType = descriptor.returnType ?: return false
-    return !returnType.containsTypeTemplate()
+    val doesReturnTypeContainStubType = returnType.containsStubType()
+    val doLambdasParametersContainStubType = resolvedAtom?.areThereLambdasWithStubTypeInParameterOrReceiver() == true
+
+    return !doesReturnTypeContainStubType && !doLambdasParametersContainStubType
 }
 
 private fun isGoodCallForOldCoroutines(resultingDescriptor: CallableDescriptor): Boolean {
     val returnType = resultingDescriptor.returnType ?: return false
-    if (returnType.containsTypeTemplate()) return false
+    if (returnType.containsStubType()) return false
 
     if (resultingDescriptor !is FunctionDescriptor || resultingDescriptor.isSuspend) return true
 
-    if (resultingDescriptor.valueParameters.any { it.type.containsTypeTemplate() }) return false
+    if (resultingDescriptor.valueParameters.any { it.type.containsStubType() }) return false
 
     return true
 }

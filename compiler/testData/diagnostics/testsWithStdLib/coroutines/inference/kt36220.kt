@@ -13,8 +13,8 @@ class TypeDefinition<KotlinType : Any> {
 fun <KotlinType : Any> defineType(@BuilderInference definition: TypeDefinition<KotlinType>.() -> Unit): Unit = TODO()
 
 fun main() {
-    <!TYPE_INFERENCE_NO_INFORMATION_FOR_PARAMETER{OI}!>defineType<!> {
+    <!NEW_INFERENCE_NO_INFORMATION_FOR_PARAMETER, TYPE_INFERENCE_NO_INFORMATION_FOR_PARAMETER{OI}!>defineType<!> {
         parse { it.toInt() }
-        serialize { <!DEBUG_INFO_ELEMENT_WITH_ERROR_TYPE{OI}!>it<!>.<!DEBUG_INFO_ELEMENT_WITH_ERROR_TYPE{OI}!>toString<!>() }
+        serialize { <!DEBUG_INFO_ELEMENT_WITH_ERROR_TYPE!>it<!>.<!DEBUG_INFO_ELEMENT_WITH_ERROR_TYPE{OI}, DEBUG_INFO_MISSING_UNRESOLVED!>toString<!>() }
     }
 }

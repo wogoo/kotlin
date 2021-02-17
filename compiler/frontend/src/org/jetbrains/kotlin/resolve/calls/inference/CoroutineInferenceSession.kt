@@ -123,10 +123,14 @@ class CoroutineInferenceSession(
 
         if (!checkCall) return
 
+        val resolvedCall = callInfo.resolvedCall
+        val resolvedCallAtom = if (resolvedCall is NewResolvedCallImpl<*>) resolvedCall.resolvedCallAtom else null
+
         val isApplicableCall =
             callComponents.statelessCallbacks.isApplicableCallForBuilderInference(
                 resultingDescriptor,
-                callComponents.languageVersionSettings
+                callComponents.languageVersionSettings,
+                resolvedCallAtom
             )
 
         if (!isApplicableCall) {

@@ -33,10 +33,7 @@ import org.jetbrains.kotlin.resolve.calls.inference.ConstraintSystemBuilderImpl
 import org.jetbrains.kotlin.resolve.calls.inference.components.ConstraintInjector
 import org.jetbrains.kotlin.resolve.calls.inference.components.SimpleConstraintSystemImpl
 import org.jetbrains.kotlin.resolve.calls.inference.isCoroutineCallWithAdditionalInference
-import org.jetbrains.kotlin.resolve.calls.model.CallableReferenceKotlinCallArgument
-import org.jetbrains.kotlin.resolve.calls.model.KotlinCall
-import org.jetbrains.kotlin.resolve.calls.model.KotlinCallArgument
-import org.jetbrains.kotlin.resolve.calls.model.SimpleKotlinCallArgument
+import org.jetbrains.kotlin.resolve.calls.model.*
 import org.jetbrains.kotlin.resolve.calls.results.SimpleConstraintSystem
 import org.jetbrains.kotlin.resolve.deprecation.DeprecationResolver
 import org.jetbrains.kotlin.types.KotlinType
@@ -98,8 +95,13 @@ class KotlinResolutionStatelessCallbacksImpl(
     override fun isApplicableCallForBuilderInference(
         descriptor: CallableDescriptor,
         languageVersionSettings: LanguageVersionSettings,
+        resolvedAtom: ResolvedCallAtom?
     ): Boolean {
-        return org.jetbrains.kotlin.resolve.calls.inference.isApplicableCallForBuilderInference(descriptor, languageVersionSettings)
+        return org.jetbrains.kotlin.resolve.calls.inference.isApplicableCallForBuilderInference(
+            descriptor,
+            languageVersionSettings,
+            resolvedAtom
+        )
     }
 
     override fun isOldIntersectionIsEmpty(types: Collection<KotlinType>): Boolean {
