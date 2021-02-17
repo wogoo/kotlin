@@ -305,9 +305,9 @@ fun ResolvedAtom.areThereLambdasWithStubTypeInParameterOrReceiver(): Boolean {
     val atoms = subResolvedAtoms ?: return false
 
     return atoms.any { atom ->
-        val doParametersContainStubType = atom is ResolvedLambdaAtom && atom.parameters.any { it.containsStubType() }
-        val doesReceiverContainStubType = atom is ResolvedLambdaAtom && atom.receiver?.containsStubType() == true
-        doParametersContainStubType || doesReceiverContainStubType || atom.areThereLambdasWithStubTypeInParameterOrReceiver()
+        val areThereParametersOfStubType = atom is ResolvedLambdaAtom && atom.parameters.any { it is StubType }
+        val isReceiverOfStubType = atom is ResolvedLambdaAtom && atom.receiver is StubType
+        areThereParametersOfStubType || isReceiverOfStubType || atom.areThereLambdasWithStubTypeInParameterOrReceiver()
     }
 }
 
