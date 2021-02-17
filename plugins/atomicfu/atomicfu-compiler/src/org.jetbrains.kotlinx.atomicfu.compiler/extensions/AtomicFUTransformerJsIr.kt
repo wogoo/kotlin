@@ -70,10 +70,11 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
     }
 
     override fun visitClass(declaration: IrClass): IrStatement {
+        val newDeclarations = mutableListOf<IrDeclaration>()
         declaration.declarations.forEachIndexed { index, irDeclaration ->
-            irDeclaration.transformAtomicInlineDeclaration()?.let { declaration.declarations[index] = it }
-            //declaration.declarations[index] = irDeclaration.transformAtomicInlineDeclaration()
+            irDeclaration.transformAtomicInlineDeclaration()?.let { newDeclarations.add(it) }
         }
+        declaration.declarations.addAll(newDeclarations)
         return super.visitClass(declaration)
     }
 
@@ -131,7 +132,7 @@ class AtomicFUTransformer(override val context: IrPluginContext) : IrElementTran
             val valueParametersCount = valueParameters.size
             val oldDeclaration = this
             val res = buildFunction(parent, origin, name, visibility, isInline, returnType).apply {
-                body = oldDeclaration.body?.deepCopyWithVariables()
+                body = oldDeclaration.body?.deepCopyWithSymbols(this)
                 val oldParameters = oldDeclaration.valueParameters.mapIndexed { index, p ->
                     val typeParameter = p.type.classifierOrNull?.owner
                     val wrappedType = if (typeParameter is IrClass) {
