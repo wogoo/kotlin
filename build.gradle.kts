@@ -947,6 +947,12 @@ tasks {
         }
     }
 
+    register("publishGradlePluginArtifacts") {
+        idePluginDependency {
+            dependsOnKotlinGradlePluginPublish()
+        }
+    }
+
     register("publishIdeArtifacts") {
         idePluginDependency {
             dependsOn(
