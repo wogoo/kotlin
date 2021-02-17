@@ -12365,7 +12365,6 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
                 public void testStubTypeInLambdasParameter() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/inference/builderInference/stubTypeInLambdasParameter.kt");
                 }
-
                 @Test
                 @TestMetadata("stubTypeInLambdasReceiver.kt")
                 public void testStubTypeInLambdasReceiver() throws Exception {

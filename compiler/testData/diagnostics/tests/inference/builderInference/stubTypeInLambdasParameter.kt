@@ -61,3 +61,15 @@ fun test4() {
         }
     }
 }
+
+fun test5() {
+    makeCodec {
+        decode { string ->
+            Foo(string)
+        }
+        <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction1<(TypeVariable(Value)) -> kotlin.Unit, kotlin.Unit>")!>::encode<!>
+        <!DEBUG_INFO_EXPRESSION_TYPE("Type is unknown"), TYPE_INFERENCE_POSTPONED_VARIABLE_IN_RECEIVER_TYPE!>::<!TYPE_INFERENCE_INCORPORATION_ERROR!>encode2<!><!>
+        <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction1<(value: A<A<TypeVariable(Value)>>) -> kotlin.Unit, kotlin.Unit>")!>::encode3<!>
+        <!DEBUG_INFO_EXPRESSION_TYPE("Type is unknown"), TYPE_INFERENCE_POSTPONED_VARIABLE_IN_RECEIVER_TYPE!>::<!TYPE_INFERENCE_INCORPORATION_ERROR!>encode4<!><!>
+    }
+}
