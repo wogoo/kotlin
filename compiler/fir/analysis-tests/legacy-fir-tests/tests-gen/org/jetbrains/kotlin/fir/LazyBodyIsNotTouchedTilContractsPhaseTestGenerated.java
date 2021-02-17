@@ -750,6 +750,11 @@ public class LazyBodyIsNotTouchedTilContractsPhaseTestGenerated extends Abstract
             runTest("compiler/fir/analysis-tests/testData/resolve/callResolution/typeAliasWithNotNullBound.kt");
         }
 
+        @TestMetadata("typealiasUnrwppingToNonExistingClassInReceiver.kt")
+        public void testTypealiasUnrwppingToNonExistingClassInReceiver() throws Exception {
+            runTest("compiler/fir/analysis-tests/testData/resolve/callResolution/typealiasUnrwppingToNonExistingClassInReceiver.kt");
+        }
+
         @TestMetadata("uselessMultipleBounds.kt")
         public void testUselessMultipleBounds() throws Exception {
             runTest("compiler/fir/analysis-tests/testData/resolve/callResolution/uselessMultipleBounds.kt");

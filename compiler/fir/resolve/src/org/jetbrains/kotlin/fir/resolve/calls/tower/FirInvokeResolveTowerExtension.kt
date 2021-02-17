@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.fir.resolve.calls.tower
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirResolvedQualifier
 import org.jetbrains.kotlin.fir.expressions.builder.FirQualifiedAccessExpressionBuilder
+import org.jetbrains.kotlin.fir.expressions.builder.buildErrorResolvedQualifier
 import org.jetbrains.kotlin.fir.resolve.*
 import org.jetbrains.kotlin.fir.resolve.calls.*
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.firUnsafe
@@ -15,6 +16,7 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirTypeAliasSymbol
+import org.jetbrains.kotlin.fir.types.ConeClassErrorType
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.coneTypeUnsafe
 import org.jetbrains.kotlin.fir.types.isExtensionFunctionType
@@ -262,9 +264,16 @@ private fun BodyResolveComponents.createExplicitReceiverForInvoke(
         )
         is FirRegularClassSymbol -> buildResolvedQualifierForClass(symbol, sourceElement = null)
         is FirTypeAliasSymbol -> {
-            val type = symbol.fir.expandedTypeRef.coneTypeUnsafe<ConeClassLikeType>().fullyExpandedType(session)
-            val expansionRegularClassSymbol = type.lookupTag.toSymbolOrError(session)
-            buildResolvedQualifierForClass(expansionRegularClassSymbol, sourceElement = symbol.fir.source)
+            when (val type = symbol.fir.expandedTypeRef.coneTypeUnsafe<ConeClassLikeType>().fullyExpandedType(session)) {
+                is ConeClassErrorType -> buildErrorResolvedQualifier {
+                    diagnostic = type.diagnostic
+                    packageFqName = type.lookupTag.classId.packageFqName
+                }
+                else -> {
+                    val expansionRegularClassSymbol = type.lookupTag.toSymbolOrError(session)
+                    buildResolvedQualifierForClass(expansionRegularClassSymbol, sourceElement = symbol.fir.source)
+                }
+            }
         }
         else -> throw AssertionError()
     }

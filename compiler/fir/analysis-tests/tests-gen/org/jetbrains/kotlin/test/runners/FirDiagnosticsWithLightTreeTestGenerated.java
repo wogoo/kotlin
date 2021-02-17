@@ -877,6 +877,12 @@ public class FirDiagnosticsWithLightTreeTestGenerated extends AbstractFirDiagnos
             }
 
             @Test
+            @TestMetadata("typealiasUnrwppingToNonExistingClassInReceiver.kt")
+            public void testTypealiasUnrwppingToNonExistingClassInReceiver() throws Exception {
+                runTest("compiler/fir/analysis-tests/testData/resolve/callResolution/typealiasUnrwppingToNonExistingClassInReceiver.kt");
+            }
+
+            @Test
             @TestMetadata("uselessMultipleBounds.kt")
             public void testUselessMultipleBounds() throws Exception {
                 runTest("compiler/fir/analysis-tests/testData/resolve/callResolution/uselessMultipleBounds.kt");

@@ -1,0 +1,5 @@
+FILE: typealiasUnrwppingToNonExistingClassInReceiver.kt
+    public final typealias TypeAlias = <ERROR TYPE REF: Symbol not found, for `NonExistingClass`>
+    public final fun buildFor(): R|kotlin/Unit| {
+        lval a: R|ERROR CLASS: Unresolved name: TypeAlias| = <Unresolved name: TypeAlias>#()
+    }
