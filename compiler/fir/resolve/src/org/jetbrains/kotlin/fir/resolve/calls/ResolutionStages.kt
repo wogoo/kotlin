@@ -149,6 +149,8 @@ internal object CheckArguments : CheckerStage() {
                 sink = sink,
                 context = context
             )
+        }
+        if (callInfo.argumentCount > 0) {
             if (candidate.system.hasContradiction) {
                 sink.yieldDiagnostic(InapplicableCandidate)
             }

@@ -1,0 +1,7 @@
+FILE: analyseLambdaArgumentAfterInapplicableArgumentFound.kt
+    public final fun test(map: R|kotlin/collections/MutableMap<kotlin/Int, kotlin/collections/List<kotlin/Int>>|): R|kotlin/Unit| {
+        R|<local>/map|.<Inapplicable(INAPPLICABLE): kotlin/collections/getOrPut>#<R|kotlin/Int|, R|kotlin/collections/List<kotlin/Int>|>(String(Not a Int), <L> = getOrPut@fun <anonymous>(): R|kotlin/collections/List<kotlin/Int>| <kind=UNKNOWN>  {
+            ^ R|kotlin/collections/listOf|<R|kotlin/Int|>(Int(1))
+        }
+        )
+    }

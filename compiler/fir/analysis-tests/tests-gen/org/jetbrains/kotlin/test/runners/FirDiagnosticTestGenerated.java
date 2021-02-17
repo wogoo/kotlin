@@ -4279,6 +4279,28 @@ public class FirDiagnosticTestGenerated extends AbstractFirDiagnosticTest {
         }
 
         @Nested
+        @TestMetadata("compiler/fir/analysis-tests/testData/resolveWithStdlib/completion")
+        @TestDataPath("$PROJECT_ROOT")
+        public class Completion {
+            @Test
+            public void testAllFilesPresentInCompletion() throws Exception {
+                KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/fir/analysis-tests/testData/resolveWithStdlib/completion"), Pattern.compile("^([^.]+)\\.kt$"), null, true);
+            }
+
+            @Test
+            @TestMetadata("analyseArgumentAfterInapplicableArgumentFound.kt")
+            public void testAnalyseArgumentAfterInapplicableArgumentFound() throws Exception {
+                runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/completion/analyseArgumentAfterInapplicableArgumentFound.kt");
+            }
+
+            @Test
+            @TestMetadata("analyseLambdaArgumentAfterInapplicableArgumentFound.kt")
+            public void testAnalyseLambdaArgumentAfterInapplicableArgumentFound() throws Exception {
+                runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/completion/analyseLambdaArgumentAfterInapplicableArgumentFound.kt");
+            }
+        }
+
+        @Nested
         @TestMetadata("compiler/fir/analysis-tests/testData/resolveWithStdlib/contracts")
         @TestDataPath("$PROJECT_ROOT")
         public class Contracts {

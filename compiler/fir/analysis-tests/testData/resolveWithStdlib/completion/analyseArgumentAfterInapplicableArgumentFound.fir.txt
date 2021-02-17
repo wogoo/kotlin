@@ -1,0 +1,4 @@
+FILE: analyseArgumentAfterInapplicableArgumentFound.kt
+    public final fun test(map: R|kotlin/collections/MutableMap<kotlin/Int, kotlin/collections/List<kotlin/Int>>|): R|kotlin/Unit| {
+        R|<local>/map|.<Inapplicable(INAPPLICABLE): kotlin/collections/MutableMap.getOrDefault>#(String(Not a Int), R|kotlin/collections/listOf|<R|kotlin/Int|>(Int(1)))
+    }
