@@ -5,14 +5,14 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.cir.factory
 
-import kotlinx.metadata.KmType
-import kotlinx.metadata.KmVariance
+import kotlinx.metadata.*
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirClassTypeImpl
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirTypeAliasTypeImpl
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
+import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.utils.*
 import org.jetbrains.kotlin.types.*
 
@@ -41,8 +41,27 @@ object CirTypeFactory {
     private val typeParameterTypeInterner = Interner<CirTypeParameterType>()
 
     fun create(source: KmType, providedClassifiers: CirProvidedClassifiers, useAbbreviation: Boolean = true): CirType {
-        // TODO: implement
-        return StandardTypes.NON_EXISTING_TYPE
+        return when (val classifier = source.classifier) {
+            is KmClassifier.Class -> {
+                createClassType(
+                    classId = CirEntityId.create(classifier.name),
+                    outerType = null, // TODO
+                    visibility = decodeVisibility(source.flags),
+                    arguments = createArguments(source.arguments, useAbbreviation, providedClassifiers),
+                    isMarkedNullable = Flag.Type.IS_NULLABLE(source.flags)
+                )
+            }
+            is KmClassifier.TypeAlias -> {
+                // TODO: implement
+                StandardTypes.NON_EXISTING_TYPE
+            }
+            is KmClassifier.TypeParameter -> {
+                createTypeParameterType(
+                    index = classifier.id,
+                    isMarkedNullable = Flag.Type.IS_NULLABLE(source.flags)
+                )
+            }
+        }
     }
 
     fun create(source: KotlinType, useAbbreviation: Boolean = true): CirType = source.unwrap().run {
@@ -212,6 +231,23 @@ object CirTypeFactory {
                     type = create(projection.type, useAbbreviation)
                 )
         }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun createArguments(
+        arguments: List<KmTypeProjection>,
+        useAbbreviation: Boolean,
+        providedClassifiers: CirProvidedClassifiers
+    ): List<CirTypeProjection> {
+        return arguments.compactMap { argument ->
+            val variance = argument.variance ?: return@compactMap CirStarTypeProjection
+            val argumentType = argument.type ?: return@compactMap CirStarTypeProjection
+
+            CirTypeProjectionImpl(
+                projectionKind = decodeVariance(variance),
+                type = create(argumentType, providedClassifiers, useAbbreviation)
+            )
+        }
+    }
 
     private inline val TypeParameterDescriptor.typeParameterIndex: Int
         get() {
