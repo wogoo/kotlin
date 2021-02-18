@@ -44,10 +44,9 @@ class CustomBytecodeTextTest : AbstractBytecodeTextTest() {
         )
 
         val text = generateToText()
-        val getstatics = text.lines().filter { it.contains("GETSTATIC MyEnum.") }.map { it.trim() }
+        val getstatics = text.lines().filter { it.contains("GETSTATIC MyEnum.ENTRY") }.map { it.trim() }
         KtUsefulTestCase.assertOrderedEquals(
             "actual bytecode:\n$text", listOf(
-                "GETSTATIC MyEnum.${'$'}VALUES : [LMyEnum;",
                 "GETSTATIC MyEnum.ENTRY4 : LMyEnum;",
                 "GETSTATIC MyEnum.ENTRY3 : LMyEnum;",
                 "GETSTATIC MyEnum.ENTRY2 : LMyEnum;",
