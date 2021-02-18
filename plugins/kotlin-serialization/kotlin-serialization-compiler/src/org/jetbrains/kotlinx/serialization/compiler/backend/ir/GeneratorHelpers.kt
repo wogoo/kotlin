@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -470,7 +470,7 @@ interface IrBuilderExtension {
             endOffset,
             compilerContext.irBuiltIns.kClassClass.starProjectedType,
             classSymbol,
-            classSymbol.starProjectedType
+            classType.toIrType() // todo: maybe this is jvm-specific behavior
         )
     }
 
@@ -522,8 +522,7 @@ interface IrBuilderExtension {
         dispatchReceiverParameter: IrValueParameter,
         property: SerializableProperty
     ): IrExpression? {
-        val nullableSerializerFqn = getInternalPackageFqn(SpecialBuiltins.nullableSerializer)
-        val nullableSerClass = compilerContext.referenceClass(nullableSerializerFqn) ?: error("Couldn't find class $nullableSerializerFqn")
+        val nullableSerClass = compilerContext.referenceProperties(SerialEntityNames.wrapIntoNullableExt).single()
         val serializer =
             property.serializableWith?.toClassDescriptor
                 ?: if (!property.type.isTypeParameter()) generator.findTypeSerializerOrContext(
@@ -545,24 +544,18 @@ interface IrBuilderExtension {
     private fun IrBuilderWithScope.wrapWithNullableSerializerIfNeeded(
         type: KotlinType,
         expression: IrExpression,
-        nullableSerializerClass: IrClassSymbol
-    ): IrExpression {
-        return if (type.isMarkedNullable) {
-            val classDeclaration = nullableSerializerClass.owner
-            val nullableConstructor = classDeclaration.declarations.first { it is IrConstructor } as IrConstructor
-            val resultType = type.makeNotNullable()
-            val typeParameters = classDeclaration.typeParameters
-            val typeArguments = listOf(resultType.toIrType())
-            irInvoke(
-                null, nullableConstructor.symbol,
-                typeArguments = typeArguments,
-                valueArguments = listOf(expression),
-                // Return type should be correctly substituted
-                returnTypeHint = nullableConstructor.returnType.substitute(typeParameters, typeArguments)
-            )
-        } else {
-            expression
-        }
+        nullableProp: IrPropertySymbol
+    ): IrExpression = if (type.isMarkedNullable) {
+        val resultType = type.makeNotNullable()
+        val typeArguments = listOf(resultType.toIrType())
+
+        irInvoke(
+            callee = nullableProp.owner.getter!!.symbol,
+            typeArguments = typeArguments,
+            valueArguments = emptyList(),
+        ).apply { extensionReceiver = expression }
+    } else {
+        expression
     }
 
 
@@ -602,8 +595,7 @@ interface IrBuilderExtension {
         genericIndex: Int? = null,
         genericGetter: ((Int, KotlinType) -> IrExpression)? = null
     ): IrExpression? {
-        val nullableClassFqn = getInternalPackageFqn(SpecialBuiltins.nullableSerializer)
-        val nullableSerClass = compilerContext.referenceClass(nullableClassFqn) ?: error("Expecting class $nullableClassFqn")
+        val nullableSerClass = compilerContext.referenceProperties(SerialEntityNames.wrapIntoNullableExt).single()
         if (serializerClassOriginal == null) {
             if (genericIndex == null) return null
             return genericGetter?.invoke(genericIndex, kType)
