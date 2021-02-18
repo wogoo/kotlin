@@ -153,6 +153,7 @@ internal class ConstraintSystemImpl(
 
     private class SubstitutionWithCapturedTypeApproximation(substitution: TypeSubstitution) : DelegatedTypeSubstitution(substitution) {
         override fun approximateCapturedTypes() = true
+        override fun approximateContravariantCapturedTypes() = true
     }
 
     private fun satisfyInitialConstraints(): Boolean {
