@@ -32,6 +32,9 @@ import org.jetbrains.plugins.gradle.tooling.util.SourceSetCachedFinder
 import org.jetbrains.plugins.gradle.tooling.util.resolve.DependencyResolverImpl
 import java.io.File
 import java.lang.reflect.Method
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashSet
 
 class KotlinMPPGradleModelBuilder : ModelBuilderService {
     override fun getErrorMessageBuilder(project: Project, e: Exception): ErrorMessageBuilder {
@@ -643,6 +646,13 @@ class KotlinMPPGradleModelBuilder : ModelBuilderService {
         androidDeps: Map<String, List<Any>>?
     ): List<KotlinDependency> {
         return ArrayList<KotlinDependency>().apply {
+            buildAndroidSourceSetDependencies(androidDeps, gradleSourceSet).let {
+                if (it.isNotEmpty()) {
+                    this += it
+                    return@apply
+                }
+            }
+
             val transformationBuilder = MetadataDependencyTransformationBuilder(gradleSourceSet)
             this += buildDependencies(
                 gradleSourceSet, dependencyResolver, "getApiMetadataConfigurationName", "COMPILE", project, transformationBuilder
@@ -656,8 +666,6 @@ class KotlinMPPGradleModelBuilder : ModelBuilderService {
             this += buildDependencies(
                 gradleSourceSet, dependencyResolver, "getRuntimeOnlyMetadataConfigurationName", "RUNTIME", project, transformationBuilder
             ).onlyNewDependencies(this)
-
-            this += buildAndroidSourceSetDependencies(androidDeps, gradleSourceSet)
         }
     }
 
