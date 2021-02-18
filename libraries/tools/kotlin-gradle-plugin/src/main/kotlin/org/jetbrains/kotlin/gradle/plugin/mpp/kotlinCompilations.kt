@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.gradle.plugin.mpp
 
 import groovy.lang.Closure
 import org.gradle.api.GradleException
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.attributes.AttributeContainer
@@ -195,7 +196,12 @@ abstract class AbstractKotlinCompilation<T : KotlinCommonOptions>(
 
     internal val friendArtifactsTask: TaskProvider<AbstractArchiveTask>? by lazy {
         if (associateWithTransitiveClosure.any { it.isMain() }) {
-            target.project.tasks.named(target.artifactsTaskName, AbstractArchiveTask::class.java)
+            try {
+                target.project.tasks.named(target.artifactsTaskName, AbstractArchiveTask::class.java)
+            } catch (e: InvalidUserDataException) {
+                // Native tasks does not extend AbstractArchiveTask
+                null
+            }
         } else {
             null
         }
