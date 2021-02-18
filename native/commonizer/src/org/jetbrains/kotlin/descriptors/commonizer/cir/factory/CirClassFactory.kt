@@ -12,6 +12,7 @@ import kotlinx.metadata.klib.annotations
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirClassImpl
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeClassKind
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeModality
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
@@ -37,10 +38,10 @@ object CirClassFactory {
         setSupertypes(source.filteredSupertypes.compactMap { CirTypeFactory.create(it) })
     }
 
-    fun create(name: CirName, source: KmClass): CirClass = create(
-        annotations = CirAnnotationFactory.createAnnotations(source.flags, source::annotations),
+    fun create(name: CirName, source: KmClass, providedClassifiers: CirProvidedClassifiers): CirClass = create(
+        annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
         name = name,
-        typeParameters = source.typeParameters.compactMap(CirTypeParameterFactory::create),
+        typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, providedClassifiers) },
         visibility = decodeVisibility(source.flags),
         modality = decodeModality(source.flags),
         kind = decodeClassKind(source.flags),
@@ -51,16 +52,17 @@ object CirClassFactory {
         isInner = Flag.Class.IS_INNER(source.flags),
         isExternal = Flag.Class.IS_EXTERNAL(source.flags)
     ).apply {
-        setSupertypes(source.filteredSupertypes.compactMap(CirTypeFactory::create))
+        setSupertypes(source.filteredSupertypes.compactMap { CirTypeFactory.create(it, providedClassifiers) })
     }
 
     fun createDefaultEnumEntry(
         name: CirName,
         annotations: List<KmAnnotation>,
         enumClassId: CirEntityId,
-        enumClass: KmClass
+        enumClass: KmClass,
+        providedClassifiers: CirProvidedClassifiers
     ): CirClass = create(
-        annotations = annotations.compactMap(CirAnnotationFactory::create),
+        annotations = annotations.compactMap { CirAnnotationFactory.create(it, providedClassifiers) },
         name = name,
         typeParameters = emptyList(),
         visibility = DescriptorVisibilities.PUBLIC,

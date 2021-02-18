@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirAnnotation
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirPropertySetter
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirPropertySetterImpl
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.utils.Interner
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
@@ -31,16 +32,16 @@ object CirPropertySetterFactory {
         isInline = source.isInline
     )
 
-    fun create(source: KmProperty): CirPropertySetter? {
+    fun create(source: KmProperty, providedClassifiers: CirProvidedClassifiers): CirPropertySetter? {
         if (!Flag.Property.HAS_SETTER(source.flags))
             return null
 
         val setterFlags = source.setterFlags
 
         return create(
-            annotations = CirAnnotationFactory.createAnnotations(setterFlags, source::setterAnnotations),
+            annotations = CirAnnotationFactory.createAnnotations(setterFlags, providedClassifiers, source::setterAnnotations),
             parameterAnnotations = source.setterParameter?.let { setterParameter ->
-                CirAnnotationFactory.createAnnotations(setterParameter.flags, setterParameter::annotations)
+                CirAnnotationFactory.createAnnotations(setterParameter.flags, providedClassifiers, setterParameter::annotations)
             }.orEmpty(),
             visibility = decodeVisibility(setterFlags),
             isDefault = !Flag.PropertyAccessor.IS_NOT_DEFAULT(setterFlags),

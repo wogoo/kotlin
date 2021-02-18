@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirPropertyImpl
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeCallableKind
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeModality
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
@@ -52,7 +53,12 @@ object CirPropertyFactory {
         )
     }
 
-    fun create(name: CirName, source: KmProperty, containingClass: CirContainingClass?): CirProperty {
+    fun create(
+        name: CirName,
+        source: KmProperty,
+        containingClass: CirContainingClass?,
+        providedClassifiers: CirProvidedClassifiers
+    ): CirProperty {
         val compileTimeInitializer = if (Flag.Property.HAS_CONSTANT(source.flags)) {
             CirConstantValueFactory.createSafely(
                 constantValue = source.compileTimeValue,
@@ -61,22 +67,22 @@ object CirPropertyFactory {
         } else null
 
         return create(
-            annotations = CirAnnotationFactory.createAnnotations(source.flags, source::annotations),
+            annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
             name = name,
-            typeParameters = source.typeParameters.compactMap(CirTypeParameterFactory::create),
+            typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, providedClassifiers) },
             visibility = decodeVisibility(source.flags),
             modality = decodeModality(source.flags),
             containingClass = containingClass,
             isExternal = Flag.Property.IS_EXTERNAL(source.flags),
-            extensionReceiver = source.receiverParameterType?.let(CirExtensionReceiverFactory::create),
-            returnType = CirTypeFactory.create(source.returnType),
+            extensionReceiver = source.receiverParameterType?.let { CirExtensionReceiverFactory.create(it, providedClassifiers) },
+            returnType = CirTypeFactory.create(source.returnType, providedClassifiers),
             kind = decodeCallableKind(source.flags),
             isVar = Flag.Property.IS_VAR(source.flags),
             isLateInit = Flag.Property.IS_LATEINIT(source.flags),
             isConst = Flag.Property.IS_CONST(source.flags),
             isDelegate = Flag.Property.IS_DELEGATED(source.flags),
-            getter = CirPropertyGetterFactory.create(source),
-            setter = CirPropertySetterFactory.create(source),
+            getter = CirPropertyGetterFactory.create(source, providedClassifiers),
+            setter = CirPropertySetterFactory.create(source, providedClassifiers),
             backingFieldAnnotations = emptyList(), // TODO unclear where to read backing/delegate field annotations from, see KT-44625
             delegateFieldAnnotations = emptyList(), // TODO unclear where to read backing/delegate field annotations from, see KT-44625
             compileTimeInitializer = compileTimeInitializer

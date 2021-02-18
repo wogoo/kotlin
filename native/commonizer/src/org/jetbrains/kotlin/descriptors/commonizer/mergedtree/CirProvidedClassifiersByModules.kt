@@ -15,6 +15,8 @@ import org.jetbrains.kotlin.library.SerializedMetadata
 import org.jetbrains.kotlin.library.metadata.parsePackageFragment
 import org.jetbrains.kotlin.metadata.ProtoBuf
 import org.jetbrains.kotlin.metadata.deserialization.*
+import org.jetbrains.kotlin.serialization.deserialization.ProtoEnumFlags
+import org.jetbrains.kotlin.serialization.deserialization.descriptorVisibility
 import org.jetbrains.kotlin.types.Variance
 
 internal class CirProvidedClassifiersByModules(modulesProvider: ModulesProvider) : CirProvidedClassifiers {
@@ -79,7 +81,9 @@ private inline fun readClass(
     check(classId.packageName == packageName)
 
     val typeParameters = readTypeParameters(classProto.typeParameterList)
-    val clazz = CirProvided.Class(typeParameters)
+    val visibility = ProtoEnumFlags.descriptorVisibility(Flags.VISIBILITY.get(classProto.flags))
+
+    val clazz = CirProvided.Class(typeParameters, visibility)
 
     consumer(classId, clazz)
 }

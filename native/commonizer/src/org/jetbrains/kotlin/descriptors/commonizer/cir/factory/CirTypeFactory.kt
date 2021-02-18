@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirClassTypeImpl
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirTypeAliasTypeImpl
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.utils.*
 import org.jetbrains.kotlin.types.*
 
@@ -39,7 +40,7 @@ object CirTypeFactory {
     private val typeAliasTypeInterner = Interner<CirTypeAliasType>()
     private val typeParameterTypeInterner = Interner<CirTypeParameterType>()
 
-    fun create(source: KmType, useAbbreviation: Boolean = true): CirType {
+    fun create(source: KmType, providedClassifiers: CirProvidedClassifiers, useAbbreviation: Boolean = true): CirType {
         // TODO: implement
         return StandardTypes.NON_EXISTING_TYPE
     }

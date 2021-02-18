@@ -11,6 +11,7 @@ import kotlinx.metadata.klib.annotations
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirFunctionImpl
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeCallableKind
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeModality
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
@@ -32,20 +33,27 @@ object CirFunctionFactory {
         modifiers = CirFunctionModifiersFactory.create(source),
     )
 
-    fun create(name: CirName, source: KmFunction, containingClass: CirContainingClass?): CirFunction = create(
-        annotations = CirAnnotationFactory.createAnnotations(source.flags, source::annotations),
-        name = name,
-        typeParameters = source.typeParameters.compactMap(CirTypeParameterFactory::create),
-        visibility = decodeVisibility(source.flags),
-        modality = decodeModality(source.flags),
-        containingClass = containingClass,
-        valueParameters = source.valueParameters.compactMap(CirValueParameterFactory::create),
-        hasStableParameterNames = !Flag.Function.HAS_NON_STABLE_PARAMETER_NAMES(source.flags),
-        extensionReceiver = source.receiverParameterType?.let(CirExtensionReceiverFactory::create),
-        returnType = CirTypeFactory.create(source.returnType),
-        kind = decodeCallableKind(source.flags),
-        modifiers = CirFunctionModifiersFactory.create(source),
-    )
+    fun create(
+        name: CirName,
+        source: KmFunction,
+        containingClass: CirContainingClass?,
+        providedClassifiers: CirProvidedClassifiers
+    ): CirFunction {
+        return create(
+            annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
+            name = name,
+            typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, providedClassifiers) },
+            visibility = decodeVisibility(source.flags),
+            modality = decodeModality(source.flags),
+            containingClass = containingClass,
+            valueParameters = source.valueParameters.compactMap { CirValueParameterFactory.create(it, providedClassifiers) },
+            hasStableParameterNames = !Flag.Function.HAS_NON_STABLE_PARAMETER_NAMES(source.flags),
+            extensionReceiver = source.receiverParameterType?.let { CirExtensionReceiverFactory.create(it, providedClassifiers) },
+            returnType = CirTypeFactory.create(source.returnType, providedClassifiers),
+            kind = decodeCallableKind(source.flags),
+            modifiers = CirFunctionModifiersFactory.create(source),
+        )
+    }
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun create(

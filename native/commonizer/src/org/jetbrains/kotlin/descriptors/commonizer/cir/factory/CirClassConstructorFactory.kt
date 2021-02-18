@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.descriptors.ClassConstructorDescriptor
 import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirClassConstructorImpl
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMapNotNull
@@ -37,15 +38,21 @@ object CirClassConstructorFactory {
         )
     }
 
-    fun create(source: KmConstructor, containingClass: CirContainingClass): CirClassConstructor = create(
-        annotations = CirAnnotationFactory.createAnnotations(source.flags, source::annotations),
-        typeParameters = emptyList(), // TODO: nowhere to read constructor type parameters from
-        visibility = decodeVisibility(source.flags),
-        containingClass = containingClass,
-        valueParameters = source.valueParameters.compactMap(CirValueParameterFactory::create),
-        hasStableParameterNames = !Flag.Constructor.HAS_NON_STABLE_PARAMETER_NAMES(source.flags),
-        isPrimary = !Flag.Constructor.IS_SECONDARY(source.flags)
-    )
+    fun create(
+        source: KmConstructor,
+        containingClass: CirContainingClass,
+        providedClassifiers: CirProvidedClassifiers
+    ): CirClassConstructor {
+        return create(
+            annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
+            typeParameters = emptyList(), // TODO: nowhere to read constructor type parameters from
+            visibility = decodeVisibility(source.flags),
+            containingClass = containingClass,
+            valueParameters = source.valueParameters.compactMap { CirValueParameterFactory.create(it, providedClassifiers) },
+            hasStableParameterNames = !Flag.Constructor.HAS_NON_STABLE_PARAMETER_NAMES(source.flags),
+            isPrimary = !Flag.Constructor.IS_SECONDARY(source.flags)
+        )
+    }
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun create(

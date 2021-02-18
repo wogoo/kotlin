@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.descriptors.commonizer.mergedtree
 
 import gnu.trove.THashMap
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirEntityId
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirName
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirPackageName
@@ -38,7 +39,7 @@ object CirFictitiousFunctionClassifiers : CirProvidedClassifiers {
         }
 
         val classId = CirEntityId.create(PACKAGE_NAME, CirName.create("$prefix$arity"))
-        val clazz = CirProvided.Class(typeParameters)
+        val clazz = CirProvided.Class(typeParameters, DescriptorVisibilities.PUBLIC)
 
         consumer(classId, clazz)
     }

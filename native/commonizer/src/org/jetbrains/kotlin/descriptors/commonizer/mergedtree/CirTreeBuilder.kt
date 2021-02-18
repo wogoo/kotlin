@@ -35,6 +35,11 @@ class CirTreeBuilder(
         val missingModuleInfos: Map<LeafCommonizerTarget, Collection<ModuleInfo>>
     )
 
+    private class CirTreeBuildingContext(
+        val targetIndex: Int,
+        val providedClassifiers: CirProvidedClassifiers // necessary for type resolution
+    )
+
     private val leafTargetsSize = parameters.targetProviders.size
 
     fun build(): CirTreeBuildingResult {
@@ -56,7 +61,7 @@ class CirTreeBuilder(
             val allModuleInfos = targetProvider.modulesProvider.loadModuleInfos()
 
             val (commonModuleInfos, missingModuleInfos) = allModuleInfos.partition { it.name in commonModuleNames }
-            processTarget(rootNode, targetIndex, targetProvider, commonModuleInfos)
+            processTarget(targetIndex, rootNode, targetProvider, commonModuleInfos)
 
             missingModuleInfosByTargets[targetProvider.target] = missingModuleInfos
 
@@ -71,23 +76,35 @@ class CirTreeBuilder(
     }
 
     private fun processTarget(
-        rootNode: CirRootNode,
         targetIndex: Int,
+        rootNode: CirRootNode,
         targetProvider: TargetProvider,
         commonModuleInfos: Collection<ModuleInfo>
     ) {
         rootNode.targetDeclarations[targetIndex] = CirRootFactory.create(targetProvider.target)
 
-        commonModuleInfos.forEach { moduleInfo ->
-            val metadata = targetProvider.modulesProvider.loadModuleMetadata(moduleInfo.name)
-            val module = KlibModuleMetadata.read(SerializedMetadataLibraryProvider(metadata))
-            processModule(rootNode, targetIndex, moduleInfo, module)
+        if (commonModuleInfos.isNotEmpty()) {
+            val context = CirTreeBuildingContext(
+                targetIndex = targetIndex,
+                // all classifiers "visible" for the target:
+                providedClassifiers = CirProvidedClassifiers.of(
+                    classifiers.commonDependencies,
+                    CirProvidedClassifiers.by(targetProvider.dependencyModulesProvider),
+                    CirProvidedClassifiers.by(targetProvider.modulesProvider)
+                )
+            )
+
+            commonModuleInfos.forEach { moduleInfo ->
+                val metadata = targetProvider.modulesProvider.loadModuleMetadata(moduleInfo.name)
+                val module = KlibModuleMetadata.read(SerializedMetadataLibraryProvider(metadata))
+                processModule(context, rootNode, moduleInfo, module)
+            }
         }
     }
 
     private fun processModule(
+        context: CirTreeBuildingContext,
         rootNode: CirRootNode,
-        targetIndex: Int,
         moduleInfo: ModuleInfo,
         module: KlibModuleMetadata
     ) {
@@ -97,27 +114,27 @@ class CirTreeBuilder(
         val moduleNode: CirModuleNode = rootNode.modules.getOrPut(moduleName) {
             buildModuleNode(storageManager, leafTargetsSize)
         }
-        moduleNode.targetDeclarations[targetIndex] = CirModuleFactory.create(moduleName)
+        moduleNode.targetDeclarations[context.targetIndex] = CirModuleFactory.create(moduleName)
 
         val groupedFragments: Map<CirPackageName, Collection<KmModuleFragment>> = module.fragments.foldToMap { fragment ->
             fragment.fqName?.let(CirPackageName::create) ?: error("A fragment without FQ name in module $moduleName: $fragment")
         }
 
         groupedFragments.forEach { (packageName, fragments) ->
-            processFragments(moduleNode, targetIndex, fragments, packageName)
+            processFragments(context, moduleNode, fragments, packageName)
         }
     }
 
     private fun processFragments(
+        context: CirTreeBuildingContext,
         moduleNode: CirModuleNode,
-        targetIndex: Int,
         fragments: Collection<KmModuleFragment>,
         packageName: CirPackageName
     ) {
         val packageNode: CirPackageNode = moduleNode.packages.getOrPut(packageName) {
             buildPackageNode(storageManager, leafTargetsSize)
         }
-        packageNode.targetDeclarations[targetIndex] = CirPackageFactory.create(packageName)
+        packageNode.targetDeclarations[context.targetIndex] = CirPackageFactory.create(packageName)
 
         val classesToProcess = ClassesToProcess()
         fragments.forEach { fragment ->
@@ -125,23 +142,23 @@ class CirTreeBuilder(
 
             fragment.pkg?.let { pkg ->
                 pkg.properties.forEach { property ->
-                    processProperty(packageNode, targetIndex, property, TypeParameterResolver.create(property))
+                    processProperty(context, packageNode, property, TypeParameterResolver.create(property))
                 }
                 pkg.functions.forEach { function ->
-                    processFunction(packageNode, targetIndex, function, TypeParameterResolver.create(function))
+                    processFunction(context, packageNode, function, TypeParameterResolver.create(function))
                 }
-                pkg.typeAliases.forEach { typeAlias -> processTypeAlias(packageNode, targetIndex, typeAlias) }
+                pkg.typeAliases.forEach { typeAlias -> processTypeAlias(context, packageNode, typeAlias) }
             }
         }
 
         classesToProcess.forEachClassInScope(parentClassId = null) { classEntry ->
-            processClass(packageNode, targetIndex, classEntry, classesToProcess, TypeParameterResolver.create(classEntry))
+            processClass(context, packageNode, classEntry, classesToProcess, TypeParameterResolver.create(classEntry))
         }
     }
 
     private fun processProperty(
+        context: CirTreeBuildingContext,
         ownerNode: CirNodeWithMembers<*, *>,
-        targetIndex: Int,
         property: KmProperty,
         typeParameterResolver: TypeParameterResolver
     ) {
@@ -154,16 +171,17 @@ class CirTreeBuilder(
         val propertyNode: CirPropertyNode = ownerNode.properties.getOrPut(approximationKey) {
             buildPropertyNode(storageManager, leafTargetsSize, classifiers, maybeClassOwnerNode?.commonDeclaration)
         }
-        propertyNode.targetDeclarations[targetIndex] = CirPropertyFactory.create(
+        propertyNode.targetDeclarations[context.targetIndex] = CirPropertyFactory.create(
             name = approximationKey.name,
             source = property,
-            containingClass = maybeClassOwnerNode?.targetDeclarations?.get(targetIndex)
+            containingClass = maybeClassOwnerNode?.targetDeclarations?.get(context.targetIndex),
+            providedClassifiers = context.providedClassifiers
         )
     }
 
     private fun processFunction(
+        context: CirTreeBuildingContext,
         ownerNode: CirNodeWithMembers<*, *>,
-        targetIndex: Int,
         function: KmFunction,
         typeParameterResolver: TypeParameterResolver
     ) {
@@ -180,16 +198,17 @@ class CirTreeBuilder(
         val functionNode: CirFunctionNode = ownerNode.functions.getOrPut(approximationKey) {
             buildFunctionNode(storageManager, leafTargetsSize, classifiers, maybeClassOwnerNode?.commonDeclaration)
         }
-        functionNode.targetDeclarations[targetIndex] = CirFunctionFactory.create(
+        functionNode.targetDeclarations[context.targetIndex] = CirFunctionFactory.create(
             name = approximationKey.name,
             source = function,
-            containingClass = maybeClassOwnerNode?.targetDeclarations?.get(targetIndex)
+            containingClass = maybeClassOwnerNode?.targetDeclarations?.get(context.targetIndex),
+            providedClassifiers = context.providedClassifiers
         )
     }
 
     private fun processClass(
+        context: CirTreeBuildingContext,
         ownerNode: CirNodeWithMembers<*, *>,
-        targetIndex: Int,
         classEntry: ClassEntry,
         classesToProcess: ClassesToProcess,
         typeParameterResolver: TypeParameterResolver
@@ -205,42 +224,48 @@ class CirTreeBuilder(
         val clazz: KmClass?
         val isEnumEntry: Boolean
 
-        classNode.targetDeclarations[targetIndex] = when (classEntry) {
+        classNode.targetDeclarations[context.targetIndex] = when (classEntry) {
             is ClassEntry.RegularClassEntry -> {
                 clazz = classEntry.clazz
                 isEnumEntry = Flag.Class.IS_ENUM_ENTRY(clazz.flags)
 
-                CirClassFactory.create(className, clazz)
+                CirClassFactory.create(className, clazz, context.providedClassifiers)
             }
             is ClassEntry.EnumEntry -> {
                 clazz = null
                 isEnumEntry = true
 
-                CirClassFactory.createDefaultEnumEntry(className, classEntry.annotations, classEntry.enumClassId, classEntry.enumClass)
+                CirClassFactory.createDefaultEnumEntry(
+                    name = className,
+                    annotations = classEntry.annotations,
+                    enumClassId = classEntry.enumClassId,
+                    enumClass = classEntry.enumClass,
+                    providedClassifiers = context.providedClassifiers
+                )
             }
         }
 
         if (!isEnumEntry) {
             clazz?.constructors?.forEach { constructor ->
-                processClassConstructor(classNode, targetIndex, constructor, typeParameterResolver)
+                processClassConstructor(context, classNode, constructor, typeParameterResolver)
             }
         }
 
         clazz?.properties?.forEach { property ->
-            processProperty(classNode, targetIndex, property, typeParameterResolver.create(property))
+            processProperty(context, classNode, property, typeParameterResolver.create(property))
         }
         clazz?.functions?.forEach { function ->
-            processFunction(classNode, targetIndex, function, typeParameterResolver.create(function))
+            processFunction(context, classNode, function, typeParameterResolver.create(function))
         }
 
         classesToProcess.forEachClassInScope(parentClassId = classId) { nestedClassEntry ->
-            processClass(classNode, targetIndex, nestedClassEntry, classesToProcess, typeParameterResolver.create(nestedClassEntry))
+            processClass(context, classNode, nestedClassEntry, classesToProcess, typeParameterResolver.create(nestedClassEntry))
         }
     }
 
     private fun processClassConstructor(
+        context: CirTreeBuildingContext,
         classNode: CirClassNode,
-        targetIndex: Int,
         constructor: KmConstructor,
         typeParameterResolver: TypeParameterResolver
     ) {
@@ -248,15 +273,16 @@ class CirTreeBuilder(
         val constructorNode: CirClassConstructorNode = classNode.constructors.getOrPut(approximationKey) {
             buildClassConstructorNode(storageManager, leafTargetsSize, classifiers, classNode.commonDeclaration)
         }
-        constructorNode.targetDeclarations[targetIndex] = CirClassConstructorFactory.create(
+        constructorNode.targetDeclarations[context.targetIndex] = CirClassConstructorFactory.create(
             source = constructor,
-            containingClass = classNode.targetDeclarations[targetIndex]!!
+            containingClass = classNode.targetDeclarations[context.targetIndex]!!,
+            providedClassifiers = context.providedClassifiers
         )
     }
 
     private fun processTypeAlias(
+        context: CirTreeBuildingContext,
         packageNode: CirPackageNode,
-        targetIndex: Int,
         typeAliasMetadata: KmTypeAlias
     ) {
         val typeAliasName = CirName.create(typeAliasMetadata.name)
@@ -265,7 +291,11 @@ class CirTreeBuilder(
         val typeAliasNode: CirTypeAliasNode = packageNode.typeAliases.getOrPut(typeAliasName) {
             buildTypeAliasNode(storageManager, leafTargetsSize, classifiers, typeAliasId)
         }
-        typeAliasNode.targetDeclarations[targetIndex] = CirTypeAliasFactory.create(typeAliasName, typeAliasMetadata)
+        typeAliasNode.targetDeclarations[context.targetIndex] = CirTypeAliasFactory.create(
+            name = typeAliasName,
+            source = typeAliasMetadata,
+            providedClassifiers = context.providedClassifiers
+        )
     }
 
     private fun processCInteropModuleAttributes(moduleInfo: ModuleInfo) {

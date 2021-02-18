@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.descriptors.commonizer.cir.CirName
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirType
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirValueParameter
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirValueParameterImpl
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.utils.Interner
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
 
@@ -30,11 +31,11 @@ object CirValueParameterFactory {
         isNoinline = source.isNoinline
     )
 
-    fun create(source: KmValueParameter): CirValueParameter = create(
-        annotations = CirAnnotationFactory.createAnnotations(source.flags, source::annotations),
+    fun create(source: KmValueParameter, providedClassifiers: CirProvidedClassifiers): CirValueParameter = create(
+        annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
         name = CirName.create(source.name),
-        returnType = CirTypeFactory.create(source.type!!),
-        varargElementType = source.varargElementType?.let(CirTypeFactory::create),
+        returnType = CirTypeFactory.create(source.type!!, providedClassifiers),
+        varargElementType = source.varargElementType?.let { CirTypeFactory.create(it, providedClassifiers) },
         declaresDefaultValue = Flag.ValueParameter.DECLARES_DEFAULT_VALUE(source.flags),
         isCrossinline = Flag.ValueParameter.IS_CROSSINLINE(source.flags),
         isNoinline = Flag.ValueParameter.IS_NOINLINE(source.flags)
