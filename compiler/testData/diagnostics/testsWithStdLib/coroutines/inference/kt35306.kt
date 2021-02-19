@@ -8,37 +8,20 @@ import kotlin.experimental.ExperimentalTypeInference
 interface Build<T>
 
 @OptIn(ExperimentalTypeInference::class)
-fun <T> build(@BuilderInference fn: Builder<T>.() -> Unit): Build<T> = TODO()
+fun <T> build(@BuilderInference fn: BuilderScope<T>.() -> Unit): Build<T> = TODO()
 
-// Works completely
-val build = build {
-    value(1)
-}
-
-// Works completely
-val buildWithWrappedValue = build {
-    wrappedValue(Wrapped(1))
-}
-
-// Works completely
-val buildWithFn = build {
-    valueFn {
-        1
-    }
-}
-
-// Works, but the ide complains with "Non-applicable call for builder inference"
-val buildWithFnWrapped = build {
-    wrappedValueFn {
-        Wrapped(1)
-    }
-}
-
-interface Builder<T> {
-    fun value(value: T)
-    fun wrappedValue(value: Wrapped<T>)
+interface BuilderScope<T> {
     fun wrappedValueFn(fn: () -> Wrapped<T>)
-    fun valueFn(fn: () -> T)
+    fun wrappedValueFn2(fn: T)
 }
 
-data class Wrapped<T>(val value: T)
+class Wrapped<T>(val value: T)
+
+fun <L> wrappedFactory(x: L): Wrapped<L> = Wrapped(x)
+
+val buildWithFnWrapped = build {
+    wrappedValueFn2(1f)
+    wrappedValueFn {
+        wrappedFactory(1)
+    }
+}

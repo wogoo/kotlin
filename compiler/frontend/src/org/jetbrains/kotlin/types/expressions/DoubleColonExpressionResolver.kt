@@ -541,15 +541,6 @@ class DoubleColonExpressionResolver(
 
         val (lhs, resolutionResults) = resolveCallableReference(expression, c, ResolveArgumentsMode.RESOLVE_FUNCTION_ARGUMENTS)
         val result = getCallableReferenceType(expression, lhs, resolutionResults, c)
-        val doesSomeExtensionReceiverContainsStubType =
-            resolutionResults != null && resolutionResults.resultingCalls.any { resolvedCall ->
-                resolvedCall.extensionReceiver?.type?.contains { it is StubType } == true
-            }
-
-        if (doesSomeExtensionReceiverContainsStubType) {
-            c.trace.reportDiagnosticOnce(TYPE_INFERENCE_POSTPONED_VARIABLE_IN_RECEIVER_TYPE.on(expression))
-            return noTypeInfo(c)
-        }
 
         val dataFlowInfo = (lhs as? DoubleColonLHS.Expression)?.dataFlowInfo ?: c.dataFlowInfo
 

@@ -326,9 +326,13 @@ fun isApplicableCallForBuilderInference(
 
     val returnType = descriptor.returnType ?: return false
     val doesReturnTypeContainStubType = returnType.containsStubType()
+//    val parametersContainsStubTypes = descriptor.valueParameters.any { it.type.containsStubType() }
+//    val extensionReceiverContainsStubTypes = descriptor.extensionReceiverParameter?.type?.containsStubType() == true
     val doLambdasParametersContainStubType = resolvedAtom?.areThereLambdasWithStubTypeInParameterOrReceiver() == true
 
-    return !doesReturnTypeContainStubType && !doLambdasParametersContainStubType
+//    val a = doesReturnTypeContainStubType && (parametersContainsStubTypes || extensionReceiverContainsStubTypes)
+
+    return (!doesReturnTypeContainStubType && !doLambdasParametersContainStubType)
 }
 
 private fun isGoodCallForOldCoroutines(resultingDescriptor: CallableDescriptor): Boolean {

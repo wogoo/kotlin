@@ -1,0 +1,20 @@
+package
+
+@[ERROR : OptIn] /* annotation class not found */ public fun </*0*/ Value> makeCodec(/*0*/ @[ERROR : BuilderInference] /* annotation class not found */ configure: CodecBuilder<Value>.() -> kotlin.Unit): kotlin.Unit
+public fun </*0*/ K> materialize(): K
+public fun test1(): kotlin.Unit
+public fun </*0*/ Value> transform(/*0*/ x: CodecBuilder<Value>): Foo<Value>
+
+public interface CodecBuilder</*0*/ Value> {
+    public abstract fun contribute(/*0*/ x: Value): kotlin.Unit
+    public open override /*1*/ /*fake_override*/ fun equals(/*0*/ other: kotlin.Any?): kotlin.Boolean
+    public open override /*1*/ /*fake_override*/ fun hashCode(): kotlin.Int
+    public open override /*1*/ /*fake_override*/ fun toString(): kotlin.String
+}
+
+public final class Foo</*0*/ Value> {
+    public constructor Foo</*0*/ Value>(/*0*/ x: Value)
+    public open override /*1*/ /*fake_override*/ fun equals(/*0*/ other: kotlin.Any?): kotlin.Boolean
+    public open override /*1*/ /*fake_override*/ fun hashCode(): kotlin.Int
+    public open override /*1*/ /*fake_override*/ fun toString(): kotlin.String
+}

@@ -42,11 +42,6 @@ public class IrCodegenBoxWasmTestGenerated extends AbstractIrCodegenBoxWasmTest 
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/annotations"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.WASM, true);
         }
 
-        @TestMetadata("annotatedAnnotationParameter.kt")
-        public void testAnnotatedAnnotationParameter() throws Exception {
-            runTest("compiler/testData/codegen/box/annotations/annotatedAnnotationParameter.kt");
-        }
-
         @TestMetadata("nestedAnnotation.kt")
         public void testNestedAnnotation() throws Exception {
             runTest("compiler/testData/codegen/box/annotations/nestedAnnotation.kt");

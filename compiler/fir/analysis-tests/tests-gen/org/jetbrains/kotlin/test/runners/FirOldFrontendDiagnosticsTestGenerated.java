@@ -12365,6 +12365,12 @@ public class FirOldFrontendDiagnosticsTestGenerated extends AbstractFirDiagnosti
                 public void testStubTypeInLambdasReceiver() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/inference/builderInference/stubTypeInLambdasReceiver.kt");
                 }
+
+                @Test
+                @TestMetadata("stubTypeInReturnType.kt")
+                public void testStubTypeInReturnType() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/builderInference/stubTypeInReturnType.kt");
+                }
             }
 
             @Nested

@@ -42,11 +42,6 @@ public class IrJsCodegenBoxES6TestGenerated extends AbstractIrJsCodegenBoxES6Tes
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/annotations"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JS_IR_ES6, true);
         }
 
-        @TestMetadata("annotatedAnnotationParameter.kt")
-        public void testAnnotatedAnnotationParameter() throws Exception {
-            runTest("compiler/testData/codegen/box/annotations/annotatedAnnotationParameter.kt");
-        }
-
         @TestMetadata("nestedAnnotation.kt")
         public void testNestedAnnotation() throws Exception {
             runTest("compiler/testData/codegen/box/annotations/nestedAnnotation.kt");

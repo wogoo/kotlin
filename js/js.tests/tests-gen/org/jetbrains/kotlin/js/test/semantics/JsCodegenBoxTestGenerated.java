@@ -42,11 +42,6 @@ public class JsCodegenBoxTestGenerated extends AbstractJsCodegenBoxTest {
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/annotations"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JS, true);
         }
 
-        @TestMetadata("annotatedAnnotationParameter.kt")
-        public void testAnnotatedAnnotationParameter() throws Exception {
-            runTest("compiler/testData/codegen/box/annotations/annotatedAnnotationParameter.kt");
-        }
-
         @TestMetadata("nestedAnnotation.kt")
         public void testNestedAnnotation() throws Exception {
             runTest("compiler/testData/codegen/box/annotations/nestedAnnotation.kt");
