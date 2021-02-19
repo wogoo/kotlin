@@ -22,11 +22,18 @@ import org.gradle.api.internal.component.SoftwareComponentInternal
 import org.gradle.api.internal.component.UsageContext
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.jvm.tasks.Jar
 import org.gradle.util.ConfigureUtil
 import org.gradle.util.WrapUtil
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.plugin.*
+import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsSubTargetContainerDsl
+import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsSubTargetDsl
+import org.jetbrains.kotlin.gradle.targets.js.dukat.DukatCompilationResolverPlugin
+import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
+import org.jetbrains.kotlin.gradle.tasks.dependsOn
 import org.jetbrains.kotlin.gradle.utils.dashSeparatedName
 import org.jetbrains.kotlin.gradle.utils.lowerCamelCaseName
 
@@ -183,8 +190,13 @@ abstract class AbstractKotlinTarget(
         classifierPrefix: String? = null
     ): PublishArtifact {
         val sourcesJarTask = sourcesJarTask(producingCompilation, componentName, artifactNameAppendix)
+        linkToSourcesProducedByDukatTasks(
+            producingCompilation,
+            sourcesJarTask
+        )
         val sourceArtifactConfigurationName = producingCompilation.disambiguateName("sourceArtifacts")
-        return producingCompilation.target.project.run {
+
+        return with(producingCompilation.target.project) {
             (configurations.findByName(sourceArtifactConfigurationName) ?: run {
                 val configuration = configurations.create(sourceArtifactConfigurationName) {
                     it.isCanBeResolved = false
@@ -196,6 +208,30 @@ abstract class AbstractKotlinTarget(
                 this as ConfigurablePublishArtifact
                 classifier = dashSeparatedName(classifierPrefix, "sources")
             }
+        }
+    }
+
+    private fun linkToSourcesProducedByDukatTasks(
+        producingCompilation: KotlinCompilation<*>,
+        sourcesJarTask: TaskProvider<Jar>
+    ) {
+        if (producingCompilation is KotlinJsCompilation) {
+            val configAction: (KotlinJsSubTargetDsl) -> Unit = {
+                val dukatGenerateExternalsTaskName = producingCompilation.npmProject.compilation
+                    .disambiguateName(
+                        DukatCompilationResolverPlugin.GENERATE_EXTERNALS_INTEGRATED_TASK_SIMPLE_NAME
+                    )
+                producingCompilation.target.project.afterEvaluate {
+                    sourcesJarTask.dependsOn(
+                        producingCompilation.target.project.tasks.named(dukatGenerateExternalsTaskName)
+                    )
+                }
+            }
+
+            (producingCompilation.target as KotlinJsSubTargetContainerDsl)
+                .whenNodejsConfigured(configAction)
+            (producingCompilation.target as KotlinJsSubTargetContainerDsl)
+                .whenBrowserConfigured(configAction)
         }
     }
 

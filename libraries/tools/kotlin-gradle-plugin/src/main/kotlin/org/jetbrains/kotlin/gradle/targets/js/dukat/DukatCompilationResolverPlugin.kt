@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.gradle.targets.js.dukat
 
-import org.gradle.api.artifacts.FileCollectionDependency
 import org.gradle.api.internal.project.ProjectInternal
 import org.jetbrains.kotlin.gradle.plugin.mpp.disambiguateName
 import org.jetbrains.kotlin.gradle.targets.js.KotlinJsTarget
@@ -36,8 +35,8 @@ internal class DukatCompilationResolverPlugin(
     val externalsOutputFormat by lazy {
         compilation.externalsOutputFormat
     }
-    val integratedTaskName = npmProject.compilation.disambiguateName("generateExternalsIntegrated")
-    val separateTaskName = npmProject.compilation.disambiguateName("generateExternals")
+    val integratedTaskName = npmProject.compilation.disambiguateName(GENERATE_EXTERNALS_INTEGRATED_TASK_SIMPLE_NAME)
+    val separateTaskName = npmProject.compilation.disambiguateName(GENERATE_EXTERNALS_TASK_SIMPLE_NAME)
 
     init {
         val externalsOutputFormat = compilation.externalsOutputFormat
@@ -117,6 +116,8 @@ internal class DukatCompilationResolverPlugin(
 
     companion object {
         const val VERSION = "3"
+        internal const val GENERATE_EXTERNALS_INTEGRATED_TASK_SIMPLE_NAME = "generateExternalsIntegrated"
+        internal const val GENERATE_EXTERNALS_TASK_SIMPLE_NAME = "generateExternals"
     }
 }
 
