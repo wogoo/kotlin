@@ -486,7 +486,7 @@ class GenerateIrRuntime {
             emptyList(),
             true,
             perFile,
-            null
+            jsOutputName = null
         )
 
         return tmpKlibDir

@@ -98,9 +98,20 @@ internal fun runToolInSeparateProcess(
 
     val compilerOptions = writeArgumentsToFile(buildDir, argsArray)
 
+    val jvmArgs2 = if (compilerClassName == KotlinCompilerClass.JS && argsArray.any { it.contains("-Xir-produce-js") }) jvmArgs + "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005" else jvmArgs
+
+        println("HELLO")
+        listOf(
+            javaBin,
+            *(jvmArgs2.toTypedArray()),
+            compilerClassName,
+            "-cp",
+            classpathString,
+            "@${compilerOptions.absolutePath}"
+        ).joinToString(" ").let { println(it) }
     val builder = ProcessBuilder(
         javaBin,
-        *(jvmArgs.toTypedArray()),
+        *(jvmArgs2.toTypedArray()),
         "-cp",
         classpathString,
         compilerClassName,
@@ -140,7 +151,7 @@ private fun writeArgumentsToFile(directory: File, argsArray: Array<String>): Fil
         Files.createTempFile(directory.toPath(), prefix, suffix).toFile()
     else
         Files.createTempFile(prefix, suffix).toFile()
-    compilerOptions.deleteOnExit()
+//    compilerOptions.deleteOnExit()
     compilerOptions.writeText(argsArray.joinToString(" ") { "\"${StringEscapeUtils.escapeJava(it)}\"" })
     return compilerOptions
 }
