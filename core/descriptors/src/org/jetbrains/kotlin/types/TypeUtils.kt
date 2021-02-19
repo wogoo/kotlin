@@ -306,4 +306,4 @@ private fun NewCapturedType.unCaptureTopLevelType(): UnwrappedType {
     return constructor.projection.type.unwrap()
 }
 
-fun KotlinType.shouldBeSubstituted() = contains { it is StubType || it.constructor is TypeVariableTypeConstructorMarker }
+fun KotlinType?.canBeUpdated() = this == null || contains { it is StubType || it.constructor is TypeVariableTypeConstructorMarker }
