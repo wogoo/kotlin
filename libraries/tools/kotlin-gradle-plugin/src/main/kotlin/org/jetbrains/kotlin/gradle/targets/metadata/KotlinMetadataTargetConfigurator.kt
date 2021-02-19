@@ -595,6 +595,7 @@ internal fun getPublishedPlatformCompilations(project: Project): Map<KotlinUsage
 internal fun Project.filesWithUnpackedArchives(from: FileCollection, extensions: Set<String>): FileCollection =
     project.files(project.provider {
         from.mapNotNull {
+            @Suppress("IMPLICIT_CAST_TO_ANY")
             if (it.extension in extensions) {
                 if (it.exists()) project.zipTree(it) else null
             } else it

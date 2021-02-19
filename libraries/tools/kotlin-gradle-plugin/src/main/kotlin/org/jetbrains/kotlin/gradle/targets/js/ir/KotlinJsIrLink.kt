@@ -9,7 +9,6 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.*
-import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.jetbrains.kotlin.cli.common.arguments.K2JSCompilerArguments
 import org.jetbrains.kotlin.gradle.dsl.KotlinJsOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJsOptionsImpl
@@ -46,9 +45,8 @@ open class KotlinJsIrLink : Kotlin2JsCompile() {
         )
     }
 
-    override fun skipCondition(inputs: IncrementalTaskInputs): Boolean {
-        return !inputs.isIncremental && !entryModule.exists()
-    }
+    override fun skipCondition(): Boolean =
+        !entryModule.exists()
 
     override fun getDestinationDir(): File {
         return if (kotlinOptions.outputFile == null) {

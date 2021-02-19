@@ -56,8 +56,7 @@ abstract class KotlinBasePluginWrapper : Plugin<Project> {
         DefaultKotlinSourceSetFactory(project)
 
     override fun apply(project: Project) {
-        val listenerRegistryHolder = BuildEventsListenerRegistryHolder.getInstance(project)
-        val statisticsReporter = KotlinBuildStatsService.getOrCreateInstance(project, listenerRegistryHolder)
+        val statisticsReporter = KotlinBuildStatsService.getOrCreateInstance(project)
         statisticsReporter?.report(StringMetrics.KOTLIN_COMPILER_VERSION, kotlinPluginVersion)
 
         checkGradleCompatibility()
@@ -79,6 +78,7 @@ abstract class KotlinBasePluginWrapper : Plugin<Project> {
         // TODO: consider only set if if daemon or parallel compilation are enabled, though this way it should be safe too
         System.setProperty(org.jetbrains.kotlin.cli.common.KOTLIN_COMPILER_ENVIRONMENT_KEEPALIVE_PROPERTY, "true")
 
+        val listenerRegistryHolder = BuildEventsListenerRegistryHolder.getInstance(project)
         val kotlinGradleBuildServices = KotlinGradleBuildServices.getInstance(project, listenerRegistryHolder)
 
         kotlinGradleBuildServices.detectKotlinPluginLoadedInMultipleProjects(project, kotlinPluginVersion)

@@ -767,6 +767,7 @@ internal open class KotlinAndroidPlugin(
 }
 
 class KotlinConfigurationTools internal constructor(
+    @Suppress("EXPOSED_PROPERTY_TYPE_IN_CONSTRUCTOR")
     val kotlinTasksProvider: KotlinTasksProvider,
     val kotlinPluginVersion: String
 )
@@ -880,7 +881,7 @@ abstract class AbstractAndroidProjectHandler(private val kotlinConfigurationTool
                 project.addExtendsFromRelation(androidSourceSet.apiConfigurationName, apiConfigurationName)
             } else {
                 // If any dependency is added to this configuration, report an error:
-                project.configurations.getByName(apiConfigurationName).dependencies.all { dependency ->
+                project.configurations.getByName(apiConfigurationName).dependencies.all {
                     throw InvalidUserCodeException(
                         "API dependencies are not allowed for Android source set ${androidSourceSet.name}. " +
                                 "Please use an implementation dependency instead."

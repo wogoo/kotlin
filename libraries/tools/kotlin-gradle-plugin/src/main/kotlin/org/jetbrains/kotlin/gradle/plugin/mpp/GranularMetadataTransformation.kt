@@ -353,7 +353,7 @@ private class IncludedBuildMetadataExtractor(
     init {
         val id = dependency.id
         require(id is ProjectComponentIdentifier) { "dependency should resolve to a project" }
-        require(!(id as ProjectComponentIdentifier).build.isCurrentBuild) { "should be a project from an included build" }
+        require(!id.build.isCurrentBuild) { "should be a project from an included build" }
         this.id = id
     }
 

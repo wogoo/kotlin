@@ -227,7 +227,7 @@ internal fun KotlinSourceSet.disambiguateName(simpleName: String): String {
 }
 
 private fun createDefaultSourceDirectorySet(project: Project, name: String?): SourceDirectorySet =
-    project.objects.sourceDirectorySet(name, name)
+    project.objects.sourceDirectorySet(name!!, name)
 
 internal fun KotlinSourceSet.getSourceSetHierarchy(): Set<KotlinSourceSet> {
     val result = mutableSetOf<KotlinSourceSet>()
