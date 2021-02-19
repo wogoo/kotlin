@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.descriptors.commonizer.cir.CirType
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirTypeParameter
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirTypeFactory.decodeVariance
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirTypeParameterImpl
+import org.jetbrains.kotlin.descriptors.commonizer.metadata.ALWAYS_HAS_ANNOTATIONS
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
 import org.jetbrains.kotlin.descriptors.commonizer.utils.filteredUpperBounds
 import org.jetbrains.kotlin.types.Variance
@@ -29,7 +30,7 @@ object CirTypeParameterFactory {
     )
 
     fun create(source: KmTypeParameter, typeResolver: CirTypeResolver): CirTypeParameter = create(
-        annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
+        annotations = CirAnnotationFactory.createAnnotations(ALWAYS_HAS_ANNOTATIONS, typeResolver, source::annotations),
         name = CirName.create(source.name),
         isReified = Flag.TypeParameter.IS_REIFIED(source.flags),
         variance = decodeVariance(source.variance),

@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 
 internal const val NO_FLAGS: Flags = 0
+internal val ALWAYS_HAS_ANNOTATIONS: Flags = flagsOf(Flag.Common.HAS_ANNOTATIONS)
 
 internal fun CirFunction.functionFlags(isExpect: Boolean): Flags =
     flagsOfNotNull(
