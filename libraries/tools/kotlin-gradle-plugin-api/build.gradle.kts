@@ -26,9 +26,7 @@ tasks {
     withType<KotlinCompile> {
         kotlinOptions.languageVersion = "1.3"
         kotlinOptions.apiVersion = "1.3"
-        kotlinOptions.freeCompilerArgs += listOf(
-            "-Xskip-prerelease-check", "-Xsuppress-version-warnings"
-        )
+        kotlinOptions.freeCompilerArgs += listOf("-Xskip-prerelease-check")
     }
 
     named<Jar>("jar") {

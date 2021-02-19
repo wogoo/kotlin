@@ -128,9 +128,8 @@ java {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.freeCompilerArgs += listOf(
-        "-Xopt-in=kotlin.RequiresOptIn", "-Xskip-runtime-version-check", "-Xsuppress-version-warnings"
-    )
+    kotlinOptions.freeCompilerArgs +=
+        listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xskip-runtime-version-check")
 }
 
 tasks["build"].dependsOn(":prepare-deps:build")

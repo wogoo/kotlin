@@ -42,7 +42,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
     kotlinOptions {
         // This module is being run from within Gradle, older versions of which only have kotlin-stdlib 1.3 in the runtime classpath.
         apiVersion = "1.3"
-        freeCompilerArgs += "-Xsuppress-version-warnings"
     }
 }
 
