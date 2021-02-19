@@ -23,26 +23,14 @@ object CirTypeAliasFactory {
         expandedType = CirTypeFactory.create(source.expandedType, useAbbreviation = false) as CirClassType
     )
 
-    fun create(name: CirName, source: KmTypeAlias, typeResolver: CirTypeResolver): CirTypeAlias {
-        val localTypeResolver = typeResolver.create(source.typeParameters)
-
-        return create(
-            annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
-            name = name,
-            typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, typeResolver) },
-            visibility = decodeVisibility(source.flags),
-            underlyingType = CirTypeFactory.create(
-                source = source.underlyingType,
-                typeResolver = localTypeResolver,
-                useAbbreviation = true
-            ) as CirClassOrTypeAliasType,
-            expandedType = CirTypeFactory.create(
-                source = source.expandedType,
-                typeResolver = localTypeResolver,
-                useAbbreviation = false
-            ) as CirClassType
-        )
-    }
+    fun create(name: CirName, source: KmTypeAlias, typeResolver: CirTypeResolver): CirTypeAlias = create(
+        annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
+        name = name,
+        typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, typeResolver) },
+        visibility = decodeVisibility(source.flags),
+        underlyingType = CirTypeFactory.create(source.underlyingType, typeResolver, useAbbreviation = true) as CirClassOrTypeAliasType,
+        expandedType = CirTypeFactory.create(source.expandedType, typeResolver, useAbbreviation = false) as CirClassType
+    )
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun create(

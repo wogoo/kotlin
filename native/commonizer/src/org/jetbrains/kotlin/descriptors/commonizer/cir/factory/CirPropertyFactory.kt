@@ -60,8 +60,6 @@ object CirPropertyFactory {
             )
         } else null
 
-        val localTypeResolver = typeResolver.create(source.typeParameters)
-
         return create(
             annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
             name = name,
@@ -70,15 +68,15 @@ object CirPropertyFactory {
             modality = decodeModality(source.flags),
             containingClass = containingClass,
             isExternal = Flag.Property.IS_EXTERNAL(source.flags),
-            extensionReceiver = source.receiverParameterType?.let { CirExtensionReceiverFactory.create(it, localTypeResolver) },
-            returnType = CirTypeFactory.create(source.returnType, localTypeResolver),
+            extensionReceiver = source.receiverParameterType?.let { CirExtensionReceiverFactory.create(it, typeResolver) },
+            returnType = CirTypeFactory.create(source.returnType, typeResolver),
             kind = decodeCallableKind(source.flags),
             isVar = Flag.Property.IS_VAR(source.flags),
             isLateInit = Flag.Property.IS_LATEINIT(source.flags),
             isConst = Flag.Property.IS_CONST(source.flags),
             isDelegate = Flag.Property.IS_DELEGATED(source.flags),
-            getter = CirPropertyGetterFactory.create(source, localTypeResolver),
-            setter = CirPropertySetterFactory.create(source, localTypeResolver),
+            getter = CirPropertyGetterFactory.create(source, typeResolver),
+            setter = CirPropertySetterFactory.create(source, typeResolver),
             backingFieldAnnotations = emptyList(), // TODO unclear where to read backing/delegate field annotations from, see KT-44625
             delegateFieldAnnotations = emptyList(), // TODO unclear where to read backing/delegate field annotations from, see KT-44625
             compileTimeInitializer = compileTimeInitializer

@@ -298,7 +298,8 @@ abstract class CirTypeResolver {
         override val parent: CirTypeResolver? get() = null
         override val typeParameterMapping: Map<TypeParameterId, TypeParameterIndex> get() = emptyMap()
         override val typeParameterIndexOffset get() = 0
-        override fun resolveTypeParameter(id: TypeParameterId) = error("Unresolved type parameter: id=$id")
+        override fun resolveTypeParameter(id: TypeParameterId) =
+            error("Unresolved type parameter: id=$id")
     }
 
     private class Nested(

@@ -37,26 +37,21 @@ object CirClassFactory {
         setSupertypes(source.filteredSupertypes.compactMap { CirTypeFactory.create(it) })
     }
 
-    fun create(name: CirName, source: KmClass, typeResolver: CirTypeResolver): CirClass {
-        val localTypeResolver = typeResolver.create(source.typeParameters)
-
-        val clazz = create(
-            annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
-            name = name,
-            typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, typeResolver) },
-            visibility = decodeVisibility(source.flags),
-            modality = decodeModality(source.flags),
-            kind = decodeClassKind(source.flags),
-            companion = source.companionObject?.let(CirName::create),
-            isCompanion = Flag.Class.IS_COMPANION_OBJECT(source.flags),
-            isData = Flag.Class.IS_DATA(source.flags),
-            isInline = Flag.Class.IS_INLINE(source.flags),
-            isInner = Flag.Class.IS_INNER(source.flags),
-            isExternal = Flag.Class.IS_EXTERNAL(source.flags)
-        )
-        clazz.setSupertypes(source.filteredSupertypes.compactMap { CirTypeFactory.create(it, localTypeResolver) })
-
-        return clazz
+    fun create(name: CirName, source: KmClass, typeResolver: CirTypeResolver): CirClass = create(
+        annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
+        name = name,
+        typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, typeResolver) },
+        visibility = decodeVisibility(source.flags),
+        modality = decodeModality(source.flags),
+        kind = decodeClassKind(source.flags),
+        companion = source.companionObject?.let(CirName::create),
+        isCompanion = Flag.Class.IS_COMPANION_OBJECT(source.flags),
+        isData = Flag.Class.IS_DATA(source.flags),
+        isInline = Flag.Class.IS_INLINE(source.flags),
+        isInner = Flag.Class.IS_INNER(source.flags),
+        isExternal = Flag.Class.IS_EXTERNAL(source.flags)
+    ).apply {
+        setSupertypes(source.filteredSupertypes.compactMap { CirTypeFactory.create(it, typeResolver) })
     }
 
     fun createDefaultEnumEntry(

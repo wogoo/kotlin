@@ -38,7 +38,15 @@ class CirTreeBuilder(
     private class CirTreeBuildingContext(
         val targetIndex: Int,
         val typeResolver: CirTypeResolver
-    )
+    ) {
+        fun create(typeParameters: List<KmTypeParameter>): CirTreeBuildingContext {
+            val newTypeResolver = typeResolver.create(typeParameters)
+            return if (newTypeResolver !== typeResolver)
+                CirTreeBuildingContext(targetIndex, newTypeResolver)
+            else
+                this
+        }
+    }
 
     private val leafTargetsSize = parameters.targetProviders.size
 
@@ -83,24 +91,25 @@ class CirTreeBuilder(
     ) {
         rootNode.targetDeclarations[targetIndex] = CirRootFactory.create(targetProvider.target)
 
-        if (commonModuleInfos.isNotEmpty()) {
-            val context = CirTreeBuildingContext(
-                targetIndex = targetIndex,
-                // all classifiers "visible" for the target:
-                typeResolver = CirTypeResolver.create(
-                    providedClassifiers = CirProvidedClassifiers.of(
-                        classifiers.commonDependencies,
-                        CirProvidedClassifiers.by(targetProvider.dependencyModulesProvider),
-                        CirProvidedClassifiers.by(targetProvider.modulesProvider)
-                    )
+        if (commonModuleInfos.isEmpty())
+            return
+
+        val context = CirTreeBuildingContext(
+            targetIndex = targetIndex,
+            // all classifiers "visible" for the target:
+            typeResolver = CirTypeResolver.create(
+                providedClassifiers = CirProvidedClassifiers.of(
+                    classifiers.commonDependencies,
+                    CirProvidedClassifiers.by(targetProvider.dependencyModulesProvider),
+                    CirProvidedClassifiers.by(targetProvider.modulesProvider)
                 )
             )
+        )
 
-            commonModuleInfos.forEach { moduleInfo ->
-                val metadata = targetProvider.modulesProvider.loadModuleMetadata(moduleInfo.name)
-                val module = KlibModuleMetadata.read(SerializedMetadataLibraryProvider(metadata))
-                processModule(context, rootNode, moduleInfo, module)
-            }
+        commonModuleInfos.forEach { moduleInfo ->
+            val metadata = targetProvider.modulesProvider.loadModuleMetadata(moduleInfo.name)
+            val module = KlibModuleMetadata.read(SerializedMetadataLibraryProvider(metadata))
+            processModule(context, rootNode, moduleInfo, module)
         }
     }
 
@@ -144,17 +153,23 @@ class CirTreeBuilder(
 
             fragment.pkg?.let { pkg ->
                 pkg.properties.forEach { property ->
-                    processProperty(context, packageNode, property, TypeParameterResolver.create(property))
+                    val propertyContext = context.create(property.typeParameters)
+                    processProperty(propertyContext, packageNode, property, TypeParameterResolver.create(property))
                 }
                 pkg.functions.forEach { function ->
-                    processFunction(context, packageNode, function, TypeParameterResolver.create(function))
+                    val functionContext = context.create(function.typeParameters)
+                    processFunction(functionContext, packageNode, function, TypeParameterResolver.create(function))
                 }
-                pkg.typeAliases.forEach { typeAlias -> processTypeAlias(context, packageNode, typeAlias) }
+                pkg.typeAliases.forEach { typeAlias ->
+                    val typeAliasContext = context.create(typeAlias.typeParameters)
+                    processTypeAlias(typeAliasContext, packageNode, typeAlias)
+                }
             }
         }
 
         classesToProcess.forEachClassInScope(parentClassId = null) { classEntry ->
-            processClass(context, packageNode, classEntry, classesToProcess, TypeParameterResolver.create(classEntry))
+            val classContext = context.create((classEntry as? ClassEntry.RegularClassEntry)?.clazz?.typeParameters.orEmpty())
+            processClass(classContext, packageNode, classEntry, classesToProcess, TypeParameterResolver.create(classEntry))
         }
     }
 
@@ -254,14 +269,17 @@ class CirTreeBuilder(
         }
 
         clazz?.properties?.forEach { property ->
-            processProperty(context, classNode, property, typeParameterResolver.create(property))
+            val propertyContext = context.create(property.typeParameters)
+            processProperty(propertyContext, classNode, property, typeParameterResolver.create(property))
         }
         clazz?.functions?.forEach { function ->
-            processFunction(context, classNode, function, typeParameterResolver.create(function))
+            val functionContext = context.create(function.typeParameters)
+            processFunction(functionContext, classNode, function, typeParameterResolver.create(function))
         }
 
         classesToProcess.forEachClassInScope(parentClassId = classId) { nestedClassEntry ->
-            processClass(context, classNode, nestedClassEntry, classesToProcess, typeParameterResolver.create(nestedClassEntry))
+            val nestedClassContext = context.create((nestedClassEntry as? ClassEntry.RegularClassEntry)?.clazz?.typeParameters.orEmpty())
+            processClass(nestedClassContext, classNode, nestedClassEntry, classesToProcess, typeParameterResolver.create(nestedClassEntry))
         }
     }
 
@@ -285,9 +303,9 @@ class CirTreeBuilder(
     private fun processTypeAlias(
         context: CirTreeBuildingContext,
         packageNode: CirPackageNode,
-        typeAliasMetadata: KmTypeAlias
+        typeAlias: KmTypeAlias
     ) {
-        val typeAliasName = CirName.create(typeAliasMetadata.name)
+        val typeAliasName = CirName.create(typeAlias.name)
         val typeAliasId = CirEntityId.create(packageNode.packageName, typeAliasName)
 
         val typeAliasNode: CirTypeAliasNode = packageNode.typeAliases.getOrPut(typeAliasName) {
@@ -295,7 +313,7 @@ class CirTreeBuilder(
         }
         typeAliasNode.targetDeclarations[context.targetIndex] = CirTypeAliasFactory.create(
             name = typeAliasName,
-            source = typeAliasMetadata,
+            source = typeAlias,
             typeResolver = context.typeResolver
         )
     }
