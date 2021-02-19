@@ -56,9 +56,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
     kotlinOptions {
         languageVersion = "1.3"
         apiVersion = "1.3"
-        freeCompilerArgs = freeCompilerArgs - "-progressive" + listOf(
-            "-Xskip-prerelease-check", "-Xsuppress-version-warnings"
-        )
+        freeCompilerArgs = freeCompilerArgs - "-progressive" + "-Xskip-prerelease-check"
     }
 }
 
