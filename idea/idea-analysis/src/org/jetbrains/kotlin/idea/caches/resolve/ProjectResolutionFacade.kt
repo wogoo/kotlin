@@ -116,17 +116,15 @@ internal class ProjectResolutionFacade(
 
         val modulesToCreateResolversFor = allModuleInfos.filter(moduleFilter)
 
-        val resolverForProject = IdeaResolverForProject(
+        return IdeaResolverForProject(
             resolverDebugName,
             globalContext.withProject(project),
             modulesToCreateResolversFor,
             syntheticFilesByModule,
             delegateResolverForProject,
             if (invalidateOnOOCB) KotlinModificationTrackerService.getInstance(project).outOfBlockModificationTracker else null,
-            constantSdkDependencyIfAny = if (settings is PlatformAnalysisSettingsImpl) settings.sdk?.let { SdkInfo(project, it) } else null
+            settings
         )
-
-        return resolverForProject
     }
 
     internal fun resolverForModuleInfo(moduleInfo: IdeaModuleInfo) = cachedResolverForProject.resolverForModule(moduleInfo)

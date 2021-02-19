@@ -37,9 +37,11 @@ import org.jetbrains.kotlin.analyzer.ResolverForProject.Companion.resolverForSdk
 import org.jetbrains.kotlin.analyzer.ResolverForProject.Companion.resolverForSpecialInfoName
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.caches.resolve.KotlinCacheService
+import org.jetbrains.kotlin.caches.resolve.KotlinCacheService.CapabilitiesProvider
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.context.GlobalContext
 import org.jetbrains.kotlin.context.GlobalContextImpl
+import org.jetbrains.kotlin.descriptors.ModuleCapability
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
 import org.jetbrains.kotlin.idea.caches.project.*
 import org.jetbrains.kotlin.idea.caches.project.IdeaModuleInfo
@@ -469,6 +471,13 @@ class KotlinCacheServiceImpl(val project: Project) : KotlinCacheService {
 
     private fun getResolutionFacadeByModuleInfo(moduleInfo: IdeaModuleInfo, platform: TargetPlatform): ResolutionFacade {
         val settings = moduleInfo.platformSettings(platform)
+        return getResolutionFacadeByModuleInfoAndSettings(moduleInfo, settings)
+    }
+
+    private fun getResolutionFacadeByModuleInfoAndSettings(
+        moduleInfo: IdeaModuleInfo,
+        settings: PlatformAnalysisSettings
+    ): ResolutionFacade {
         val projectFacade = when (moduleInfo) {
             is ScriptDependenciesInfo.ForProject,
             is ScriptDependenciesSourceInfo.ForProject -> facadeForScriptDependenciesForProject
@@ -480,6 +489,12 @@ class KotlinCacheServiceImpl(val project: Project) : KotlinCacheService {
 
     override fun getResolutionFacadeByModuleInfo(moduleInfo: ModuleInfo, platform: TargetPlatform): ResolutionFacade? =
         (moduleInfo as? IdeaModuleInfo)?.let { getResolutionFacadeByModuleInfo(it, platform) }
+
+    override fun getResolutionFacadeByModuleInfo(moduleInfo: ModuleInfo, provider: CapabilitiesProvider): ResolutionFacade? {
+        val ideaModuleInfo = moduleInfo as? IdeaModuleInfo ?: return null
+        val analysisSettings = provider.getCapability(IdeaResolverForProject.PLATFORM_ANALYSIS_SETTINGS) ?: return null
+        return getResolutionFacadeByModuleInfoAndSettings(ideaModuleInfo, analysisSettings)
+    }
 
     private fun Collection<KtFile>.filterNotInProjectSource(moduleInfo: IdeaModuleInfo): Set<KtFile> {
         return mapNotNull {

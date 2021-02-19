@@ -20,6 +20,7 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.analyzer.ModuleInfo
+import org.jetbrains.kotlin.descriptors.ModuleCapability
 import org.jetbrains.kotlin.idea.resolve.ResolutionFacade
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.platform.TargetPlatform
@@ -36,4 +37,10 @@ interface KotlinCacheService {
 
     fun getSuppressionCache(): KotlinSuppressCache
     fun getResolutionFacadeByModuleInfo(moduleInfo: ModuleInfo, platform: TargetPlatform): ResolutionFacade?
+
+    fun getResolutionFacadeByModuleInfo(moduleInfo: ModuleInfo, provider: CapabilitiesProvider): ResolutionFacade?
+
+    interface CapabilitiesProvider {
+        fun <T> getCapability(capability: ModuleCapability<T>): T?
+    }
 }

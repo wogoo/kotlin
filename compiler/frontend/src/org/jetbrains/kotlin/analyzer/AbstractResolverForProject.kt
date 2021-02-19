@@ -196,13 +196,15 @@ abstract class AbstractResolverForProject<M : ModuleInfo>(
         return moduleData
     }
 
+    protected open fun getAdditionalCapabilities(): Map<ModuleCapability<*>, Any?> = emptyMap()
+
     private fun createModuleDescriptor(module: M): ModuleData {
         val moduleDescriptor = ModuleDescriptorImpl(
             module.name,
             projectContext.storageManager,
             builtInsForModule(module),
             module.platform,
-            module.capabilities + listOf(RESOLUTION_ANCHOR_PROVIDER_CAPABILITY to resolutionAnchorProvider),
+            module.capabilities + listOf(RESOLUTION_ANCHOR_PROVIDER_CAPABILITY to resolutionAnchorProvider) + getAdditionalCapabilities(),
             module.stableName,
         )
         moduleInfoByDescriptor[moduleDescriptor] = module
