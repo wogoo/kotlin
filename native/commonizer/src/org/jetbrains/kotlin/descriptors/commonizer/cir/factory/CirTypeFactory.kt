@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.descriptors.commonizer.cir.factory
 
+import gnu.trove.TIntObjectHashMap
 import kotlinx.metadata.*
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
@@ -61,7 +62,7 @@ object CirTypeFactory {
 //                // TODO: implement
 //                StandardTypes.NON_EXISTING_TYPE
                 createTypeParameterType(
-                    index = typeResolver.resolveTypeParameter(classifier.id),
+                    index = typeResolver.resolveTypeParameterIndex(classifier.id),
                     isMarkedNullable = Flag.Type.IS_NULLABLE(source.flags)
                 )
             }
@@ -276,9 +277,7 @@ typealias TypeParameterId = Int
 typealias TypeParameterIndex = Int
 
 abstract class CirTypeResolver {
-    protected abstract val parent: CirTypeResolver?
     abstract val providedClassifiers: CirProvidedClassifiers
-    protected abstract val typeParameterMapping: Map<TypeParameterId, TypeParameterIndex>
     protected abstract val typeParameterIndexOffset: Int
 
     inline fun <reified T : CirProvided.Classifier> resolveClassifier(classifierId: CirEntityId): T {
@@ -292,32 +291,43 @@ abstract class CirTypeResolver {
         return classifier
     }
 
-    abstract fun resolveTypeParameter(id: TypeParameterId): TypeParameterIndex
+    abstract fun resolveTypeParameterIndex(id: TypeParameterId): TypeParameterIndex
+    abstract fun resolveTypeParameterName(id: TypeParameterId): CirName
 
     private class TopLevel(override val providedClassifiers: CirProvidedClassifiers) : CirTypeResolver() {
-        override val parent: CirTypeResolver? get() = null
-        override val typeParameterMapping: Map<TypeParameterId, TypeParameterIndex> get() = emptyMap()
         override val typeParameterIndexOffset get() = 0
-        override fun resolveTypeParameter(id: TypeParameterId) =
-            error("Unresolved type parameter: id=$id")
+
+        override fun resolveTypeParameterIndex(id: TypeParameterId) = error("Unresolved type parameter: id=$id")
+        override fun resolveTypeParameterName(id: TypeParameterId) = error("Unresolved type parameter: id=$id")
     }
 
     private class Nested(
-        override val parent: CirTypeResolver,
-        override val typeParameterMapping: Map<TypeParameterId, TypeParameterIndex>
+        private val parent: CirTypeResolver,
+        private val typeParameterMapping: TIntObjectHashMap<TypeParameterInfo>
     ) : CirTypeResolver() {
         override val providedClassifiers get() = parent.providedClassifiers
-        override val typeParameterIndexOffset = typeParameterMapping.size + parent.typeParameterIndexOffset
-        override fun resolveTypeParameter(id: TypeParameterId) = typeParameterMapping[id] ?: parent.resolveTypeParameter(id)
+        override val typeParameterIndexOffset = typeParameterMapping.size() + parent.typeParameterIndexOffset
+
+        override fun resolveTypeParameterIndex(id: TypeParameterId) =
+            typeParameterMapping[id]?.index ?: parent.resolveTypeParameterIndex(id)
+
+        override fun resolveTypeParameterName(id: TypeParameterId) =
+            typeParameterMapping[id]?.name ?: parent.resolveTypeParameterName(id)
     }
+
+    private class TypeParameterInfo(val index: TypeParameterIndex, val name: CirName)
 
     fun create(typeParameters: List<KmTypeParameter>): CirTypeResolver =
         if (typeParameters.isEmpty())
             this
         else {
-            val mapping = mutableMapOf<TypeParameterId, TypeParameterIndex>()
-            typeParameters.forEachIndexed { index, typeParameter ->
-                mapping[typeParameter.id] = index + typeParameterIndexOffset
+            val mapping = TIntObjectHashMap<TypeParameterInfo>(typeParameters.size * 2)
+            typeParameters.forEachIndexed { localIndex, typeParameter ->
+                val typeParameterInfo = TypeParameterInfo(
+                    index = localIndex + typeParameterIndexOffset,
+                    name = CirName.create(typeParameter.name)
+                )
+                mapping.put(typeParameter.id, typeParameterInfo)
             }
 
             Nested(this, mapping)
