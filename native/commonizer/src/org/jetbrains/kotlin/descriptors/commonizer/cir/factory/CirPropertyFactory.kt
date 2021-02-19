@@ -58,7 +58,7 @@ object CirPropertyFactory {
                 constantValue = source.compileTimeValue,
                 owner = source,
             )
-        } else null
+        } else CirConstantValue.NullValue
 
         return create(
             annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
