@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.idea.fir.low.level.api.file.structure
 
-import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirPsiDiagnostic
 import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
@@ -47,7 +46,13 @@ internal class FileStructure(
             when {
                 structureElement == null -> createStructureElement(declaration)
                 structureElement is ReanalyzableStructureElement<KtDeclaration> && !structureElement.isUpToDate() -> {
-                    structureElement.reanalyze(declaration as KtDeclaration, moduleFileCache, firLazyDeclarationResolver, firIdeProvider)
+                    structureElement.reanalyze(
+                        declaration as KtDeclaration,
+                        moduleFileCache,
+                        firLazyDeclarationResolver,
+                        firIdeProvider,
+                        collector
+                    )
                 }
                 else -> structureElement
             }
