@@ -44,6 +44,7 @@ import org.jetbrains.kotlin.storage.getValue
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.checker.KotlinTypeRefiner
 import org.jetbrains.kotlin.types.refinement.TypeRefinement
+import org.jetbrains.kotlin.types.typeUtil.canBeUpdated
 import org.jetbrains.kotlin.utils.addToStdlib.flatMapToNullable
 import java.util.*
 
@@ -529,7 +530,9 @@ open class LazyClassMemberScope(
     }
 
     protected fun setDeferredReturnType(descriptor: ClassConstructorDescriptorImpl) {
-        descriptor.returnType = c.wrappedTypeFactory.createDeferredType(trace, { thisDescriptor.defaultType })
+        if (descriptor.returnType.canBeUpdated()) {
+            descriptor.returnType = c.wrappedTypeFactory.createDeferredType(trace) { thisDescriptor.defaultType }
+        }
     }
 
     override fun recordLookup(name: Name, location: LookupLocation) {

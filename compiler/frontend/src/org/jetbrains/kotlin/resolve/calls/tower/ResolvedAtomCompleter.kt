@@ -46,9 +46,8 @@ import org.jetbrains.kotlin.types.expressions.DoubleColonExpressionResolver
 import org.jetbrains.kotlin.types.expressions.ExpressionTypingServices
 import org.jetbrains.kotlin.types.expressions.typeInfoFactory.createTypeInfo
 import org.jetbrains.kotlin.types.typeUtil.asTypeProjection
-import org.jetbrains.kotlin.types.typeUtil.contains
 import org.jetbrains.kotlin.types.typeUtil.isUnit
-import org.jetbrains.kotlin.types.typeUtil.shouldBeSubstituted
+import org.jetbrains.kotlin.types.typeUtil.canBeUpdated
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 class ResolvedAtomCompleter(
@@ -224,7 +223,7 @@ class ResolvedAtomCompleter(
         val receiverType = lambda.receiver
 
         val approximatedValueParameterTypes = lambda.parameters.map { parameterType ->
-            if (parameterType.shouldBeSubstituted()) {
+            if (parameterType.canBeUpdated()) {
                 typeApproximator.approximateDeclarationType(
                     resultSubstitutor.safeSubstitute(parameterType),
                     local = true,
@@ -294,16 +293,18 @@ class ResolvedAtomCompleter(
         val functionDescriptor = trace.bindingContext.get(BindingContext.FUNCTION, ktFunction) as? FunctionDescriptorImpl
             ?: throw AssertionError("No function descriptor for resolved lambda argument")
 
-        functionDescriptor.setReturnType(returnType)
+        if (functionDescriptor.returnType.canBeUpdated()) {
+            functionDescriptor.setReturnType(returnType)
+        }
 
         val extensionReceiverParameter = functionDescriptor.extensionReceiverParameter
 
-        if (receiverType != null && extensionReceiverParameter is ReceiverParameterDescriptorImpl && extensionReceiverParameter.type.shouldBeSubstituted()) {
+        if (receiverType != null && extensionReceiverParameter is ReceiverParameterDescriptorImpl && extensionReceiverParameter.type.canBeUpdated()) {
             extensionReceiverParameter.setOutType(receiverType)
         }
 
         for ((i, valueParameter) in functionDescriptor.valueParameters.withIndex()) {
-            if (valueParameter !is ValueParameterDescriptorImpl || !valueParameter.type.shouldBeSubstituted()) continue
+            if (valueParameter !is ValueParameterDescriptorImpl || !valueParameter.type.canBeUpdated()) continue
             valueParameter.setOutType(valueParameters[i])
         }
 

@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.descriptors.annotations.AnnotationsKt;
 import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.resolve.scopes.receivers.ExtensionReceiver;
 import org.jetbrains.kotlin.types.*;
+import org.jetbrains.kotlin.types.typeUtil.TypeUtilsKt;
 import org.jetbrains.kotlin.utils.SmartList;
 
 import java.util.*;
@@ -146,10 +147,7 @@ public abstract class FunctionDescriptorImpl extends DeclarationDescriptorNonRoo
     }
 
     public void setReturnType(@NotNull KotlinType unsubstitutedReturnType) {
-        if (this.unsubstitutedReturnType != null) {
-            // TODO: uncomment and fix tests
-            //throw new IllegalStateException("returnType already set");
-        }
+        assert TypeUtilsKt.canBeUpdated(this.unsubstitutedReturnType);
         this.unsubstitutedReturnType = unsubstitutedReturnType;
     }
 

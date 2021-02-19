@@ -12065,6 +12065,11 @@ public class IrJsCodegenBoxES6TestGenerated extends AbstractIrJsCodegenBoxES6Tes
             runTest("compiler/testData/codegen/box/inference/coerctionToUnitForLastExpressionWithStarProjection.kt");
         }
 
+        @TestMetadata("dontUpdateFunctionTypeTwice.kt")
+        public void testDontUpdateFunctionTypeTwice() throws Exception {
+            runTest("compiler/testData/codegen/box/inference/dontUpdateFunctionTypeTwice.kt");
+        }
+
         @TestMetadata("earlyReturnInsideCrossinlineLambda.kt")
         public void testEarlyReturnInsideCrossinlineLambda() throws Exception {
             runTest("compiler/testData/codegen/box/inference/earlyReturnInsideCrossinlineLambda.kt");
