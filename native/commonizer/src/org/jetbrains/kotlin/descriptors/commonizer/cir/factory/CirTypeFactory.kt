@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirClassTypeImpl
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirTypeAliasTypeImpl
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvided
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.TypeParameterResolver
 import org.jetbrains.kotlin.descriptors.commonizer.utils.*
 import org.jetbrains.kotlin.types.*
 
@@ -59,8 +60,6 @@ object CirTypeFactory {
                 StandardTypes.NON_EXISTING_TYPE
             }
             is KmClassifier.TypeParameter -> {
-//                // TODO: implement
-//                StandardTypes.NON_EXISTING_TYPE
                 createTypeParameterType(
                     index = typeResolver.resolveTypeParameterIndex(classifier.id),
                     isMarkedNullable = Flag.Type.IS_NULLABLE(source.flags)
@@ -276,7 +275,7 @@ object CirTypeFactory {
 typealias TypeParameterId = Int
 typealias TypeParameterIndex = Int
 
-abstract class CirTypeResolver {
+abstract class CirTypeResolver : TypeParameterResolver {
     abstract val providedClassifiers: CirProvidedClassifiers
     protected abstract val typeParameterIndexOffset: Int
 
@@ -292,13 +291,13 @@ abstract class CirTypeResolver {
     }
 
     abstract fun resolveTypeParameterIndex(id: TypeParameterId): TypeParameterIndex
-    abstract fun resolveTypeParameterName(id: TypeParameterId): CirName
+    abstract override fun resolveTypeParameter(id: TypeParameterId): KmTypeParameter
 
     private class TopLevel(override val providedClassifiers: CirProvidedClassifiers) : CirTypeResolver() {
         override val typeParameterIndexOffset get() = 0
 
         override fun resolveTypeParameterIndex(id: TypeParameterId) = error("Unresolved type parameter: id=$id")
-        override fun resolveTypeParameterName(id: TypeParameterId) = error("Unresolved type parameter: id=$id")
+        override fun resolveTypeParameter(id: TypeParameterId) = error("Unresolved type parameter: id=$id")
     }
 
     private class Nested(
@@ -311,11 +310,11 @@ abstract class CirTypeResolver {
         override fun resolveTypeParameterIndex(id: TypeParameterId) =
             typeParameterMapping[id]?.index ?: parent.resolveTypeParameterIndex(id)
 
-        override fun resolveTypeParameterName(id: TypeParameterId) =
-            typeParameterMapping[id]?.name ?: parent.resolveTypeParameterName(id)
+        override fun resolveTypeParameter(id: TypeParameterId) =
+            typeParameterMapping[id]?.typeParameter ?: parent.resolveTypeParameter(id)
     }
 
-    private class TypeParameterInfo(val index: TypeParameterIndex, val name: CirName)
+    private class TypeParameterInfo(val index: TypeParameterIndex, val typeParameter: KmTypeParameter)
 
     fun create(typeParameters: List<KmTypeParameter>): CirTypeResolver =
         if (typeParameters.isEmpty())
@@ -325,7 +324,7 @@ abstract class CirTypeResolver {
             typeParameters.forEachIndexed { localIndex, typeParameter ->
                 val typeParameterInfo = TypeParameterInfo(
                     index = localIndex + typeParameterIndexOffset,
-                    name = CirName.create(typeParameter.name)
+                    typeParameter = typeParameter
                 )
                 mapping.put(typeParameter.id, typeParameterInfo)
             }

@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.descriptors.commonizer.mergedtree
 
 import com.intellij.util.containers.FactoryMap
-import gnu.trove.TIntObjectHashMap
 import kotlinx.metadata.*
 import kotlinx.metadata.klib.KlibModuleMetadata
 import kotlinx.metadata.klib.fqName
@@ -39,6 +38,11 @@ class CirTreeBuilder(
         val targetIndex: Int,
         val typeResolver: CirTypeResolver
     ) {
+        fun create(classEntry: ClassEntry): CirTreeBuildingContext = when (classEntry) {
+            is ClassEntry.RegularClassEntry -> create(classEntry.clazz.typeParameters)
+            is ClassEntry.EnumEntry -> this
+        }
+
         fun create(typeParameters: List<KmTypeParameter>): CirTreeBuildingContext {
             val newTypeResolver = typeResolver.create(typeParameters)
             return if (newTypeResolver !== typeResolver)
@@ -154,11 +158,11 @@ class CirTreeBuilder(
             fragment.pkg?.let { pkg ->
                 pkg.properties.forEach { property ->
                     val propertyContext = context.create(property.typeParameters)
-                    processProperty(propertyContext, packageNode, property, TypeParameterResolver.create(property))
+                    processProperty(propertyContext, packageNode, property)
                 }
                 pkg.functions.forEach { function ->
                     val functionContext = context.create(function.typeParameters)
-                    processFunction(functionContext, packageNode, function, TypeParameterResolver.create(function))
+                    processFunction(functionContext, packageNode, function)
                 }
                 pkg.typeAliases.forEach { typeAlias ->
                     val typeAliasContext = context.create(typeAlias.typeParameters)
@@ -168,23 +172,22 @@ class CirTreeBuilder(
         }
 
         classesToProcess.forEachClassInScope(parentClassId = null) { classEntry ->
-            val classContext = context.create((classEntry as? ClassEntry.RegularClassEntry)?.clazz?.typeParameters.orEmpty())
-            processClass(classContext, packageNode, classEntry, classesToProcess, TypeParameterResolver.create(classEntry))
+            val classContext = context.create(classEntry)
+            processClass(classContext, packageNode, classEntry, classesToProcess)
         }
     }
 
     private fun processProperty(
         context: CirTreeBuildingContext,
         ownerNode: CirNodeWithMembers<*, *>,
-        property: KmProperty,
-        typeParameterResolver: TypeParameterResolver
+        property: KmProperty
     ) {
         if (property.isFakeOverride())
             return
 
         val maybeClassOwnerNode: CirClassNode? = ownerNode as? CirClassNode
 
-        val approximationKey = PropertyApproximationKey(property, typeParameterResolver)
+        val approximationKey = PropertyApproximationKey(property, context.typeResolver)
         val propertyNode: CirPropertyNode = ownerNode.properties.getOrPut(approximationKey) {
             buildPropertyNode(storageManager, leafTargetsSize, classifiers, maybeClassOwnerNode?.commonDeclaration)
         }
@@ -199,8 +202,7 @@ class CirTreeBuilder(
     private fun processFunction(
         context: CirTreeBuildingContext,
         ownerNode: CirNodeWithMembers<*, *>,
-        function: KmFunction,
-        typeParameterResolver: TypeParameterResolver
+        function: KmFunction
     ) {
         if (function.isFakeOverride()
             || function.isKniBridgeFunction()
@@ -211,7 +213,7 @@ class CirTreeBuilder(
 
         val maybeClassOwnerNode: CirClassNode? = ownerNode as? CirClassNode
 
-        val approximationKey = FunctionApproximationKey(function, typeParameterResolver)
+        val approximationKey = FunctionApproximationKey(function, context.typeResolver)
         val functionNode: CirFunctionNode = ownerNode.functions.getOrPut(approximationKey) {
             buildFunctionNode(storageManager, leafTargetsSize, classifiers, maybeClassOwnerNode?.commonDeclaration)
         }
@@ -227,8 +229,7 @@ class CirTreeBuilder(
         context: CirTreeBuildingContext,
         ownerNode: CirNodeWithMembers<*, *>,
         classEntry: ClassEntry,
-        classesToProcess: ClassesToProcess,
-        typeParameterResolver: TypeParameterResolver
+        classesToProcess: ClassesToProcess
     ) {
         val classId = classEntry.classId
         val className = classId.relativeNameSegments.last()
@@ -263,33 +264,30 @@ class CirTreeBuilder(
         }
 
         if (!isEnumEntry) {
-            clazz?.constructors?.forEach { constructor ->
-                processClassConstructor(context, classNode, constructor, typeParameterResolver)
-            }
+            clazz?.constructors?.forEach { constructor -> processClassConstructor(context, classNode, constructor) }
         }
 
         clazz?.properties?.forEach { property ->
             val propertyContext = context.create(property.typeParameters)
-            processProperty(propertyContext, classNode, property, typeParameterResolver.create(property))
+            processProperty(propertyContext, classNode, property)
         }
         clazz?.functions?.forEach { function ->
             val functionContext = context.create(function.typeParameters)
-            processFunction(functionContext, classNode, function, typeParameterResolver.create(function))
+            processFunction(functionContext, classNode, function)
         }
 
         classesToProcess.forEachClassInScope(parentClassId = classId) { nestedClassEntry ->
-            val nestedClassContext = context.create((nestedClassEntry as? ClassEntry.RegularClassEntry)?.clazz?.typeParameters.orEmpty())
-            processClass(nestedClassContext, classNode, nestedClassEntry, classesToProcess, typeParameterResolver.create(nestedClassEntry))
+            val nestedClassContext = context.create(nestedClassEntry)
+            processClass(nestedClassContext, classNode, nestedClassEntry, classesToProcess)
         }
     }
 
     private fun processClassConstructor(
         context: CirTreeBuildingContext,
         classNode: CirClassNode,
-        constructor: KmConstructor,
-        typeParameterResolver: TypeParameterResolver
+        constructor: KmConstructor
     ) {
-        val approximationKey = ConstructorApproximationKey(constructor, typeParameterResolver)
+        val approximationKey = ConstructorApproximationKey(constructor, context.typeResolver)
         val constructorNode: CirClassConstructorNode = classNode.constructors.getOrPut(approximationKey) {
             buildClassConstructorNode(storageManager, leafTargetsSize, classifiers, classNode.commonDeclaration)
         }
@@ -331,54 +329,6 @@ class CirTreeBuilder(
         }
     }
 }
-
-private class TypeParameterResolverImpl private constructor(
-    private val parent: TypeParameterResolver?,
-    private val typeParameters: TIntObjectHashMap<KmTypeParameter>
-) : TypeParameterResolver {
-    override fun resolveTypeParameter(id: Int): KmTypeParameter? =
-        typeParameters.get(id) ?: parent?.resolveTypeParameter(id)
-
-    companion object {
-        @Suppress("NOTHING_TO_INLINE")
-        inline fun create(parent: TypeParameterResolver?, typeParameters: List<KmTypeParameter>): TypeParameterResolver =
-            if (typeParameters.isEmpty()) {
-                if (parent == null || parent === TypeParameterResolver.EMPTY)
-                    TypeParameterResolver.EMPTY
-                else
-                    parent
-            } else
-                TypeParameterResolverImpl(parent, typeParameters.groupById())
-
-        @Suppress("NOTHING_TO_INLINE")
-        private inline fun List<KmTypeParameter>.groupById(): TIntObjectHashMap<KmTypeParameter> =
-            TIntObjectHashMap<KmTypeParameter>(size * 2).also { result ->
-                forEach { typeParameter -> result.put(typeParameter.id, typeParameter) }
-            }
-    }
-}
-
-private fun TypeParameterResolver.Companion.create(topLevelClassEntry: ClassEntry): TypeParameterResolver = when (topLevelClassEntry) {
-    is ClassEntry.RegularClassEntry -> TypeParameterResolverImpl.create(null, topLevelClassEntry.clazz.typeParameters)
-    is ClassEntry.EnumEntry -> EMPTY
-}
-
-private fun TypeParameterResolver.create(nestedClassEntry: ClassEntry): TypeParameterResolver = when (nestedClassEntry) {
-    is ClassEntry.RegularClassEntry -> TypeParameterResolverImpl.create(this, nestedClassEntry.clazz.typeParameters)
-    is ClassEntry.EnumEntry -> this
-}
-
-private fun TypeParameterResolver.Companion.create(topLevelFunction: KmFunction): TypeParameterResolver =
-    TypeParameterResolverImpl.create(null, topLevelFunction.typeParameters)
-
-private fun TypeParameterResolver.create(nestedFunction: KmFunction): TypeParameterResolver =
-    TypeParameterResolverImpl.create(this, nestedFunction.typeParameters)
-
-private fun TypeParameterResolver.Companion.create(topLevelProperty: KmProperty): TypeParameterResolver =
-    TypeParameterResolverImpl.create(null, topLevelProperty.typeParameters)
-
-private fun TypeParameterResolver.create(nestedProperty: KmProperty): TypeParameterResolver =
-    TypeParameterResolverImpl.create(this, nestedProperty.typeParameters)
 
 private class ClassesToProcess {
     sealed class ClassEntry {
