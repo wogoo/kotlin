@@ -113,6 +113,8 @@ dependencies {
 
     implementation("org.gradle:test-retry-gradle-plugin:1.2.0")
     implementation("com.gradle.enterprise:test-distribution-gradle-plugin:1.2.1")
+
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${project.bootstrapKotlinVersion}")
 }
 
 samWithReceiver {
