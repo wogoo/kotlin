@@ -43,13 +43,15 @@ object CirTypeFactory {
     fun create(source: KmType, providedClassifiers: CirProvidedClassifiers, useAbbreviation: Boolean = true): CirType {
         return when (val classifier = source.classifier) {
             is KmClassifier.Class -> {
-                createClassType(
-                    classId = CirEntityId.create(classifier.name),
-                    outerType = null, // TODO
-                    visibility = decodeVisibility(source.flags),
-                    arguments = createArguments(source.arguments, useAbbreviation, providedClassifiers),
-                    isMarkedNullable = Flag.Type.IS_NULLABLE(source.flags)
-                )
+                // TODO: implement
+                StandardTypes.NON_EXISTING_TYPE
+//                createClassType(
+//                    classId = CirEntityId.create(classifier.name),
+//                    outerType = null, // TODO
+//                    visibility = decodeVisibility(source.flags),
+//                    arguments = createArguments(source.arguments, useAbbreviation, providedClassifiers),
+//                    isMarkedNullable = Flag.Type.IS_NULLABLE(source.flags)
+//                )
             }
             is KmClassifier.TypeAlias -> {
                 // TODO: implement
