@@ -264,7 +264,12 @@ class CirTreeBuilder(
         }
 
         if (!isEnumEntry) {
-            clazz?.constructors?.forEach { constructor -> processClassConstructor(context, classNode, constructor) }
+            clazz?.constructors?.forEach { constructor ->
+                // TODO: nowhere to read constructor type parameters from
+                //val constructorContext = context.create(constructor.typeParameters)
+
+                processClassConstructor(context, classNode, constructor)
+            }
         }
 
         clazz?.properties?.forEach { property ->
