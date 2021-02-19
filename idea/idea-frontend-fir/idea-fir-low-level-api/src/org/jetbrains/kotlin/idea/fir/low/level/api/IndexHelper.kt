@@ -80,7 +80,7 @@ public class IndexHelper(val project: Project, private val scope: GlobalSearchSc
         val index = KotlinFullClassNameIndex.getInstance()
         return index.getAllKeys(project).asSequence()
             .onEach { ProgressManager.checkCanceled() }
-            .filter { fqName -> nameFilter(Name.identifier(fqName.substringAfterLast('.'))) }
+            .filter { fqName -> nameFilter(getShortName(fqName)) }
             .flatMap { fqName -> index[fqName, project, scope] }
             .filter(psiFilter)
             .toList()
@@ -95,5 +95,7 @@ public class IndexHelper(val project: Project, private val scope: GlobalSearchSc
 
         private fun ClassId.asStringForIndexes(): String =
             asSingleFqName().asStringForIndexes()
+
+        private fun getShortName(fqName: String) = Name.identifier(fqName.substringAfterLast('.'))
     }
 }
