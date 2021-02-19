@@ -10,7 +10,6 @@ import org.jetbrains.kotlin.descriptors.TypeAliasDescriptor
 import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirTypeAliasImpl
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
 
@@ -24,22 +23,26 @@ object CirTypeAliasFactory {
         expandedType = CirTypeFactory.create(source.expandedType, useAbbreviation = false) as CirClassType
     )
 
-    fun create(name: CirName, source: KmTypeAlias, providedClassifiers: CirProvidedClassifiers): CirTypeAlias = create(
-        annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
-        name = name,
-        typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, providedClassifiers) },
-        visibility = decodeVisibility(source.flags),
-        underlyingType = CirTypeFactory.create(
-            source = source.underlyingType,
-            providedClassifiers = providedClassifiers,
-            useAbbreviation = true
-        ) as CirClassOrTypeAliasType,
-        expandedType = CirTypeFactory.create(
-            source = source.expandedType,
-            providedClassifiers = providedClassifiers,
-            useAbbreviation = false
-        ) as CirClassType
-    )
+    fun create(name: CirName, source: KmTypeAlias, typeResolver: CirTypeResolver): CirTypeAlias {
+        val localTypeResolver = typeResolver.create(source.typeParameters)
+
+        return create(
+            annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
+            name = name,
+            typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, typeResolver) },
+            visibility = decodeVisibility(source.flags),
+            underlyingType = CirTypeFactory.create(
+                source = source.underlyingType,
+                typeResolver = localTypeResolver,
+                useAbbreviation = true
+            ) as CirClassOrTypeAliasType,
+            expandedType = CirTypeFactory.create(
+                source = source.expandedType,
+                typeResolver = localTypeResolver,
+                useAbbreviation = false
+            ) as CirClassType
+        )
+    }
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun create(

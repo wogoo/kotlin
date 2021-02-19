@@ -15,20 +15,36 @@ interface CirProvidedClassifiers {
     fun hasClassifier(classifierId: CirEntityId): Boolean
     fun classifier(classifierId: CirEntityId): CirProvided.Classifier?
 
-    companion object {
-        val EMPTY: CirProvidedClassifiers = object : CirProvidedClassifiers {
-            override fun hasClassifier(classifierId: CirEntityId) = false
-            override fun classifier(classifierId: CirEntityId): CirProvided.Classifier? = null
+    object EMPTY : CirProvidedClassifiers {
+        override fun hasClassifier(classifierId: CirEntityId) = false
+        override fun classifier(classifierId: CirEntityId): CirProvided.Classifier? = null
+    }
+
+    private class CompositeClassifiers(val delegates: List<CirProvidedClassifiers>) : CirProvidedClassifiers {
+        override fun hasClassifier(classifierId: CirEntityId) = delegates.any { it.hasClassifier(classifierId) }
+        override fun classifier(classifierId: CirEntityId): CirProvided.Classifier? {
+            for (delegate in delegates) {
+                delegate.classifier(classifierId)?.let { return it }
+            }
+            return null
         }
+    }
 
-        fun of(vararg delegates: CirProvidedClassifiers): CirProvidedClassifiers = object : CirProvidedClassifiers {
-            override fun hasClassifier(classifierId: CirEntityId) = delegates.any { it.hasClassifier(classifierId) }
-
-            override fun classifier(classifierId: CirEntityId): CirProvided.Classifier? {
-                for (delegate in delegates) {
-                    delegate.classifier(classifierId)?.let { return it }
+    companion object {
+        fun of(vararg delegates: CirProvidedClassifiers): CirProvidedClassifiers {
+            val unwrappedDelegates: List<CirProvidedClassifiers> = delegates.fold(ArrayList()) { acc, delegate ->
+                when (delegate) {
+                    EMPTY -> Unit
+                    is CompositeClassifiers -> acc.addAll(delegate.delegates)
+                    else -> acc.add(delegate)
                 }
-                return null
+                acc
+            }
+
+            return when (unwrappedDelegates.size) {
+                0 -> EMPTY
+                1 -> unwrappedDelegates.first()
+                else -> CompositeClassifiers(unwrappedDelegates)
             }
         }
 

@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.descriptors.commonizer.cir.CirType
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirTypeParameter
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirTypeFactory.decodeVariance
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirTypeParameterImpl
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
 import org.jetbrains.kotlin.descriptors.commonizer.utils.filteredUpperBounds
 import org.jetbrains.kotlin.types.Variance
@@ -29,12 +28,12 @@ object CirTypeParameterFactory {
         upperBounds = source.filteredUpperBounds.compactMap(CirTypeFactory::create)
     )
 
-    fun create(source: KmTypeParameter, providedClassifiers: CirProvidedClassifiers): CirTypeParameter = create(
-        annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
+    fun create(source: KmTypeParameter, typeResolver: CirTypeResolver): CirTypeParameter = create(
+        annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
         name = CirName.create(source.name),
         isReified = Flag.TypeParameter.IS_REIFIED(source.flags),
         variance = decodeVariance(source.variance),
-        upperBounds = source.filteredUpperBounds.compactMap { CirTypeFactory.create(it, providedClassifiers) }
+        upperBounds = source.filteredUpperBounds.compactMap { CirTypeFactory.create(it, typeResolver) }
     )
 
     @Suppress("NOTHING_TO_INLINE")

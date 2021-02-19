@@ -37,7 +37,7 @@ class CirTreeBuilder(
 
     private class CirTreeBuildingContext(
         val targetIndex: Int,
-        val providedClassifiers: CirProvidedClassifiers // necessary for type resolution
+        val typeResolver: CirTypeResolver
     )
 
     private val leafTargetsSize = parameters.targetProviders.size
@@ -87,10 +87,12 @@ class CirTreeBuilder(
             val context = CirTreeBuildingContext(
                 targetIndex = targetIndex,
                 // all classifiers "visible" for the target:
-                providedClassifiers = CirProvidedClassifiers.of(
-                    classifiers.commonDependencies,
-                    CirProvidedClassifiers.by(targetProvider.dependencyModulesProvider),
-                    CirProvidedClassifiers.by(targetProvider.modulesProvider)
+                typeResolver = CirTypeResolver.create(
+                    providedClassifiers = CirProvidedClassifiers.of(
+                        classifiers.commonDependencies,
+                        CirProvidedClassifiers.by(targetProvider.dependencyModulesProvider),
+                        CirProvidedClassifiers.by(targetProvider.modulesProvider)
+                    )
                 )
             )
 
@@ -175,7 +177,7 @@ class CirTreeBuilder(
             name = approximationKey.name,
             source = property,
             containingClass = maybeClassOwnerNode?.targetDeclarations?.get(context.targetIndex),
-            providedClassifiers = context.providedClassifiers
+            typeResolver = context.typeResolver
         )
     }
 
@@ -202,7 +204,7 @@ class CirTreeBuilder(
             name = approximationKey.name,
             source = function,
             containingClass = maybeClassOwnerNode?.targetDeclarations?.get(context.targetIndex),
-            providedClassifiers = context.providedClassifiers
+            typeResolver = context.typeResolver
         )
     }
 
@@ -229,7 +231,7 @@ class CirTreeBuilder(
                 clazz = classEntry.clazz
                 isEnumEntry = Flag.Class.IS_ENUM_ENTRY(clazz.flags)
 
-                CirClassFactory.create(className, clazz, context.providedClassifiers)
+                CirClassFactory.create(className, clazz, context.typeResolver)
             }
             is ClassEntry.EnumEntry -> {
                 clazz = null
@@ -240,7 +242,7 @@ class CirTreeBuilder(
                     annotations = classEntry.annotations,
                     enumClassId = classEntry.enumClassId,
                     enumClass = classEntry.enumClass,
-                    providedClassifiers = context.providedClassifiers
+                    typeResolver = context.typeResolver
                 )
             }
         }
@@ -276,7 +278,7 @@ class CirTreeBuilder(
         constructorNode.targetDeclarations[context.targetIndex] = CirClassConstructorFactory.create(
             source = constructor,
             containingClass = classNode.targetDeclarations[context.targetIndex]!!,
-            providedClassifiers = context.providedClassifiers
+            typeResolver = context.typeResolver
         )
     }
 
@@ -294,7 +296,7 @@ class CirTreeBuilder(
         typeAliasNode.targetDeclarations[context.targetIndex] = CirTypeAliasFactory.create(
             name = typeAliasName,
             source = typeAliasMetadata,
-            providedClassifiers = context.providedClassifiers
+            typeResolver = context.typeResolver
         )
     }
 

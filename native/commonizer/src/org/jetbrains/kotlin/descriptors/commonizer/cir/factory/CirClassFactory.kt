@@ -12,7 +12,6 @@ import kotlinx.metadata.klib.annotations
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirClassImpl
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeClassKind
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeModality
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
@@ -38,21 +37,26 @@ object CirClassFactory {
         setSupertypes(source.filteredSupertypes.compactMap { CirTypeFactory.create(it) })
     }
 
-    fun create(name: CirName, source: KmClass, providedClassifiers: CirProvidedClassifiers): CirClass = create(
-        annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
-        name = name,
-        typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, providedClassifiers) },
-        visibility = decodeVisibility(source.flags),
-        modality = decodeModality(source.flags),
-        kind = decodeClassKind(source.flags),
-        companion = source.companionObject?.let(CirName::create),
-        isCompanion = Flag.Class.IS_COMPANION_OBJECT(source.flags),
-        isData = Flag.Class.IS_DATA(source.flags),
-        isInline = Flag.Class.IS_INLINE(source.flags),
-        isInner = Flag.Class.IS_INNER(source.flags),
-        isExternal = Flag.Class.IS_EXTERNAL(source.flags)
-    ).apply {
-        setSupertypes(source.filteredSupertypes.compactMap { CirTypeFactory.create(it, providedClassifiers) })
+    fun create(name: CirName, source: KmClass, typeResolver: CirTypeResolver): CirClass {
+        val localTypeResolver = typeResolver.create(source.typeParameters)
+
+        val clazz = create(
+            annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
+            name = name,
+            typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, typeResolver) },
+            visibility = decodeVisibility(source.flags),
+            modality = decodeModality(source.flags),
+            kind = decodeClassKind(source.flags),
+            companion = source.companionObject?.let(CirName::create),
+            isCompanion = Flag.Class.IS_COMPANION_OBJECT(source.flags),
+            isData = Flag.Class.IS_DATA(source.flags),
+            isInline = Flag.Class.IS_INLINE(source.flags),
+            isInner = Flag.Class.IS_INNER(source.flags),
+            isExternal = Flag.Class.IS_EXTERNAL(source.flags)
+        )
+        clazz.setSupertypes(source.filteredSupertypes.compactMap { CirTypeFactory.create(it, localTypeResolver) })
+
+        return clazz
     }
 
     fun createDefaultEnumEntry(
@@ -60,9 +64,9 @@ object CirClassFactory {
         annotations: List<KmAnnotation>,
         enumClassId: CirEntityId,
         enumClass: KmClass,
-        providedClassifiers: CirProvidedClassifiers
+        typeResolver: CirTypeResolver
     ): CirClass = create(
-        annotations = annotations.compactMap { CirAnnotationFactory.create(it, providedClassifiers) },
+        annotations = annotations.compactMap { CirAnnotationFactory.create(it, typeResolver) },
         name = name,
         typeParameters = emptyList(),
         visibility = DescriptorVisibilities.PUBLIC,

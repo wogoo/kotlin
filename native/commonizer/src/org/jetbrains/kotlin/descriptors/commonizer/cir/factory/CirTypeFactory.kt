@@ -11,8 +11,8 @@ import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirClassTypeImpl
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirTypeAliasTypeImpl
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvided
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
-import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
 import org.jetbrains.kotlin.descriptors.commonizer.utils.*
 import org.jetbrains.kotlin.types.*
 
@@ -40,7 +40,7 @@ object CirTypeFactory {
     private val typeAliasTypeInterner = Interner<CirTypeAliasType>()
     private val typeParameterTypeInterner = Interner<CirTypeParameterType>()
 
-    fun create(source: KmType, providedClassifiers: CirProvidedClassifiers, useAbbreviation: Boolean = true): CirType {
+    fun create(source: KmType, typeResolver: CirTypeResolver, useAbbreviation: Boolean = true): CirType {
         return when (val classifier = source.classifier) {
             is KmClassifier.Class -> {
                 // TODO: implement
@@ -58,8 +58,10 @@ object CirTypeFactory {
                 StandardTypes.NON_EXISTING_TYPE
             }
             is KmClassifier.TypeParameter -> {
+//                // TODO: implement
+//                StandardTypes.NON_EXISTING_TYPE
                 createTypeParameterType(
-                    index = classifier.id,
+                    index = typeResolver.resolveTypeParameter(classifier.id),
                     isMarkedNullable = Flag.Type.IS_NULLABLE(source.flags)
                 )
             }
@@ -237,8 +239,8 @@ object CirTypeFactory {
     @Suppress("NOTHING_TO_INLINE")
     private inline fun createArguments(
         arguments: List<KmTypeProjection>,
-        useAbbreviation: Boolean,
-        providedClassifiers: CirProvidedClassifiers
+        typeResolver: CirTypeResolver,
+        useAbbreviation: Boolean
     ): List<CirTypeProjection> {
         return arguments.compactMap { argument ->
             val variance = argument.variance ?: return@compactMap CirStarTypeProjection
@@ -246,7 +248,7 @@ object CirTypeFactory {
 
             CirTypeProjectionImpl(
                 projectionKind = decodeVariance(variance),
-                type = create(argumentType, providedClassifiers, useAbbreviation)
+                type = create(argumentType, typeResolver, useAbbreviation)
             )
         }
     }
@@ -268,4 +270,59 @@ object CirTypeFactory {
 
             return index
         }
+}
+
+typealias TypeParameterId = Int
+typealias TypeParameterIndex = Int
+
+abstract class CirTypeResolver {
+    protected abstract val parent: CirTypeResolver?
+    abstract val providedClassifiers: CirProvidedClassifiers
+    protected abstract val typeParameterMapping: Map<TypeParameterId, TypeParameterIndex>
+    protected abstract val typeParameterIndexOffset: Int
+
+    inline fun <reified T : CirProvided.Classifier> resolveClassifier(classifierId: CirEntityId): T {
+        val classifier = providedClassifiers.classifier(classifierId)
+            ?: error("Unresolved classifier: $classifierId")
+
+        check(classifier is T) {
+            "Resolved classifier $classifierId of type ${classifier::class.java.simpleName}. Expected: ${T::class.java.simpleName}."
+        }
+
+        return classifier
+    }
+
+    abstract fun resolveTypeParameter(id: TypeParameterId): TypeParameterIndex
+
+    private class TopLevel(override val providedClassifiers: CirProvidedClassifiers) : CirTypeResolver() {
+        override val parent: CirTypeResolver? get() = null
+        override val typeParameterMapping: Map<TypeParameterId, TypeParameterIndex> get() = emptyMap()
+        override val typeParameterIndexOffset get() = 0
+        override fun resolveTypeParameter(id: TypeParameterId) = error("Unresolved type parameter: id=$id")
+    }
+
+    private class Nested(
+        override val parent: CirTypeResolver,
+        override val typeParameterMapping: Map<TypeParameterId, TypeParameterIndex>
+    ) : CirTypeResolver() {
+        override val providedClassifiers get() = parent.providedClassifiers
+        override val typeParameterIndexOffset = typeParameterMapping.size + parent.typeParameterIndexOffset
+        override fun resolveTypeParameter(id: TypeParameterId) = typeParameterMapping[id] ?: parent.resolveTypeParameter(id)
+    }
+
+    fun create(typeParameters: List<KmTypeParameter>): CirTypeResolver =
+        if (typeParameters.isEmpty())
+            this
+        else {
+            val mapping = mutableMapOf<TypeParameterId, TypeParameterIndex>()
+            typeParameters.forEachIndexed { index, typeParameter ->
+                mapping[typeParameter.id] = index + typeParameterIndexOffset
+            }
+
+            Nested(this, mapping)
+        }
+
+    companion object {
+        fun create(providedClassifiers: CirProvidedClassifiers): CirTypeResolver = TopLevel(providedClassifiers)
+    }
 }

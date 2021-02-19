@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.descriptors.commonizer.cir.CirAnnotation
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirExtensionReceiver
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirType
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirExtensionReceiverImpl
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
 
 object CirExtensionReceiverFactory {
@@ -20,9 +19,9 @@ object CirExtensionReceiverFactory {
         type = CirTypeFactory.create(source.type)
     )
 
-    fun create(receiverParameterType: KmType, providedClassifiers: CirProvidedClassifiers): CirExtensionReceiver = create(
+    fun create(receiverParameterType: KmType, typeResolver: CirTypeResolver): CirExtensionReceiver = create(
         annotations = emptyList(), // TODO nowhere to read receiver annotations from, see KT-42490
-        type = CirTypeFactory.create(receiverParameterType, providedClassifiers)
+        type = CirTypeFactory.create(receiverParameterType, typeResolver)
     )
 
     @Suppress("NOTHING_TO_INLINE")

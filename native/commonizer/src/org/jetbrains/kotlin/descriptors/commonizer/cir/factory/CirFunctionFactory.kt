@@ -11,7 +11,6 @@ import kotlinx.metadata.klib.annotations
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirFunctionImpl
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeCallableKind
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeModality
 import org.jetbrains.kotlin.descriptors.commonizer.metadata.decodeVisibility
@@ -33,23 +32,20 @@ object CirFunctionFactory {
         modifiers = CirFunctionModifiersFactory.create(source),
     )
 
-    fun create(
-        name: CirName,
-        source: KmFunction,
-        containingClass: CirContainingClass?,
-        providedClassifiers: CirProvidedClassifiers
-    ): CirFunction {
+    fun create(name: CirName, source: KmFunction, containingClass: CirContainingClass?, typeResolver: CirTypeResolver): CirFunction {
+        val localTypeResolver = typeResolver.create(source.typeParameters)
+
         return create(
-            annotations = CirAnnotationFactory.createAnnotations(source.flags, providedClassifiers, source::annotations),
+            annotations = CirAnnotationFactory.createAnnotations(source.flags, typeResolver, source::annotations),
             name = name,
-            typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, providedClassifiers) },
+            typeParameters = source.typeParameters.compactMap { CirTypeParameterFactory.create(it, typeResolver) },
             visibility = decodeVisibility(source.flags),
             modality = decodeModality(source.flags),
             containingClass = containingClass,
-            valueParameters = source.valueParameters.compactMap { CirValueParameterFactory.create(it, providedClassifiers) },
+            valueParameters = source.valueParameters.compactMap { CirValueParameterFactory.create(it, localTypeResolver) },
             hasStableParameterNames = !Flag.Function.HAS_NON_STABLE_PARAMETER_NAMES(source.flags),
-            extensionReceiver = source.receiverParameterType?.let { CirExtensionReceiverFactory.create(it, providedClassifiers) },
-            returnType = CirTypeFactory.create(source.returnType, providedClassifiers),
+            extensionReceiver = source.receiverParameterType?.let { CirExtensionReceiverFactory.create(it, localTypeResolver) },
+            returnType = CirTypeFactory.create(source.returnType, localTypeResolver),
             kind = decodeCallableKind(source.flags),
             modifiers = CirFunctionModifiersFactory.create(source),
         )

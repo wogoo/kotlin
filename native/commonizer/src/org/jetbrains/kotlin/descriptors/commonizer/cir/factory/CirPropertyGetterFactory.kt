@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.descriptors.PropertyGetterDescriptor
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirAnnotation
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirPropertyGetter
 import org.jetbrains.kotlin.descriptors.commonizer.cir.impl.CirPropertyGetterImpl
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirProvidedClassifiers
 import org.jetbrains.kotlin.descriptors.commonizer.utils.Interner
 import org.jetbrains.kotlin.descriptors.commonizer.utils.compactMap
 
@@ -39,14 +38,14 @@ object CirPropertyGetterFactory {
             )
     }
 
-    fun create(source: KmProperty, providedClassifiers: CirProvidedClassifiers): CirPropertyGetter? {
+    fun create(source: KmProperty, typeResolver: CirTypeResolver): CirPropertyGetter? {
         if (!Flag.Property.HAS_GETTER(source.flags))
             return null
 
         val getterFlags = source.getterFlags
 
         val isDefault = !Flag.PropertyAccessor.IS_NOT_DEFAULT(getterFlags)
-        val annotations = CirAnnotationFactory.createAnnotations(getterFlags, providedClassifiers, source::getterAnnotations)
+        val annotations = CirAnnotationFactory.createAnnotations(getterFlags, typeResolver, source::getterAnnotations)
 
         if (isDefault && annotations.isEmpty())
             return DEFAULT_NO_ANNOTATIONS
