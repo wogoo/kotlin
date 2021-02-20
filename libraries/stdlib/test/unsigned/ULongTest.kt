@@ -1,12 +1,12 @@
 /*
- * Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package test.unsigned
 
 import kotlin.math.*
-import kotlin.random.Random
+import kotlin.random.*
 import kotlin.test.*
 
 class ULongTest {
@@ -64,6 +64,20 @@ class ULongTest {
         }
 
         testToString("18446744073709551615", ULong.MAX_VALUE)
+    }
+
+    @Test
+    fun divRem() = repeat(1000) {
+        val number = Random.nextULong()
+        val divisor = Random.nextULong(until = ULong.MAX_VALUE) + 1u
+        val quot = number / divisor
+        val rem = number % divisor
+
+        assertEquals(number, quot * divisor + rem)
+        assertTrue(rem < divisor)
+        assertTrue(quot < number)
+        assertEquals(quot, number.floorDiv(divisor))
+        assertEquals(rem, number.mod(divisor))
     }
 
     @Test

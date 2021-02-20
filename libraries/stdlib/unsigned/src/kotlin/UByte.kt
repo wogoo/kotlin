@@ -133,6 +133,32 @@ public inline class UByte @PublishedApi internal constructor(@PublishedApi inter
     @kotlin.internal.InlineOnly
     public inline operator fun rem(other: ULong): ULong = this.toULong().rem(other)
 
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun mod(other: UByte): UInt = this.toUInt().mod(other.toUInt())
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun mod(other: UShort): UInt = this.toUInt().mod(other.toUInt())
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun mod(other: UInt): UInt = this.toUInt().mod(other)
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun mod(other: ULong): ULong = this.toULong().mod(other)
+
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun floorDiv(other: UByte): UInt = this.toUInt().floorDiv(other.toUInt())
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun floorDiv(other: UShort): UInt = this.toUInt().floorDiv(other.toUInt())
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun floorDiv(other: UInt): UInt = this.toUInt().floorDiv(other)
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun floorDiv(other: ULong): ULong = this.toULong().floorDiv(other)
+
     /** Increments this value. */
     @kotlin.internal.InlineOnly
     public inline operator fun inc(): UByte = UByte(data.inc())

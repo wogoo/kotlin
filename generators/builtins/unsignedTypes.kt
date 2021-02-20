@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -125,6 +125,8 @@ class UnsignedTypeGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIns
         for ((name, doc) in GeneratePrimitives.binaryOperators) {
             generateOperator(name, doc)
         }
+        generateFloorDivMod("floorDiv", "TODO")
+        generateFloorDivMod("mod", "TODO")
     }
 
     private fun generateOperator(name: String, doc: String) {
@@ -139,6 +141,26 @@ class UnsignedTypeGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIns
                     "plus", "minus", "times" -> out.println("$className(this.data.$name(other.data))")
                     "div" -> out.println("${type.capitalized.toLowerCase()}Divide(this, other)")
                     "rem" -> out.println("${type.capitalized.toLowerCase()}Remainder(this, other)")
+                    else -> error(name)
+                }
+            } else {
+                out.println("${convert("this", type, returnType)}.$name(${convert("other", otherType, returnType)})")
+            }
+        }
+        out.println()
+    }
+
+    private fun generateFloorDivMod(name: String, doc: String) {
+        for (otherType in UnsignedType.values()) {
+            val returnType = getOperatorReturnType(type, otherType)
+
+            out.println("    /** $doc */")
+            out.println("    @kotlin.internal.InlineOnly")
+            out.print("    public inline fun $name(other: ${otherType.capitalized}): ${returnType.capitalized} = ")
+            if (type == otherType && type == returnType) {
+                when (name) {
+                    "floorDiv" -> out.println("div(other)")
+                    "mod" -> out.println("rem(other)")
                     else -> error(name)
                 }
             } else {
