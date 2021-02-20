@@ -99,11 +99,11 @@ class Fir2IrLazyClass(
     override val isFun: Boolean
         get() = fir.isFun
 
-    override var superTypes: List<IrType> by lazyVar {
+    override var superTypes: List<IrType> by lazyVar(lock) {
         fir.superTypeRefs.map { it.toIrType(typeConverter) }
     }
 
-    override var thisReceiver: IrValueParameter? by lazyVar {
+    override var thisReceiver: IrValueParameter? by lazyVar(lock) {
         symbolTable.enterScope(this)
         val typeArguments = fir.typeParameters.map {
             IrSimpleTypeImpl(
@@ -120,7 +120,7 @@ class Fir2IrLazyClass(
         receiver
     }
 
-    override val declarations: MutableList<IrDeclaration> by lazyVar {
+    override val declarations: MutableList<IrDeclaration> by lazyVar(lock) {
         val result = mutableListOf<IrDeclaration>()
         val processedNames = mutableSetOf<Name>()
         // NB: it's necessary to take all callables from scope,

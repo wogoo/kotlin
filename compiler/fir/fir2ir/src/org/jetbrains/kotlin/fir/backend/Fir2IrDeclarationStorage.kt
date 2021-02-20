@@ -58,7 +58,7 @@ import java.util.concurrent.ConcurrentHashMap
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 class Fir2IrDeclarationStorage(
     private val components: Fir2IrComponents,
-    private val moduleDescriptor: FirModuleDescriptor
+    private val moduleDescriptor: FirModuleDescriptor,
 ) : Fir2IrComponents by components {
 
     private val firProvider = session.firProvider
@@ -411,7 +411,7 @@ class Fir2IrDeclarationStorage(
         irParent: IrDeclarationParent?,
         isLocal: Boolean = false,
     ): IrSimpleFunction {
-        synchronized(IrLock) {
+        synchronized(lock) {
             getCachedIrFunction(function)?.let { return it }
             return createIrFunction(function, irParent, isLocal = isLocal)
         }
@@ -685,7 +685,7 @@ class Fir2IrDeclarationStorage(
         irParent: IrDeclarationParent?,
         isLocal: Boolean = false,
     ): IrProperty {
-        synchronized(IrLock) {
+        synchronized(lock) {
             getCachedIrProperty(property)?.let { return it }
             return createIrProperty(property, irParent, isLocal = isLocal)
         }
@@ -695,7 +695,7 @@ class Fir2IrDeclarationStorage(
         field: FirField,
         irParent: IrDeclarationParent
     ): IrProperty {
-        synchronized(IrLock) {
+        synchronized(lock) {
             fieldToPropertyCache[field]?.let { return it }
             return createIrProperty(field.toStubProperty(), irParent).apply {
                 fieldToPropertyCache[field] = this
@@ -1013,7 +1013,7 @@ class Fir2IrDeclarationStorage(
     fun getIrFunctionSymbol(firFunctionSymbol: FirFunctionSymbol<*>): IrFunctionSymbol {
         return when (val fir = firFunctionSymbol.fir) {
             is FirAnonymousFunction -> {
-                synchronized(IrLock) {
+                synchronized(lock) {
                     getCachedIrFunction(fir)?.let { return it.symbol }
                     val irParent = findIrParent(fir)
                     val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
@@ -1099,7 +1099,7 @@ class Fir2IrDeclarationStorage(
         val fir = firSymbol.fir as F
         val irParent by lazy { findIrParent(fir) }
         val signature by lazy { signatureComposer.composeSignature(fir) }
-        synchronized(IrLock) {
+        synchronized(lock) {
             getCachedIrDeclaration(fir) {
                 // Parent calculation provokes declaration calculation for some members from IrBuiltIns
                 @Suppress("UNUSED_EXPRESSION") irParent
@@ -1154,7 +1154,7 @@ class Fir2IrDeclarationStorage(
                 if (fir.isLocal) {
                     return localStorage.getDelegatedProperty(fir)?.delegate?.symbol ?: getIrVariableSymbol(fir)
                 }
-                synchronized(IrLock) {
+                synchronized(lock) {
                     propertyCache[fir]?.let { return it.backingField!!.symbol }
                     val irParent = findIrParent(fir)
                     val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
@@ -1177,7 +1177,7 @@ class Fir2IrDeclarationStorage(
     fun getIrValueSymbol(firVariableSymbol: FirVariableSymbol<*>): IrSymbol {
         return when (val firDeclaration = firVariableSymbol.fir) {
             is FirEnumEntry -> {
-                synchronized(IrLock) {
+                synchronized(lock) {
                     classifierStorage.getCachedIrEnumEntry(firDeclaration)?.let { return it.symbol }
                     val containingFile = firProvider.getFirCallableContainerFile(firVariableSymbol)
                     val irParentClass = firDeclaration.containingClass()?.let { findIrClass(it) }

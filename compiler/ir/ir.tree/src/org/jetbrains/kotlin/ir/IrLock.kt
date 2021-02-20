@@ -8,4 +8,4 @@ package org.jetbrains.kotlin.ir
 /*
     Lock protecting accesses to global IR structures during by-file lowerings.
  */
-object IrLock
+class IrLock

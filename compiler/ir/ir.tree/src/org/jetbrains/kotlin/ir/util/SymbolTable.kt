@@ -63,13 +63,14 @@ interface ReferenceSymbolTable {
 class SymbolTable(
     val signaturer: IdSignatureComposer,
     val irFactory: IrFactory,
+    val lock: IrLock = IrLock(),
     val nameProvider: NameProvider = NameProvider.DEFAULT
 ) : ReferenceSymbolTable {
 
     @Suppress("LeakingThis")
     val lazyWrapper = IrLazySymbolTable(this)
 
-    private abstract class SymbolTableBase<D : DeclarationDescriptor, B : IrSymbolOwner, S : IrBindableSymbol<D, B>> {
+    private abstract class SymbolTableBase<D : DeclarationDescriptor, B : IrSymbolOwner, S : IrBindableSymbol<D, B>>(val lock: IrLock) {
         val unboundSymbols = linkedSetOf<S>()
 
         abstract fun get(d: D): S?
@@ -77,7 +78,7 @@ class SymbolTable(
         abstract fun get(sig: IdSignature): S?
 
         inline fun declare(d: D, createSymbol: () -> S, createOwner: (S) -> B): B {
-            synchronized(IrLock) {
+            synchronized(lock) {
                 @Suppress("UNCHECKED_CAST")
                 val d0 = d.original as D
                 assert(d0 === d) {
@@ -98,7 +99,7 @@ class SymbolTable(
 
         @OptIn(ObsoleteDescriptorBasedAPI::class)
         inline fun declare(sig: IdSignature, createSymbol: () -> S, createOwner: (S) -> B): B {
-            synchronized(IrLock) {
+            synchronized(lock) {
                 val existing = get(sig)
                 val symbol = if (existing == null) {
                     createSymbol()
@@ -114,7 +115,7 @@ class SymbolTable(
         }
 
         inline fun declareIfNotExists(d: D, createSymbol: () -> S, createOwner: (S) -> B): B {
-            synchronized(IrLock) {
+            synchronized(lock) {
                 @Suppress("UNCHECKED_CAST")
                 val d0 = d.original as D
                 assert(d0 === d) {
@@ -134,7 +135,7 @@ class SymbolTable(
         }
 
         inline fun declare(sig: IdSignature, d: D?, createSymbol: () -> S, createOwner: (S) -> B): B {
-            synchronized(IrLock) {
+            synchronized(lock) {
                 @Suppress("UNCHECKED_CAST")
                 val d0 = d?.original as D
                 assert(d0 === d) {
@@ -154,7 +155,7 @@ class SymbolTable(
         }
 
         inline fun referenced(d: D, orElse: () -> S): S {
-            synchronized(IrLock) {
+            synchronized(lock) {
                 @Suppress("UNCHECKED_CAST")
                 val d0 = d.original as D
                 assert(d0 === d) {
@@ -175,7 +176,7 @@ class SymbolTable(
 
         @OptIn(ObsoleteDescriptorBasedAPI::class)
         inline fun referenced(sig: IdSignature, orElse: () -> S): S {
-            synchronized(IrLock) {
+            synchronized(lock) {
                 return get(sig) ?: run {
                     val new = orElse()
                     assert(unboundSymbols.add(new)) {
@@ -189,7 +190,7 @@ class SymbolTable(
     }
 
     private open inner class FlatSymbolTable<D : DeclarationDescriptor, B : IrSymbolOwner, S : IrBindableSymbol<D, B>> :
-        SymbolTableBase<D, B, S>() {
+        SymbolTableBase<D, B, S>(lock) {
         val descriptorToSymbol = linkedMapOf<D, S>()
         val idSigToSymbol = linkedMapOf<IdSignature, S>()
 
@@ -226,7 +227,7 @@ class SymbolTable(
     }
 
     private inner class ScopedSymbolTable<D : DeclarationDescriptor, B : IrSymbolOwner, S : IrBindableSymbol<D, B>>
-        : SymbolTableBase<D, B, S>() {
+        : SymbolTableBase<D, B, S>(lock) {
         inner class Scope(val owner: IrSymbol, val parent: Scope?) {
             private val descriptorToSymbol = linkedMapOf<D, S>()
             private val idSigToSymbol = linkedMapOf<IdSignature, S>()
