@@ -135,19 +135,6 @@ public inline class ULong @PublishedApi internal constructor(@PublishedApi inter
 
     /** TODO */
     @kotlin.internal.InlineOnly
-    public inline fun mod(other: UByte): ULong = this.mod(other.toULong())
-    /** TODO */
-    @kotlin.internal.InlineOnly
-    public inline fun mod(other: UShort): ULong = this.mod(other.toULong())
-    /** TODO */
-    @kotlin.internal.InlineOnly
-    public inline fun mod(other: UInt): ULong = this.mod(other.toULong())
-    /** TODO */
-    @kotlin.internal.InlineOnly
-    public inline fun mod(other: ULong): ULong = rem(other)
-
-    /** TODO */
-    @kotlin.internal.InlineOnly
     public inline fun floorDiv(other: UByte): ULong = this.floorDiv(other.toULong())
     /** TODO */
     @kotlin.internal.InlineOnly
@@ -158,6 +145,19 @@ public inline class ULong @PublishedApi internal constructor(@PublishedApi inter
     /** TODO */
     @kotlin.internal.InlineOnly
     public inline fun floorDiv(other: ULong): ULong = div(other)
+
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun mod(other: UByte): ULong = this.mod(other.toULong())
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun mod(other: UShort): ULong = this.mod(other.toULong())
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun mod(other: UInt): ULong = this.mod(other.toULong())
+    /** TODO */
+    @kotlin.internal.InlineOnly
+    public inline fun mod(other: ULong): ULong = rem(other)
 
     /** Increments this value. */
     @kotlin.internal.InlineOnly

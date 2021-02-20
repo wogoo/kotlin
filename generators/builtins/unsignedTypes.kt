@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.generators.builtins.PrimitiveType
 import org.jetbrains.kotlin.generators.builtins.UnsignedType
 import org.jetbrains.kotlin.generators.builtins.convert
 import org.jetbrains.kotlin.generators.builtins.generateBuiltIns.BuiltInsSourceGenerator
-import org.jetbrains.kotlin.generators.builtins.ranges.GeneratePrimitives
+import org.jetbrains.kotlin.generators.builtins.numbers.GeneratePrimitives
 import java.io.File
 import java.io.PrintWriter
 

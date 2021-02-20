@@ -1,9 +1,9 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.jetbrains.kotlin.generators.builtins.ranges
+package org.jetbrains.kotlin.generators.builtins.numbers
 
 import org.jetbrains.kotlin.generators.builtins.PrimitiveType
 import org.jetbrains.kotlin.generators.builtins.generateBuiltIns.BuiltInsSourceGenerator
@@ -396,13 +396,79 @@ class GeneratePrimitives(out: PrintWriter) : BuiltInsSourceGenerator(out) {
             out.println("    public override fun to$otherName(): $otherName")
         }
     }
-
-    private fun maxByDomainCapacity(type1: PrimitiveType, type2: PrimitiveType): PrimitiveType
-            = if (type1.ordinal > type2.ordinal) type1 else type2
-
-    private fun getOperatorReturnType(kind1: PrimitiveType, kind2: PrimitiveType): PrimitiveType {
-        require(kind1 != PrimitiveType.BOOLEAN) { "kind1 must not be BOOLEAN" }
-        require(kind2 != PrimitiveType.BOOLEAN) { "kind2 must not be BOOLEAN" }
-        return maxByDomainCapacity(maxByDomainCapacity(kind1, kind2), PrimitiveType.INT)
-    }
 }
+
+class GenerateFloorDivMod(out: PrintWriter) : BuiltInsSourceGenerator(out) {
+
+    override fun getMultifileClassName() = "NumbersKt"
+    override fun generateBody() {
+        val kinds = PrimitiveType.integral intersect PrimitiveType.onlyNumeric
+        for (thisKind in kinds) {
+            for (otherKind in kinds) {
+                generateFloorDiv(thisKind, otherKind)
+                generateMod(thisKind, otherKind)
+            }
+        }
+    }
+
+    private fun convert(expr: String, kind: PrimitiveType, targetKind: PrimitiveType): String =
+        if (kind == targetKind) expr else "$expr.to${targetKind.capitalized}()"
+
+
+    private fun generateFloorDiv(thisKind: PrimitiveType, otherKind: PrimitiveType) {
+        val returnType = getOperatorReturnType(thisKind, otherKind)
+        val returnTypeName = returnType.capitalized
+        out.println("""@SinceKotlin("1.5")""")
+        out.println("@kotlin.internal.InlineOnly")
+        val declaration = "public inline fun ${thisKind.capitalized}.floorDiv(other: ${otherKind.capitalized}): $returnTypeName"
+        if (thisKind == otherKind && thisKind >= PrimitiveType.INT) {
+            out.println(
+                """
+                    $declaration {
+                        var q = this / other
+                        if (this xor other < 0 && q * other != this) q-- 
+                        return q
+                    }
+                """.trimIndent()
+            )
+        } else {
+            out.println("$declaration = ")
+            out.println("    ${convert("this", thisKind, returnType)}.floorDiv(${convert("other", otherKind, returnType)})")
+        }
+        out.println()
+    }
+
+    private fun generateMod(thisKind: PrimitiveType, otherKind: PrimitiveType) {
+        val returnType = getOperatorReturnType(thisKind, otherKind)
+        val returnTypeName = returnType.capitalized
+        out.println("""@SinceKotlin("1.5")""")
+        out.println("@kotlin.internal.InlineOnly")
+        val declaration = "public inline fun ${thisKind.capitalized}.mod(other: ${otherKind.capitalized}): $returnTypeName"
+        if (thisKind == otherKind && thisKind >= PrimitiveType.INT) {
+            out.println(
+                """
+                    $declaration {
+                        val r = this % other
+                        return r + (other and (((r xor other) and (r or -r)) shr ${returnType.bitSize - 1}))
+                    }
+                """.trimIndent()
+            )
+        } else {
+            out.println("$declaration = ")
+            out.println("    ${convert("this", thisKind, returnType)}.mod(${convert("other", otherKind, returnType)})")
+        }
+        out.println()
+    }
+
+}
+
+
+private fun maxByDomainCapacity(type1: PrimitiveType, type2: PrimitiveType): PrimitiveType
+        = if (type1.ordinal > type2.ordinal) type1 else type2
+
+private fun getOperatorReturnType(kind1: PrimitiveType, kind2: PrimitiveType): PrimitiveType {
+    require(kind1 != PrimitiveType.BOOLEAN) { "kind1 must not be BOOLEAN" }
+    require(kind2 != PrimitiveType.BOOLEAN) { "kind2 must not be BOOLEAN" }
+    return maxByDomainCapacity(maxByDomainCapacity(kind1, kind2), PrimitiveType.INT)
+}
+
