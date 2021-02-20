@@ -1,6 +1,7 @@
 package org.jetbrains.kotlin.gradle
 
 import org.gradle.api.logging.configuration.WarningMode
+import org.jetbrains.kotlin.gradle.util.getFilesByNames
 import org.jetbrains.kotlin.gradle.util.modify
 import org.junit.Test
 import java.io.File
@@ -151,4 +152,72 @@ class SimpleKotlinGradleIT : BaseGradleIT() {
             assertSuccessful()
         }
     }
+
+    @Test
+    fun testObjectValueRecompilation() {
+        val project = Project("incrementalMultiproject")
+        project.setupWorkingDir()
+
+        project.build("build") {
+            assertSuccessful()
+        }
+        project.projectDir.resolve("lib/src/main/kotlin/bar/barObject.kt")
+            .replace("CONSTANT = 26", "CONSTANT = 27")
+
+        project.build(":lib:build") {
+            assertSuccessful()
+            val affectedSources = project.projectDir.getFilesByNames("barObject.kt", "fooUseConstant.kt")
+            val relativePaths = project.relativize(affectedSources)
+            assertCompiledKotlinSources(relativePaths)
+            assertContains("Object constant: 27")
+        }
+    }
+
+    @Test
+    fun testImportCompanionConstantRecompilation() {
+        val project = Project("incrementalMultiproject")
+        project.setupWorkingDir()
+
+        project.build("build") {
+            assertSuccessful()
+        }
+        project.projectDir.resolve("lib/src/main/kotlin/foo/FooDummy.kt")
+            .replace("FOO_DUMMY_CONSTANT = 36", "FOO_DUMMY_CONSTANT = 37")
+
+        project.build(":lib:build") {
+            assertSuccessful()
+            val affectedSources = project.projectDir.getFilesByNames("FooDummy.kt", "fooUseConstant.kt")
+            val relativePaths = project.relativize(affectedSources)
+//            assertCompiledKotlinSources(relativePaths)
+            assertContains(" Imported companion constant: 37")
+        }
+
+    }
+
+    @Test
+    fun testCompanionConstantRecompilation() {
+        val project = Project("incrementalMultiproject")
+        project.setupWorkingDir()
+
+        project.build("build") {
+            assertSuccessful()
+        }
+        project.projectDir.resolve("lib/src/main/kotlin/bar/BarDummy.kt")
+            .replace("BAR_DYMMY_CONSTANT = 16", "BAR_DYMMY_CONSTANT = 17")
+
+        project.build(":lib:build") {
+            assertSuccessful()
+            val affectedSources = project.projectDir.getFilesByNames("BarDummy.kt", "fooUseConstant.kt")
+            val relativePaths = project.relativize(affectedSources)
+//            assertCompiledKotlinSources(relativePaths)
+            assertContains("Called companion constant: 17")
+        }
+
+    }
+
+    private fun File.replace(oldValue: String, newValue: String) {
+        val text = readText()
+        writeText(text.replace(oldValue, newValue))
+    }
+
 }

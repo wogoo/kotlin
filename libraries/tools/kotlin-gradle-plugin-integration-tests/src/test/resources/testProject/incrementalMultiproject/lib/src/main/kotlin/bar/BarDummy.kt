@@ -1,3 +1,7 @@
 package bar
 
-class BarDummy
+class BarDummy {
+    companion object {
+        val BAR_DYMMY_CONSTANT = 16
+    }
+}
