@@ -124,7 +124,7 @@ class FakeOverrideGenerator(
         return result
     }
 
-    internal fun IrClass.calcBaseSymbolsForFakeOverrideFunction(
+    internal fun calcBaseSymbolsForFakeOverrideFunction(
         klass: FirClass<*>,
         fakeOverride: IrSimpleFunction,
         originalSymbol: FirNamedFunctionSymbol,
@@ -132,13 +132,16 @@ class FakeOverrideGenerator(
         val scope = klass.unsubstitutedScope(session, scopeSession, withForcedTypeCalculator = true)
         val classLookupTag = klass.symbol.toLookupTag()
         val baseFirSymbolsForFakeOverride =
-            if (originalSymbol.fir.origin.fromSupertypes && originalSymbol.dispatchReceiverClassOrNull() == classLookupTag) {
+            if (originalSymbol.shouldHaveComputedBaseSymbolsForClass(classLookupTag)) {
                 computeBaseSymbols(originalSymbol, FirTypeScope::getDirectOverriddenFunctions, scope, classLookupTag)
             } else {
                 listOf(originalSymbol)
             }
         baseFunctionSymbols[fakeOverride] = baseFirSymbolsForFakeOverride
     }
+
+    private fun FirCallableSymbol<*>.shouldHaveComputedBaseSymbolsForClass(classLookupTag: ConeClassLikeLookupTag): Boolean =
+        fir.origin.fromSupertypes && dispatchReceiverClassOrNull() == classLookupTag
 
     private inline fun <reified D : FirCallableMemberDeclaration<D>, reified S : FirCallableSymbol<D>, reified I : IrDeclaration> createFakeOverriddenIfNeeded(
         klass: FirClass<*>,
@@ -165,7 +168,7 @@ class FakeOverrideGenerator(
         val baseSymbol = originalSymbol.unwrapSubstitutionAndIntersectionOverrides() as S
 
         val (fakeOverrideFirDeclaration, baseFirSymbolsForFakeOverride) = when {
-            originalSymbol.fir.origin.fromSupertypes && originalSymbol.dispatchReceiverClassOrNull() == classLookupTag -> {
+            originalSymbol.shouldHaveComputedBaseSymbolsForClass(classLookupTag) -> {
                 // Substitution or intersection case
                 // We have already a FIR declaration for such fake override
                 originalDeclaration to computeBaseSymbols(originalSymbol, computeDirectOverridden, scope, classLookupTag)
