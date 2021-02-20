@@ -63,8 +63,8 @@ interface ReferenceSymbolTable {
 class SymbolTable(
     val signaturer: IdSignatureComposer,
     val irFactory: IrFactory,
-    val lock: IrLock = IrLock(),
-    val nameProvider: NameProvider = NameProvider.DEFAULT
+    val nameProvider: NameProvider = NameProvider.DEFAULT,
+    val lock: IrLock = IrLock()
 ) : ReferenceSymbolTable {
 
     @Suppress("LeakingThis")

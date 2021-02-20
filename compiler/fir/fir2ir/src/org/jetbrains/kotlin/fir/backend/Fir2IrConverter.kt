@@ -257,7 +257,7 @@ class Fir2IrConverter(
         ): Fir2IrResult {
             val moduleDescriptor = FirModuleDescriptor(session)
             val lock = IrLock()
-            val symbolTable = SymbolTable(signaturer, irFactory, lock)
+            val symbolTable = SymbolTable(signaturer, irFactory, lock=lock)
             val constantValueGenerator = ConstantValueGenerator(moduleDescriptor, symbolTable)
             val typeTranslator = TypeTranslator(
                 symbolTable,
