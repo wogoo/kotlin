@@ -77,8 +77,17 @@ class Fir2IrConverter(
     fun processFileAndClassMembers(file: FirFile) {
         val irFile = declarationStorage.getIrFile(file)
         for (declaration in file.declarations) {
-            val irDeclaration = processMemberDeclaration(declaration, null, irFile) ?: continue
-            irFile.declarations += irDeclaration
+            try {
+                val irDeclaration = processMemberDeclaration(declaration, null, irFile) ?: continue
+                irFile.declarations += irDeclaration
+            } catch (e: Throwable) {
+                val name = when (declaration) {
+                    is FirSimpleFunction -> declaration.name.asString()
+                    is FirProperty -> declaration.name.asString()
+                    else -> declaration.javaClass.toString()
+                }
+                throw IllegalStateException("Error while processing declaration $name from file ${file.name}", e)
+            }
         }
     }
 
