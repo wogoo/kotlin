@@ -53,7 +53,7 @@ import org.jetbrains.kotlin.types.ConstantValueKind
 import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.util.OperatorNameConventions
 
-internal fun <T : IrElement> FirElement.convertWithOffsets(
+internal inline fun <T : IrElement> FirElement.convertWithOffsets(
     f: (startOffset: Int, endOffset: Int) -> T
 ): T {
     val psi = psi
@@ -63,7 +63,7 @@ internal fun <T : IrElement> FirElement.convertWithOffsets(
     return f(startOffset, endOffset)
 }
 
-internal fun <T : IrElement> FirQualifiedAccess.convertWithOffsets(
+internal inline fun <T : IrElement> FirQualifiedAccess.convertWithOffsets(
     f: (startOffset: Int, endOffset: Int) -> T
 ): T {
     val psi = psi
