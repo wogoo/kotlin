@@ -8,6 +8,8 @@ package org.jetbrains.kotlin.fir.lazy
 import org.jetbrains.kotlin.fir.backend.*
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.initialSignatureAttr
+import org.jetbrains.kotlin.fir.isSubstitutionOverride
+import org.jetbrains.kotlin.fir.originalForSubstitutionOverride
 import org.jetbrains.kotlin.fir.symbols.Fir2IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.lazy.lazyVar
@@ -69,9 +71,14 @@ class Fir2IrLazySimpleFunction(
 
     override var overriddenSymbols: List<IrSimpleFunctionSymbol> by lazyVar {
         val parent = parent
-        if (isFakeOverride && parent is Fir2IrLazyClass) {
-            parent.declarations
-            fakeOverrideGenerator.getOverriddenSymbolsForFakeOverride(this)?.let { return@lazyVar it }
+        if (parent is Fir2IrLazyClass && fir.isSubstitutionOverride) {
+            with(fakeOverrideGenerator) {
+                val fakeOverride = this@Fir2IrLazySimpleFunction
+                parent.calcBaseSymbolsForFakeOverrideFunction(
+                    firParent, fakeOverride, fir.symbol.originalForSubstitutionOverride!!
+                )
+                getOverriddenSymbolsForFakeOverride(fakeOverride)?.let { return@lazyVar it }
+            }
         }
         fir.generateOverriddenFunctionSymbols(firParent, session, scopeSession, declarationStorage, fakeOverrideGenerator)
     }
