@@ -32,7 +32,6 @@ import org.jetbrains.kotlin.resolve.calls.inference.components.NewTypeSubstituto
 import org.jetbrains.kotlin.resolve.calls.inference.components.NewTypeSubstitutorByConstructorMap
 import org.jetbrains.kotlin.resolve.calls.model.*
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowInfo
-import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValueFactory
 import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind
 import org.jetbrains.kotlin.resolve.calls.tasks.TracingStrategyImpl
 import org.jetbrains.kotlin.resolve.calls.util.CallMaker
@@ -61,7 +60,6 @@ class ResolvedAtomCompleter(
     private val builtIns: KotlinBuiltIns,
     private val deprecationResolver: DeprecationResolver,
     private val moduleDescriptor: ModuleDescriptor,
-    private val dataFlowValueFactory: DataFlowValueFactory,
     private val typeApproximator: TypeApproximator,
     private val missingSupertypesResolver: MissingSupertypesResolver
 ) {

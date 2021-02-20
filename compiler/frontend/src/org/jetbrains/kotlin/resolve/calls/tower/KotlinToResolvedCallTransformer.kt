@@ -147,7 +147,7 @@ class KotlinToResolvedCallTransformer(
 
                 val ktPrimitiveCompleter = ResolvedAtomCompleter(
                     resultSubstitutor, context, this, expressionTypingServices, argumentTypeResolver,
-                    doubleColonExpressionResolver, builtIns, deprecationResolver, moduleDescriptor, dataFlowValueFactory,
+                    doubleColonExpressionResolver, builtIns, deprecationResolver, moduleDescriptor,
                     typeApproximator, missingSupertypesResolver,
                 )
 
