@@ -67,17 +67,39 @@ class UIntTest {
     }
 
     @Test
+    fun operations() {
+        assertEquals(2_147_483_648u, Int.MAX_VALUE.toUInt() + identity(1u))
+        assertEquals(11u, UInt.MAX_VALUE + identity(12u))
+        assertEquals(UInt.MAX_VALUE - 99u, 45u - identity(145u))
+
+        assertEquals(UInt.MAX_VALUE - 1u, Int.MAX_VALUE.toUInt() * identity(2u))
+        assertEquals(2_147_483_645u, Int.MAX_VALUE.toUInt() * identity(3u))
+
+        testMulDivRem(125u, 3u, 41u, 2u)
+        testMulDivRem(210u, 5u, 42u, 0u)
+        testMulDivRem(UInt.MAX_VALUE, 256u, 16777215u, 255u)
+        testMulDivRem(UInt.MAX_VALUE - 1u, UInt.MAX_VALUE, 0u, UInt.MAX_VALUE - 1u)
+        testMulDivRem(UInt.MAX_VALUE, UInt.MAX_VALUE - 1u, 1u, 1u)
+        testMulDivRem(UInt.MAX_VALUE, Int.MAX_VALUE.toUInt(), 2u, 1u)
+    }
+
+
+    private fun testMulDivRem(number: UInt, divisor: UInt, div: UInt, rem: UInt) {
+        assertEquals(div, number / divisor)
+        assertEquals(rem, number % divisor)
+        assertEquals(div, number.floorDiv(divisor))
+        assertEquals(rem, number.mod(divisor))
+
+        assertEquals(number, div * divisor + rem)
+        assertTrue(rem < divisor)
+        assertTrue(div < number)
+    }
+
+    @Test
     fun divRem() = repeat(1000) {
         val number = Random.nextUInt()
         val divisor = Random.nextUInt(until = UInt.MAX_VALUE) + 1u
-        val quot = number / divisor
-        val rem = number % divisor
-
-        assertEquals(number, quot * divisor + rem)
-        assertTrue(rem < divisor)
-        assertTrue(quot < number)
-        assertEquals(quot, number.floorDiv(divisor))
-        assertEquals(rem, number.mod(divisor))
+        testMulDivRem(number, divisor, number / divisor, number % divisor)
     }
 
     @Test

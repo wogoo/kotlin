@@ -67,17 +67,39 @@ class ULongTest {
     }
 
     @Test
+    fun operations() {
+        assertEquals(9223372036854775808u, Long.MAX_VALUE.toULong() + identity(1u))
+        assertEquals(11u, ULong.MAX_VALUE + identity(12u))
+        assertEquals(ULong.MAX_VALUE - 99u, 45u - identity(145u))
+
+        assertEquals(ULong.MAX_VALUE - 1u, Long.MAX_VALUE.toULong() * identity(2u))
+        assertEquals(9223372036854775805u, Long.MAX_VALUE.toULong() * identity(3u))
+
+        testMulDivRem(125u, 3u, 41u, 2u)
+        testMulDivRem(210u, 5u, 42u, 0u)
+        testMulDivRem(ULong.MAX_VALUE, 65536uL * 65536u, 4294967295u, 4294967295u)
+        testMulDivRem(ULong.MAX_VALUE - 1u, ULong.MAX_VALUE, 0u, ULong.MAX_VALUE - 1u)
+        testMulDivRem(ULong.MAX_VALUE, ULong.MAX_VALUE - 1u, 1u, 1u)
+        testMulDivRem(ULong.MAX_VALUE, Long.MAX_VALUE.toULong(), 2u, 1u)
+    }
+
+
+    private fun testMulDivRem(number: ULong, divisor: ULong, div: ULong, rem: ULong) {
+        assertEquals(div, number / divisor)
+        assertEquals(rem, number % divisor)
+        assertEquals(div, number.floorDiv(divisor))
+        assertEquals(rem, number.mod(divisor))
+
+        assertEquals(number, div * divisor + rem)
+        assertTrue(rem < divisor)
+        assertTrue(div < number)
+    }
+
+    @Test
     fun divRem() = repeat(1000) {
         val number = Random.nextULong()
         val divisor = Random.nextULong(until = ULong.MAX_VALUE) + 1u
-        val quot = number / divisor
-        val rem = number % divisor
-
-        assertEquals(number, quot * divisor + rem)
-        assertTrue(rem < divisor)
-        assertTrue(quot < number)
-        assertEquals(quot, number.floorDiv(divisor))
-        assertEquals(rem, number.mod(divisor))
+        testMulDivRem(number, divisor, number / divisor, number % divisor)
     }
 
     @Test
@@ -164,7 +186,7 @@ class ULongTest {
             assertTrue(diff <= actual.ulp, "$actual should be within one ulp (${actual.ulp}) from the expected $expected")
         }
 
-        fun testRounding(from: ULong, count: UInt) {
+        fun testRounding(from: ULong, count: ULong) {
             for (x in from..(from + count)) {
                 val double = x.toDouble()
                 val v = double.toULong()
