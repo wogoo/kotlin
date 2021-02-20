@@ -124,6 +124,22 @@ class FakeOverrideGenerator(
         return result
     }
 
+    internal fun IrClass.calcBaseSymbolsForFakeOverrideFunction(
+        klass: FirClass<*>,
+        fakeOverride: IrSimpleFunction,
+        originalSymbol: FirNamedFunctionSymbol,
+    ) {
+        val scope = klass.unsubstitutedScope(session, scopeSession, withForcedTypeCalculator = true)
+        val classLookupTag = klass.symbol.toLookupTag()
+        val baseFirSymbolsForFakeOverride =
+            if (originalSymbol.fir.origin.fromSupertypes && originalSymbol.dispatchReceiverClassOrNull() == classLookupTag) {
+                computeBaseSymbols(originalSymbol, FirTypeScope::getDirectOverriddenFunctions, scope, classLookupTag)
+            } else {
+                listOf(originalSymbol)
+            }
+        baseFunctionSymbols[fakeOverride] = baseFirSymbolsForFakeOverride
+    }
+
     private inline fun <reified D : FirCallableMemberDeclaration<D>, reified S : FirCallableSymbol<D>, reified I : IrDeclaration> createFakeOverriddenIfNeeded(
         klass: FirClass<*>,
         irClass: IrClass,
