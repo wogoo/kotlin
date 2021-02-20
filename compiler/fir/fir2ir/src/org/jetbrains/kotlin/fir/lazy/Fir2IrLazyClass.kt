@@ -169,11 +169,7 @@ class Fir2IrLazyClass(
                 else -> continue
             }
         }
-        with(fakeOverrideGenerator) {
-            val fakeOverrides = getFakeOverrides(fir, fir.declarations)
-            bindOverriddenSymbols(fakeOverrides)
-            result += fakeOverrides
-        }
+        result += fakeOverrides
         // TODO: remove this check to save time
         for (declaration in result) {
             if (declaration.parent != this) {
@@ -181,6 +177,16 @@ class Fir2IrLazyClass(
                     "Unmatched parent for lazy class ${fir.name} member ${declaration.render()} f/o ${declaration.isFakeOverride}"
                 )
             }
+        }
+        result
+    }
+
+    internal val fakeOverrides: MutableList<IrDeclaration> by lazyVar {
+        val result = mutableListOf<IrDeclaration>()
+        with(fakeOverrideGenerator) {
+            val fakeOverrides = getFakeOverrides(fir, fir.declarations)
+            bindOverriddenSymbols(fakeOverrides)
+            result += fakeOverrides
         }
         result
     }
