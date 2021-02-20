@@ -24,7 +24,7 @@ fun <T> Foo2<T>.setX(y: T): T {
 fun Float.bar() {}
 
 fun test1() {
-    val fooSetRef = <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction2<Foo<*>, kotlin.Nothing, kotlin.Number>")!>Foo<*>::<!TYPE_INFERENCE_INCORPORATION_ERROR, TYPE_MISMATCH("Nothing; Foo<*>")!>setX<!><!>
+    val fooSetRef = <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction2<Foo<*>, kotlin.Nothing, kotlin.Number>")!>Foo<*>::<!TYPE_MISMATCH("Nothing; Foo<*>")!>setX<!><!>
     val foo = Foo<Float>(1f)
 
     fooSetRef.invoke(foo, <!CONSTANT_EXPECTED_TYPE_MISMATCH!>1<!>)
@@ -42,7 +42,7 @@ fun test2() {
 }
 
 fun test3() {
-    val fooSetRef = <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction2<Foo2<*>, kotlin.Nothing, kotlin.Any?>")!>Foo2<*>::<!TYPE_INFERENCE_INCORPORATION_ERROR, TYPE_MISMATCH("Nothing; Foo2<*>")!>setX<!><!>
+    val fooSetRef = <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction2<Foo2<*>, kotlin.Nothing, kotlin.Any?>")!>Foo2<*>::<!TYPE_MISMATCH("Nothing; Foo2<*>")!>setX<!><!>
     val foo = Foo2<Int>(1)
 
     fooSetRef.invoke(foo, <!TYPE_MISMATCH!>""<!>)
