@@ -14227,6 +14227,12 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         }
 
         @Test
+        @TestMetadata("floorDiv.kt")
+        public void testFloorDiv() throws Exception {
+            runTest("compiler/testData/codegen/box/evaluate/floorDiv.kt");
+        }
+
+        @Test
         @TestMetadata("intrinsics.kt")
         public void testIntrinsics() throws Exception {
             runTest("compiler/testData/codegen/box/evaluate/intrinsics.kt");
@@ -14260,6 +14266,12 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
         @TestMetadata("minus.kt")
         public void testMinus() throws Exception {
             runTest("compiler/testData/codegen/box/evaluate/minus.kt");
+        }
+
+        @Test
+        @TestMetadata("mod.kt")
+        public void testMod() throws Exception {
+            runTest("compiler/testData/codegen/box/evaluate/mod.kt");
         }
 
         @Test
