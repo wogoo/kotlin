@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.fir.analysis.checkers.declaration
 
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.analysis.checkers.FirDeclarationInspector
+import org.jetbrains.kotlin.fir.analysis.checkers.FirDeclarationPresenter
 import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.diagnostics.DiagnosticReporter
 import org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors
@@ -18,6 +19,7 @@ import org.jetbrains.kotlin.fir.scopes.impl.FirPackageMemberScope
 import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
+import org.jetbrains.kotlin.fir.visitors.FirVisitorVoid
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.SmartSet
 
@@ -77,7 +79,7 @@ object FirConflictsChecker : FirBasicDeclarationChecker() {
             visibilityChecker: FirVisibilityChecker
         ) {
             val conflicting = conflictingSymbol.fir as? FirDeclaration ?: return
-            if (conflicting == declaration || presentation(conflicting) != declarationPresentation) return
+            if (conflicting == declaration || presenter.represent(conflicting) != declarationPresentation) return
             val conflictingFile = when (conflictingSymbol) {
                 is FirClassLikeSymbol<*> -> session.firProvider.getFirClassifierContainerFileIfAny(conflictingSymbol)
                 is FirCallableSymbol<*> -> session.firProvider.getFirCallableContainerFile(conflictingSymbol)
@@ -103,7 +105,8 @@ object FirConflictsChecker : FirBasicDeclarationChecker() {
             collect(declaration)
             val visibilityChecker = session.visibilityChecker
             var declarationName: Name? = null
-            val declarationPresentation = presentation(declaration) ?: return
+            val declarationPresentation = presenter.represent(declaration) ?: return
+
             when (declaration) {
                 is FirSimpleFunction -> {
                     declarationName = declaration.name
@@ -123,12 +126,32 @@ object FirConflictsChecker : FirBasicDeclarationChecker() {
                 }
                 is FirRegularClass -> {
                     declarationName = declaration.name
+
+                    class ClassConflictsCheckingVisitor(val className: Name) : FirVisitorVoid() {
+                        override fun visitElement(element: FirElement) {}
+
+                        override fun visitConstructor(constructor: FirConstructor) {
+                            packageMemberScope.processFunctionsByName(className) {
+                                collectExternalConflict(
+                                    constructor, presenter.represent(constructor, declaration), containingFile, it, session, visibilityChecker
+                                )
+                            }
+                        }
+
+                        override fun visitDeclarationStatus(declarationStatus: FirDeclarationStatus) {}
+                        override fun visitRegularClass(regularClass: FirRegularClass) {}
+                        override fun visitProperty(property: FirProperty) {}
+                        override fun visitSimpleFunction(simpleFunction: FirSimpleFunction) {}
+                    }
+
+
                     if (!declarationName.isSpecial) {
                         packageMemberScope.processClassifiersByNameWithSubstitution(declarationName) { symbol, _ ->
                             collectExternalConflict(
                                 declaration, declarationPresentation, containingFile, symbol, session, visibilityChecker
                             )
                         }
+                        declaration.acceptChildren(ClassConflictsCheckingVisitor(declarationName))
                     }
                 }
                 is FirTypeAlias -> {
@@ -148,15 +171,6 @@ object FirConflictsChecker : FirBasicDeclarationChecker() {
                 )
             }
         }
-
-        private fun presentation(declaration: FirDeclaration): String? =
-            when (declaration) {
-                is FirSimpleFunction -> presenter.represent(declaration)
-                is FirRegularClass -> presenter.represent(declaration)
-                is FirTypeAlias -> presenter.represent(declaration)
-                is FirProperty -> presenter.represent(declaration)
-                else -> null
-            }
     }
 
     override fun check(declaration: FirDeclaration, context: CheckerContext, reporter: DiagnosticReporter) {
@@ -196,3 +210,12 @@ object FirConflictsChecker : FirBasicDeclarationChecker() {
         }
     }
 }
+
+private fun FirDeclarationPresenter.represent(declaration: FirDeclaration): String? =
+    when (declaration) {
+        is FirSimpleFunction -> represent(declaration)
+        is FirRegularClass -> represent(declaration)
+        is FirTypeAlias -> represent(declaration)
+        is FirProperty -> represent(declaration)
+        else -> null
+    }

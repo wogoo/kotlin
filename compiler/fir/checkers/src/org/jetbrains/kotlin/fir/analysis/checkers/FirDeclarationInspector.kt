@@ -184,6 +184,24 @@ interface FirDeclarationPresenter {
         append(']')
         appendRepresentation(it.symbol.classId)
     }
+
+    fun represent(it: FirConstructor, owner: FirRegularClass) = buildString {
+        append('<')
+        it.typeParameters.forEach {
+            appendRepresentation(it)
+            append(',')
+        }
+        append('>')
+        append('[')
+        append(']')
+        appendRepresentation(owner.symbol.classId)
+        append('(')
+        it.valueParameters.forEach {
+            appendRepresentation(it)
+            append(',')
+        }
+        append(')')
+    }
 }
 
 internal class FirDefaultDeclarationPresenter : FirDeclarationPresenter
