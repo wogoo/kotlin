@@ -320,6 +320,14 @@ object KotlinToJVMBytecodeCompiler {
 
             val ktFiles = module.getSourceFiles(environment, localFileSystem, chunk.size > 1, buildFile)
             if (!checkKotlinPackageUsage(environment, ktFiles)) return false
+
+            var syntaxErrors = false
+            for (ktFile in ktFiles) {
+                syntaxErrors =
+                    syntaxErrors or AnalyzerWithCompilerReport.reportSyntaxErrors(ktFile, environment.messageCollector).isHasErrors
+            }
+            if (syntaxErrors) return false
+
             val moduleConfiguration = projectConfiguration.applyModuleProperties(module, buildFile)
 
             val scope = GlobalSearchScope.filesScope(project, ktFiles.map { it.virtualFile })
