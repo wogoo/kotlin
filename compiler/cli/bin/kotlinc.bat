@@ -28,6 +28,10 @@ set _arg=%~1
 if "%_arg%" == "" goto loopend
 
 if "%_arg:~0,2%"=="-J" (
+  if "%_arg:~2%"=="" (
+    echo error: empty -J argument
+    exit /b
+  )
   set JAVA_OPTS=%JAVA_OPTS% "%_arg:~2%"
 ) else (
   if "%_arg:~0,2%"=="-D" (
