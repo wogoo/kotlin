@@ -295,7 +295,9 @@ class KotlinMetadataTargetConfigurator(kotlinPluginVersion: String) :
 
         val platformCompilations = compilationsBySourceSets(project).getValue(sourceSet)
 
-        val isNativeSourceSet = platformCompilations.all { compilation -> compilation.target is KotlinNativeTarget }
+        val isNativeSourceSet = platformCompilations.all { compilation ->
+            compilation.target is KotlinNativeTarget || compilation is KotlinSharedNativeCompilation
+        }
 
         val compilationFactory: KotlinCompilationFactory<out AbstractKotlinCompilation<*>> = when {
             isNativeSourceSet -> KotlinSharedNativeCompilationFactory(
@@ -331,14 +333,12 @@ class KotlinMetadataTargetConfigurator(kotlinPluginVersion: String) :
                 project.runCommonizerTask.configure {
                     it.dependsOn(commonizeCInteropTask)
                 }
-                val commonizerOutput = project.files(project.provider {
-                    commonizeCInteropTask.get().commonizedOutputDirectory(this)
-                }).builtBy(commonizeCInteropTask)
-
+                val commonizerOutput = project.files(commonizeCInteropTask.map { it.getLibraries(this) })
                 compileDependencyFiles = compileDependencyFiles.plus(commonizerOutput)
-
-                // TODO NOW // MAKE IDE HAPPY FOR NOW
                 project.dependencies.add(defaultSourceSet.implementationMetadataConfigurationName, commonizerOutput)
+                kotlinSourceSets.forEach { sourceSet ->
+                    project.dependencies.add(sourceSet.implementationMetadataConfigurationName, commonizerOutput)
+                }
             }
             // END TODO NOW!!!
         }

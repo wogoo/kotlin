@@ -12,9 +12,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
 import org.jetbrains.kotlin.compilerRunner.GradleCliCommonizer
 import org.jetbrains.kotlin.compilerRunner.konanHome
-import org.jetbrains.kotlin.descriptors.commonizer.CommonizerTarget
-import org.jetbrains.kotlin.descriptors.commonizer.HierarchicalCommonizerOutputLayout
-import org.jetbrains.kotlin.descriptors.commonizer.SharedCommonizerTarget
+import org.jetbrains.kotlin.descriptors.commonizer.*
 import org.jetbrains.kotlin.gradle.dsl.multiplatformExtensionOrNull
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinSharedNativeCompilation
@@ -25,22 +23,50 @@ import java.io.File
 
 open class CInteropCommonizerTask : DefaultTask() {
 
-    data class CInteropGist(
+    internal data class CInteropGist(
+        @get:Input val identifier: CInteropIdentifier,
         @get:Input val name: String,
         @get:Input val konanTarget: KonanTarget,
         @get:Internal val sourceSets: Provider<Set<KotlinSourceSet>>,
+        @get:Internal val allSourceSets: Provider<Set<KotlinSourceSet>>,
         @get:Classpath val libraryFile: Provider<File>,
         @get:Classpath val dependencies: FileCollection
     ) {
         @Suppress("unused") // Used for UP-TO-DATE check
         @get:Input
-        val sourceSetNames = sourceSets.map { sourceSets -> sourceSets.map { sourceSet -> sourceSet.name } }
+        val sourceSetNames: Provider<List<String>> = sourceSets.map { sourceSets -> sourceSets.map { sourceSet -> sourceSet.name } }
+
+        @Suppress("unused") // Used for UP-TO-DATE check
+        @get:Input
+        val allSourceSetNames: Provider<List<String>> = allSourceSets.map { sourceSets -> sourceSets.map { sourceSet -> sourceSet.name } }
     }
 
     @get:Nested
     internal var cinterops = setOf<CInteropGist>()
         private set
 
+    @Internal
+    internal fun getAllCInteropCommonizerTargetsInProject(): Set<CInteropCommonizerTarget> {
+        val multiplatformExtension = project.multiplatformExtensionOrNull ?: return emptySet()
+        return multiplatformExtension.targets.flatMap { it.compilations }
+            .filterIsInstance<KotlinSharedNativeCompilation>()
+            .mapNotNull { sharedNativeCompilation -> project.getCInteropCommonizerTarget(sharedNativeCompilation) }
+            .mapNotNull(::filterUnregisteredCInterops)
+            .toSet()
+    }
+
+    private fun filterUnregisteredCInterops(target: CInteropCommonizerTarget): CInteropCommonizerTarget? {
+        val filteredCInterops = target.cinterops.filter { it in cinterops.map(CInteropGist::identifier) }
+        if (filteredCInterops.isEmpty()) return null
+        return target.copy(cinterops = filteredCInterops.toSet())
+    }
+
+    private fun findRootCommonizerTargetInProject(target: CInteropCommonizerTarget): CInteropCommonizerTarget {
+        return getAllCInteropCommonizerTargetsInProject()
+            .filter { candidate -> candidate != target }
+            .filter { candidate -> target in candidate }
+            .maxBy { candidate -> candidate.commonizerTarget.level } ?: target
+    }
 
     fun from(vararg tasks: CInteropProcess) = from(
         tasks.toList()
@@ -58,71 +84,55 @@ open class CInteropCommonizerTask : DefaultTask() {
 
     @TaskAction
     internal fun commonizeCInteropLibraries() {
-        val commonizerRequestsForSharedCompilations = project.sharedCInterops(cinterops)
-        for (interopGists in commonizerRequestsForSharedCompilations.map { it.cinterops }.toSet()) {
-            commonize(interopGists)
+        val targets = getAllCInteropCommonizerTargetsInProject().map(::findRootCommonizerTargetInProject).distinct()
+        for (target in targets) {
+            commonize(target)
         }
     }
 
-    private fun commonize(cinterops: Set<CInteropGist>) {
-        outputDirectory(cinterops).deleteRecursively()
-        val commonizer = GradleCliCommonizer(project)
-        commonizer.commonizeLibraries(
+    private fun commonize(target: CInteropCommonizerTarget) {
+        val cinteropsForTarget = cinterops.filter { cinterop -> cinterop.identifier in target.cinterops }
+        outputDirectory(target).deleteRecursively()
+        if (cinteropsForTarget.isEmpty()) return
+        GradleCliCommonizer(project).commonizeLibraries(
             konanHome = project.file(project.konanHome),
-            inputLibraries = cinterops.map { it.libraryFile.get() }.toSet(),
-            dependencyLibraries = cinterops.flatMap { it.dependencies.files }.toSet(),
-            outputCommonizerTarget = SharedCommonizerTarget(cinterops.map { CommonizerTarget(it.konanTarget) }.toSet()),
-            outputDirectory = outputDirectory(cinterops)
+            outputCommonizerTarget = target.commonizerTarget,
+            inputLibraries = cinteropsForTarget.map { it.libraryFile.get() }.toSet(),
+            dependencyLibraries = emptySet(),/*cinteropsForTarget.flatMap { it.dependencies.files }.toSet() */ // TODO NOW,
+            outputDirectory = outputDirectory(target)
         )
     }
 
-    private fun outputDirectory(cinterops: Set<CInteropGist>): File {
+    private fun outputDirectory(target: CInteropCommonizerTarget): File {
         return project.rootDir.resolve(".gradle/kotlin/commonizer/cinterop")
             .resolve(project.path)
-            .resolve(cinterops.joinToString("-") { it.name })
+            .resolve(target.commonizerTarget.prettyName)
+            .resolve(target.cinterops.map { it.cinteropName }.distinct().joinToString("-"))
     }
 
-    private fun commonizedOutputDirectory(cinterops: Set<CInteropGist>): File {
-        return HierarchicalCommonizerOutputLayout.getTargetDirectory(
-            outputDirectory(cinterops), SharedCommonizerTarget(cinterops.map { it.konanTarget })
-        )
+    internal fun getLibraries(compilation: KotlinSharedNativeCompilation): FileCollection {
+        val fileProvider = project.provider<Set<File>> {
+            val cinteropCommonizerTarget = project.getCInteropCommonizerTarget(compilation) ?: return@provider emptySet()
+            val rootCommonizerTarget = findRootCommonizerTargetInProject(cinteropCommonizerTarget)
+            val outputDirectory = outputDirectory(rootCommonizerTarget)
+            HierarchicalCommonizerOutputLayout
+                .getTargetDirectory(outputDirectory, cinteropCommonizerTarget.commonizerTarget)
+                .listFiles().orEmpty().toSet()
+        }
+
+        return project.files(fileProvider) { fileCollection ->
+            fileCollection.builtBy(this)
+        }
     }
-
-    internal fun commonizedOutputDirectory(compilation: KotlinSharedNativeCompilation): FileCollection {
-        val request = sharedCInteropsForCompilation(compilation, cinterops) ?: return project.files()
-        return project.files(project.provider {
-            commonizedOutputDirectory(request.cinterops).listFiles().orEmpty()
-        }).builtBy(this)
-    }
 }
-
-private data class SharedCInterops(
-    val sharedNativeCompilation: KotlinSharedNativeCompilation, val cinterops: Set<CInteropGist>
-)
-
-private fun Project.sharedCInterops(
-    cinterops: Set<CInteropGist>
-): Set<SharedCInterops> {
-    val multiplatformExtension = project.multiplatformExtensionOrNull ?: return emptySet()
-    return multiplatformExtension.targets.flatMap { it.compilations }
-        .filterIsInstance<KotlinSharedNativeCompilation>()
-        .mapNotNull { sharedCompilation -> sharedCInteropsForCompilation(sharedCompilation, cinterops) }
-        .toSet()
-}
-
-private fun sharedCInteropsForCompilation(
-    compilation: KotlinSharedNativeCompilation,
-    cinterops: Set<CInteropGist>
-): SharedCInterops? {
-    compilation.kotlinSourceSets.
-}
-
 
 private fun CInteropProcess.toGist(): CInteropGist {
     return CInteropGist(
+        identifier = settings.identifier,
         name = settings.name,
         konanTarget = konanTarget,
         sourceSets = project.provider { settings.compilation.kotlinSourceSets.toSet() },
+        allSourceSets = project.provider { settings.compilation.allKotlinSourceSets.toSet() },
         libraryFile = outputFileProvider,
         dependencies = settings.dependencyFiles // TODO NOW: var shall be replaced by provider
     )
