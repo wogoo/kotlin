@@ -6,32 +6,14 @@
 package org.jetbrains.kotlin.cli.fir
 
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureDescriptor
-import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.JvmGeneratorExtensions
-import org.jetbrains.kotlin.backend.jvm.MetadataSerializerFactory
-import org.jetbrains.kotlin.backend.jvm.codegen.MetadataSerializer
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.codegen.serialization.JvmSerializationBindings
 import org.jetbrains.kotlin.config.languageVersionSettings
-import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.backend.Fir2IrConverter
 import org.jetbrains.kotlin.fir.backend.jvm.*
 import org.jetbrains.kotlin.ir.backend.jvm.serialization.JvmManglerDesc
-import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFactory
 import org.jetbrains.kotlin.ir.declarations.impl.IrFactoryImpl
-import org.jetbrains.org.objectweb.asm.Type
-
-class FirMetadataSerializerBuilder(val session: FirSession) : MetadataSerializerFactory {
-    override fun invoke(
-        context: JvmBackendContext,
-        irClass: IrClass,
-        type: Type,
-        serializationBindings: JvmSerializationBindings,
-        parent: MetadataSerializer?
-    ): MetadataSerializer =
-        FirMetadataSerializer(session, context, irClass, serializationBindings, parent)
-}
 
 class FirJvmFrontendToIrConverterBuilder : CompilationStageBuilder<FirFrontendOutputs, FrontendToIrConverterResult> {
     var messageCollector: MessageCollector? = null
@@ -39,7 +21,7 @@ class FirJvmFrontendToIrConverterBuilder : CompilationStageBuilder<FirFrontendOu
     var irFactory: IrFactory = IrFactoryImpl
 
     override fun build(): CompilationStage<FirFrontendOutputs, FrontendToIrConverterResult> {
-        return FirJvmFrontendToIrConverter(messageCollector ?: MessageCollector.NONE, irFactory)
+        return FirJvmFrontendToIrConverter(irFactory)
     }
 
     operator fun invoke(body: FirJvmFrontendToIrConverterBuilder.() -> Unit): FirJvmFrontendToIrConverterBuilder {
@@ -49,7 +31,6 @@ class FirJvmFrontendToIrConverterBuilder : CompilationStageBuilder<FirFrontendOu
 }
 
 class FirJvmFrontendToIrConverter internal constructor(
-    val messageCollector: MessageCollector,
     val irFactory: IrFactory
 ) : CompilationStage<FirFrontendOutputs, FrontendToIrConverterResult> {
 
@@ -61,7 +42,8 @@ class FirJvmFrontendToIrConverter internal constructor(
             input.session, input.scopeSession!!, input.firFiles!!,
             input.configuration.languageVersionSettings, signaturer,
             JvmGeneratorExtensions(generateFacades = true), FirJvmKotlinMangler(input.session), irFactory,
-            FirJvmVisibilityConverter
+            FirJvmVisibilityConverter,
+            Fir2IrJvmSpecialAnnotationSymbolProvider()
         )
 
         val outputs = FrontendToIrConverterResult(

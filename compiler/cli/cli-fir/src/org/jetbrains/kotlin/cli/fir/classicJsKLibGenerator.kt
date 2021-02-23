@@ -5,18 +5,16 @@
 
 package org.jetbrains.kotlin.cli.fir
 
-import com.intellij.openapi.Disposable
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.ir.backend.js.expectActualLinker
 import org.jetbrains.kotlin.ir.backend.js.serializeModuleIntoKlib
 import org.jetbrains.kotlin.ir.util.ExpectDeclarationRemover
+import org.jetbrains.kotlin.ir.util.IrMessageLogger
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 
 class ClassicJsKLibGeneratorResult
 
-class ClassicJsKLibGeneratorBuilder(
-    val rootDisposable: Disposable,
-) : CompilationStageBuilder<FrontendToIrConverterResult, ClassicJsKLibGeneratorResult> {
+class ClassicJsKLibGeneratorBuilder : CompilationStageBuilder<FrontendToIrConverterResult, ClassicJsKLibGeneratorResult> {
 
     var outputKlibPath: String? = null
 
@@ -42,6 +40,8 @@ class ClassicJsKLibGenerator internal constructor(
     ): ExecutionResult<ClassicJsKLibGeneratorResult> {
         val configuration = input.configuration
 
+        val messageLogger = configuration[IrMessageLogger.IR_MESSAGE_LOGGER] ?: IrMessageLogger.None
+
         val moduleName = configuration[CommonConfigurationKeys.MODULE_NAME]!!
 
         val (moduleFragment, icData, symbolTable, bindingContext, project, files, dependenciesList, expectDescriptorToSymbol, hasErrors) = input
@@ -54,6 +54,7 @@ class ClassicJsKLibGenerator internal constructor(
             moduleName,
             project,
             configuration,
+            messageLogger,
             bindingContext ?: error(""),
             files,
             outputKlibPath,

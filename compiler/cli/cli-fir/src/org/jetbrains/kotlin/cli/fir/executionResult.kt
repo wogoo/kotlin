@@ -14,6 +14,7 @@ abstract class ExecutionDiagnostic {
     }
 }
 
+@Suppress("unused")
 open class ExecutionMessage(val message: String, val severity: Severity = Severity.ERROR) : ExecutionDiagnostic() {
     enum class Severity { DEBUG, INFO, WARNING, ERROR, FATAL }
 

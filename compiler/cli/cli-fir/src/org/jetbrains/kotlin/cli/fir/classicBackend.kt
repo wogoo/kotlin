@@ -3,6 +3,8 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
+@file:Suppress("unused")
+
 package org.jetbrains.kotlin.cli.fir
 
 import org.jetbrains.kotlin.analyzer.AnalysisResult
@@ -12,13 +14,10 @@ import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.psi.KtFile
 
-class ClassicBackendState(
-)
-
-class ClassicBackendBuilder : CompilationStageBuilder<Pair<AnalysisResult, List<KtFile>>, GenerationState, ClassicFrontendState> {
+class ClassicBackendBuilder : CompilationStageBuilder<Pair<AnalysisResult, List<KtFile>>, GenerationState> {
     val configuration = CompilerConfiguration()
 
-    override fun build(): CompilationStage<Pair<AnalysisResult, List<KtFile>>, GenerationState, ClassicFrontendState> {
+    override fun build(): CompilationStage<Pair<AnalysisResult, List<KtFile>>, GenerationState> {
         TODO("Not yet implemented")
     }
 
@@ -30,15 +29,11 @@ class ClassicBackendBuilder : CompilationStageBuilder<Pair<AnalysisResult, List<
 
 class ClassicBackend internal constructor(
     val configuration: CompilerConfiguration
-) : CompilationStage<Pair<AnalysisResult, List<KtFile>>, GenerationState, ClassicBackendState> {
-
-    override fun execute(input: Pair<AnalysisResult, List<KtFile>>): ExecutionResult<GenerationState, ClassicBackendState> =
-        execute(input, ClassicBackendState())
+) : CompilationStage<Pair<AnalysisResult, List<KtFile>>, GenerationState> {
 
     override fun execute(
-        input: Pair<AnalysisResult, List<KtFile>>,
-        state: ClassicBackendState
-    ): ExecutionResult<GenerationState, ClassicBackendState> {
+        input: Pair<AnalysisResult, List<KtFile>>
+    ): ExecutionResult<GenerationState> {
         val analysisResult = input.first
         val sourceFiles = input.second
         val res = GenerationState.Builder(
@@ -49,6 +44,6 @@ class ClassicBackend internal constructor(
             sourceFiles,
             configuration
         ).build().also(KotlinCodegenFacade::compileCorrectFiles)
-        return ExecutionResult.Success(res, state, emptyList())
+        return ExecutionResult.Success(res, emptyList())
     }
 }

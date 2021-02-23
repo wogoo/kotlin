@@ -20,14 +20,10 @@ import org.jetbrains.kotlin.config.Services
 import org.jetbrains.kotlin.config.languageVersionSettings
 import org.jetbrains.kotlin.psi.KtFile
 
-class ClassicFrontendState(
-    internal val environment: KotlinCoreEnvironment,
-    internal val analyzer: AnalyzerWithCompilerReport
-)
-
+@Suppress("unused")
 class ClassicFrontendBuilder(
     val rootDisposable: Disposable,
-) : CompilationStageBuilder<Pair<K2JVMCompilerArguments, List<KtFile>>, AnalysisResult, ClassicFrontendState> {
+) : CompilationStageBuilder<Pair<K2JVMCompilerArguments, List<KtFile>>, AnalysisResult> {
 
     var configuration: CompilerConfiguration = CompilerConfiguration()
 
@@ -35,7 +31,7 @@ class ClassicFrontendBuilder(
 
     var services: Services = Services.EMPTY
 
-    override fun build(): CompilationStage<Pair<K2JVMCompilerArguments, List<KtFile>>, AnalysisResult, ClassicFrontendState> {
+    override fun build(): CompilationStage<Pair<K2JVMCompilerArguments, List<KtFile>>, AnalysisResult> {
         configuration.apply {
             put(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, messageCollector)
         }
@@ -52,36 +48,28 @@ class ClassicFrontend internal constructor(
     val rootDisposable: Disposable,
     val messageCollector: MessageCollector,
     val configuration: CompilerConfiguration
-) : CompilationStage<Pair<K2JVMCompilerArguments, List<KtFile>>, AnalysisResult, ClassicFrontendState> {
+) : CompilationStage<Pair<K2JVMCompilerArguments, List<KtFile>>, AnalysisResult> {
 
-    fun newState(): ClassicFrontendState {
+    override fun execute(
+        input: Pair<K2JVMCompilerArguments, List<KtFile>>
+    ): ExecutionResult<AnalysisResult> {
+        val sourceFiles = input.second
         val environment =
             KotlinCoreEnvironment.createForProduction(
                 rootDisposable, configuration, EnvironmentConfigFiles.JVM_CONFIG_FILES
             )
-        val analyzerWithCompilerReport = AnalyzerWithCompilerReport(messageCollector, configuration.languageVersionSettings)
-        return  ClassicFrontendState(environment, analyzerWithCompilerReport)
-    }
-
-    override fun execute(input: Pair<K2JVMCompilerArguments, List<KtFile>>): ExecutionResult<AnalysisResult, ClassicFrontendState> =
-        execute(input, newState())
-
-    override fun execute(
-        input: Pair<K2JVMCompilerArguments, List<KtFile>>,
-        state: ClassicFrontendState
-    ): ExecutionResult<AnalysisResult, ClassicFrontendState> {
-        val sourceFiles = input.second
-        state.analyzer.analyzeAndReport(sourceFiles) {
-            val project = state.environment.project
+        val analyzer = AnalyzerWithCompilerReport(messageCollector, configuration.languageVersionSettings)
+        analyzer.analyzeAndReport(sourceFiles) {
+            val project = environment.project
             TopDownAnalyzerFacadeForJVM.analyzeFilesWithJavaIntegration(
                 project,
                 sourceFiles,
                 NoScopeRecordCliBindingTrace(),
-                state.environment.configuration,
-                state.environment::createPackagePartProvider
+                environment.configuration,
+                environment::createPackagePartProvider
             )
         }
-        return ExecutionResult.Success(state.analyzer.analysisResult, state, emptyList())
+        return ExecutionResult.Success(analyzer.analysisResult, emptyList())
     }
 }
 

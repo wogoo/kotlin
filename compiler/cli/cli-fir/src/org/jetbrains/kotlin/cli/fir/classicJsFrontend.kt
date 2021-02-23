@@ -80,12 +80,13 @@ class ClassicJsFrontend internal constructor(
 
         val (arguments, sourceFiles) = input
         // TODO: Handle non-empty main call arguments
-        val mainCallArguments = if (K2JsArgumentConstants.NO_CALL == arguments.main) null else emptyList<String>()
+        @Suppress("UNUSED_VARIABLE") val mainCallArguments = if (K2JsArgumentConstants.NO_CALL == arguments.main) null else emptyList<String>()
 
         val libraries = configuration.getList(JSConfigurationKeys.LIBRARIES)
 
         val resolvedLibraries = jsResolveLibraries(
             libraries,
+            emptyList(),
             messageCollectorLogger(messageCollector)
         )
 
@@ -113,6 +114,7 @@ class ClassicJsFrontend internal constructor(
 
 }
 
+@Suppress("unused")
 private fun example(args: List<String>, outStream: PrintStream) {
 
     val service = LocalCompilationServiceBuilder().build()
@@ -200,7 +202,7 @@ private fun example(args: List<String>, outStream: PrintStream) {
             val convertorRes = jsFrontendToIrConverter.execute(frontendRes.value)
 
             if (convertorRes is ExecutionResult.Success) {
-                val backendRes = jsKLibGenerator.execute(convertorRes.value)
+                jsKLibGenerator.execute(convertorRes.value)
             }
         }
     } finally {

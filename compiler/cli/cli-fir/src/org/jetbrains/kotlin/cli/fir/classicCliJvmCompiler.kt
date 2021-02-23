@@ -22,7 +22,7 @@ class ClassicJvmCompilerState(internal val compiler: K2JVMCompiler)
 class ClassicCliJvmCompilerBuilder(
     val rootDisposable: Disposable,
 
-) : CompilationStageBuilder<K2JVMCompilerArguments, List<File>, ClassicJvmCompilerState> {
+) : CompilationStageBuilder<K2JVMCompilerArguments, List<File>> {
 
     var compilerArguments: K2JVMCompilerArguments = K2JVMCompilerArguments()
 
@@ -30,7 +30,7 @@ class ClassicCliJvmCompilerBuilder(
 
     var services: Services = Services.EMPTY
 
-    override fun build(): CompilationStage<K2JVMCompilerArguments, List<File>, ClassicJvmCompilerState> =
+    override fun build(): CompilationStage<K2JVMCompilerArguments, List<File>> =
         ClassicCliJvmCompiler(compilerArguments, messageCollector, services)
 
     operator fun invoke(body: ClassicCliJvmCompilerBuilder.() -> Unit): ClassicCliJvmCompilerBuilder {
@@ -43,25 +43,22 @@ class ClassicCliJvmCompiler internal constructor(
     val compilerArguments: K2JVMCompilerArguments,
     val messageCollector: MessageCollector,
     val services: Services,
-): CompilationStage<K2JVMCompilerArguments, List<File>, ClassicJvmCompilerState> {
-
-    override fun execute(input: K2JVMCompilerArguments): ExecutionResult<List<File>, ClassicJvmCompilerState> =
-        execute(input, ClassicJvmCompilerState(K2JVMCompiler()))
+): CompilationStage<K2JVMCompilerArguments, List<File>> {
 
     override fun execute(
-        input: K2JVMCompilerArguments,
-        state: ClassicJvmCompilerState
-    ): ExecutionResult<List<File>, ClassicJvmCompilerState> {
+        input: K2JVMCompilerArguments
+    ): ExecutionResult<List<File>> {
         try {
-            val res = state.compiler.exec(messageCollector, services, compilerArguments)
-            return if (res == ExitCode.OK) ExecutionResult.Success(emptyList(), state, emptyList())
-            else ExecutionResult.Failure(res, state, emptyList())
+            val res = K2JVMCompiler().exec(messageCollector, services, compilerArguments)
+            return if (res == ExitCode.OK) ExecutionResult.Success(emptyList(), emptyList())
+            else ExecutionResult.Failure(res, emptyList())
         } catch (e: Throwable) {
-            return ExecutionResult.Failure(ExitCode.INTERNAL_ERROR, state, listOf(ExecutionExceptionWrapper(e)))
+            return ExecutionResult.Failure(ExitCode.INTERNAL_ERROR, listOf(ExecutionExceptionWrapper(e)))
         }
     }
 }
 
+@Suppress("unused")
 private fun example(args: List<String>, outStream: PrintStream) {
 
     val service = LocalCompilationServiceBuilder().build()

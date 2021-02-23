@@ -11,12 +11,14 @@ import kotlin.reflect.KClass
 
 class LocalCompilationSession(val rootDisposable: Disposable) : CompilationSession {
 
-    private val byClass = mutableMapOf(ClassicCliJvmCompiler::class to { ClassicCliJvmCompilerBuilder(rootDisposable) })
+    private val byClass: MutableMap<KClass<ClassicCliJvmCompiler>, () -> ClassicCliJvmCompilerBuilder> =
+        mutableMapOf(ClassicCliJvmCompiler::class to { ClassicCliJvmCompilerBuilder(rootDisposable) })
 
-    override fun <T : CompilationStageBuilder<*, *, *>> createStage(impl: KClass<out T>): CompilationStageBuilder<*, *, *> =
+    @Suppress("TYPE_INFERENCE_ONLY_INPUT_TYPES_WARNING")
+    override fun <T : CompilationStageBuilder<*, *>> createStage(impl: KClass<out T>): CompilationStageBuilder<*, *> =
         (byClass[impl] ?: throw RuntimeException("Unknown compilation stage: $impl")).invoke()
 
-    override fun <T : Any, R : Any> createStage(from: KClass<T>, to: KClass<R>): CompilationStageBuilder<T, R, *> {
+    override fun <T : Any, R : Any> createStage(from: KClass<T>, to: KClass<R>): CompilationStageBuilder<T, R> {
         TODO("Not yet implemented")
     }
 

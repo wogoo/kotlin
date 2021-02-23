@@ -7,9 +7,6 @@ package org.jetbrains.kotlin.cli.fir
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.StandardFileSystems
-import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.ProjectScope
 import org.jetbrains.kotlin.analyzer.ModuleInfo
@@ -26,12 +23,13 @@ import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.TopDownAnalyzerFacadeForJVM
 import org.jetbrains.kotlin.cli.jvm.plugins.PluginCliParser
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
-import org.jetbrains.kotlin.config.*
-import org.jetbrains.kotlin.diagnostics.*
-import org.jetbrains.kotlin.fir.FirPsiSourceElement
+import org.jetbrains.kotlin.config.CommonConfigurationKeys
+import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.JVMConfigurationKeys
+import org.jetbrains.kotlin.config.languageVersionSettings
+import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.analysis.FirAnalyzerFacade
-import org.jetbrains.kotlin.fir.analysis.diagnostics.*
 import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
 import org.jetbrains.kotlin.fir.resolve.ScopeSession
@@ -44,7 +42,6 @@ import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.PlatformDependentAnalyzerServices
-import org.jetbrains.kotlin.resolve.diagnostics.SimpleDiagnostics
 import org.jetbrains.kotlin.resolve.diagnostics.SimpleGenericDiagnostics
 import org.jetbrains.kotlin.resolve.jvm.platform.JvmPlatformAnalyzerServices
 import org.jetbrains.kotlin.utils.KotlinPaths
@@ -107,7 +104,6 @@ class FirJvmFrontend internal constructor(
     ): ExecutionResult<FirFrontendOutputs> {
         val (module, ktFiles, moduleConfiguration) = input
         val actualConfiguration = moduleConfiguration ?: configuration
-        val localFileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL)
         if (!actualConfiguration.getBoolean(CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE) &&
             !checkKotlinPackageUsage(ktFiles, messageCollector)
         ) return ExecutionResult.Failure(-1, emptyList())
@@ -176,6 +172,7 @@ class FirJvmFrontend internal constructor(
     }
 }
 
+@Suppress("unused")
 private fun example(args: List<String>, outStream: PrintStream) {
 
     val service = LocalCompilationServiceBuilder().build()
@@ -229,7 +226,7 @@ private fun example(args: List<String>, outStream: PrintStream) {
             val convertorRes = fir2ir.execute(frontendRes.value)
 
             if (convertorRes is ExecutionResult.Success) {
-                val backendRes = backend.execute(convertorRes.value)
+                backend.execute(convertorRes.value)
             }
         }
     } finally {
@@ -246,8 +243,6 @@ internal fun FirJvmFrontendBuilder.configureDefaultJvmFirFrontend(
 ) {
     configuration.put(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, collector)
     messageCollector = collector
-
-    val services: Services = Services.EMPTY
 
     configuration.setupCommonArguments(arguments)
     configuration.setupJvmSpecificArguments(arguments)
