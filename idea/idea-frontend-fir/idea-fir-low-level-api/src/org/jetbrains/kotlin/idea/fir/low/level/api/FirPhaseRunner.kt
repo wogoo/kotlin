@@ -18,6 +18,7 @@ internal class FirPhaseRunner {
     private val superTypesBodyResolveLock = ReentrantLock()
     private val statusResolveLock = ReentrantLock()
     private val implicitTypesResolveLock = ReentrantLock()
+    private val sealedInheritorsResolveLock = ReentrantLock()
 
     fun runPhase(firFile: FirFile, phase: FirResolvePhase, scopeSession: ScopeSession) = when (phase) {
         FirResolvePhase.SUPER_TYPES -> superTypesBodyResolveLock.withLock {
@@ -27,6 +28,9 @@ internal class FirPhaseRunner {
             runPhaseWithoutLock(firFile, phase, scopeSession)
         }
         FirResolvePhase.IMPLICIT_TYPES_BODY_RESOLVE -> implicitTypesResolveLock.withLock {
+            runPhaseWithoutLock(firFile, phase, scopeSession)
+        }
+        FirResolvePhase.SEALED_CLASS_INHERITORS -> sealedInheritorsResolveLock.withLock {
             runPhaseWithoutLock(firFile, phase, scopeSession)
         }
         else -> {
@@ -57,7 +61,17 @@ internal class FirPhaseRunner {
 
 
     private fun runPhaseWithoutLock(firFile: FirFile, phase: FirResolvePhase, scopeSession: ScopeSession) {
-        val phaseProcessor = phase.createTransformerBasedProcessorByPhase(firFile.session, scopeSession)
+        val phaseProcessor = when (phase) {
+            FirResolvePhase.SEALED_CLASS_INHERITORS -> {
+                FirIdeSealedHierarchyProcessor(firFile.session, scopeSession)
+            }
+            else -> {
+                phase.createTransformerBasedProcessorByPhase(firFile.session, scopeSession)
+            }
+        }
+
+
+
         executeWithoutPCE {
             FirLazyBodiesCalculator.calculateLazyBodiesIfPhaseRequires(firFile, phase)
             phaseProcessor.processFile(firFile)
