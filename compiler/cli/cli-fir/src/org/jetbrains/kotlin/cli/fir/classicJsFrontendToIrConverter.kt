@@ -6,26 +6,28 @@
 package org.jetbrains.kotlin.cli.fir
 
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.backend.common.overrides.FakeOverrideChecker
 import org.jetbrains.kotlin.backend.common.serialization.ICData
 import org.jetbrains.kotlin.backend.common.serialization.mangle.ManglerChecker
 import org.jetbrains.kotlin.backend.common.serialization.mangle.descriptor.Ir2DescriptorManglerAdapter
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureDescriptor
-import org.jetbrains.kotlin.backend.jvm.MetadataSerializerFactory
+import org.jetbrains.kotlin.backend.jvm.JvmBackendExtension
 import org.jetbrains.kotlin.codegen.JvmBackendClassResolver
-import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.languageVersionSettings
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
-import org.jetbrains.kotlin.ir.backend.js.*
+import org.jetbrains.kotlin.ir.backend.js.KotlinFileSerializedData
+import org.jetbrains.kotlin.ir.backend.js.generateModuleFragmentWithPlugins
 import org.jetbrains.kotlin.ir.backend.js.lower.serialization.ir.JsIrLinker
 import org.jetbrains.kotlin.ir.backend.js.lower.serialization.ir.JsManglerDesc
 import org.jetbrains.kotlin.ir.backend.js.lower.serialization.ir.JsManglerIr
+import org.jetbrains.kotlin.ir.backend.js.prepareIncrementalCompilationData
+import org.jetbrains.kotlin.ir.backend.js.sortDependencies
 import org.jetbrains.kotlin.ir.declarations.IrFactory
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.persistent.PersistentIrFactory
 import org.jetbrains.kotlin.ir.descriptors.IrFunctionFactory
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
+import org.jetbrains.kotlin.ir.util.IrMessageLogger
 import org.jetbrains.kotlin.ir.util.SymbolTable
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.js.config.ErrorTolerancePolicy
@@ -53,13 +55,13 @@ data class FrontendToIrConverterResult(
     val module: Module?,
     val sourceManager: PsiSourceManager?,
     val jvmBackendClassResolver: JvmBackendClassResolver?,
-    val metadataSerializerFactory: MetadataSerializerFactory?,
+    val backendExtensions: JvmBackendExtension?,
     val packagePartProvider: PackagePartProvider?
 )
 
 class ClassicJsFrontendToIrConverterBuilder : CompilationStageBuilder<ClassicJsFrontendResult, FrontendToIrConverterResult> {
 
-    var irFactory: IrFactory = PersistentIrFactory
+    var irFactory: IrFactory = PersistentIrFactory()
 
     override fun build(): CompilationStage<ClassicJsFrontendResult, FrontendToIrConverterResult> {
         return ClassicJsFrontendToIrConverter(irFactory)
@@ -83,6 +85,8 @@ class ClassicJsFrontendToIrConverter internal constructor(
 
         val errorPolicy = configuration.get(JSConfigurationKeys.ERROR_TOLERANCE_POLICY) ?: ErrorTolerancePolicy.DEFAULT
 
+        val messageLogger = configuration[IrMessageLogger.IR_MESSAGE_LOGGER] ?: IrMessageLogger.None
+
         val psi2Ir = Psi2IrTranslator(
             configuration.languageVersionSettings,
             Psi2IrConfiguration(errorPolicy.allowErrors)
@@ -96,7 +100,6 @@ class ClassicJsFrontendToIrConverter internal constructor(
         irBuiltIns.functionFactory = functionFactory
 
         val expectDescriptorToSymbol = mutableMapOf<DeclarationDescriptor, IrSymbol>()
-        val deserializeFakeOverrides = configuration.getBoolean(CommonConfigurationKeys.DESERIALIZE_FAKE_OVERRIDES)
         val feContext = psi2IrContext.run {
             JsIrLinker.JsFePluginContext(moduleDescriptor, bindingContext, symbolTable, typeTranslator, irBuiltIns)
         }
@@ -105,13 +108,12 @@ class ClassicJsFrontendToIrConverter internal constructor(
 
         val irLinker = JsIrLinker(
             psi2IrContext.moduleDescriptor,
-            emptyLoggingContext,
+            messageLogger,
             psi2IrContext.irBuiltIns,
             psi2IrContext.symbolTable,
             functionFactory,
             feContext,
-            serializedIrFiles?.let { ICData(it, errorPolicy.allowErrors) },
-            deserializeFakeOverrides
+            serializedIrFiles?.let { ICData(it, errorPolicy.allowErrors) }
         )
 
         val dependenciesList = input.descriptors.allDependencies.getFullList()
@@ -125,14 +127,11 @@ class ClassicJsFrontendToIrConverter internal constructor(
                 input.descriptors.project,
                 input.sourceFiles,
                 irLinker,
+                messageLogger,
                 expectDescriptorToSymbol
             )
 
         moduleFragment.acceptVoid(ManglerChecker(JsManglerIr, Ir2DescriptorManglerAdapter(JsManglerDesc)))
-        if (!configuration.getBoolean(JSConfigurationKeys.DISABLE_FAKE_OVERRIDE_VALIDATOR)) {
-            val fakeOverrideChecker = FakeOverrideChecker(JsManglerIr, JsManglerDesc)
-            irLinker.modules.forEach { fakeOverrideChecker.check(it) }
-        }
 
         return ExecutionResult.Success(
             FrontendToIrConverterResult(
@@ -149,7 +148,7 @@ class ClassicJsFrontendToIrConverter internal constructor(
                 module = null,
                 sourceManager = null,
                 jvmBackendClassResolver = null,
-                metadataSerializerFactory = null,
+                backendExtensions = null,
                 packagePartProvider = null
             ),
             emptyList()

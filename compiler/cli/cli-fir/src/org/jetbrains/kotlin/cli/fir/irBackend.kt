@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.asJava.FilteredJvmDiagnostics
 import org.jetbrains.kotlin.backend.common.output.OutputFileCollection
 import org.jetbrains.kotlin.backend.common.output.SimpleOutputFileCollection
 import org.jetbrains.kotlin.backend.common.phaser.PhaseConfig
+import org.jetbrains.kotlin.backend.jvm.JvmGeneratorExtensions
 import org.jetbrains.kotlin.backend.jvm.JvmIrCodegenFactory
 import org.jetbrains.kotlin.backend.jvm.jvmPhases
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
@@ -18,7 +19,6 @@ import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.cli.common.messages.OutputMessageUtil
 import org.jetbrains.kotlin.cli.common.output.writeAll
 import org.jetbrains.kotlin.cli.jvm.compiler.CompileEnvironmentUtil
-import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.NoScopeRecordCliBindingTrace
 import org.jetbrains.kotlin.cli.jvm.compiler.TopDownAnalyzerFacadeForJVM
 import org.jetbrains.kotlin.codegen.ClassBuilderFactories
@@ -29,7 +29,6 @@ import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.container.get
-import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.modules.Module
 import org.jetbrains.kotlin.modules.TargetId
 import org.jetbrains.kotlin.name.FqName
@@ -68,9 +67,11 @@ class IrJvmBackend internal constructor(
             TopDownAnalyzerFacadeForJVM.newModuleSearchScope(input.project, input.sourceFiles), emptyList()
         )
 
+        val generatorExtensions = JvmGeneratorExtensions()
+
         val generationState = GenerationState.Builder(
             input.project, ClassBuilderFactories.BINARIES,
-            container.get<ModuleDescriptor>(), dummyBindingContext, input.sourceFiles,
+            container.get(), dummyBindingContext, input.sourceFiles,
             input.configuration
         ).codegenFactory(
             codegenFactory
@@ -88,10 +89,12 @@ class IrJvmBackend internal constructor(
 
         generationState.beforeCompile()
         codegenFactory.generateModuleInFrontendIRMode(
-            generationState, input.moduleFragment,
-            input.symbolTable, input.sourceManager!!,
-            input.metadataSerializerFactory!!
-        ) 
+            generationState, input.moduleFragment, input.symbolTable, input.sourceManager!!, generatorExtensions, input.backendExtensions!!,
+            {
+//                performanceManager?.notifyIRLoweringFinished()
+//                performanceManager?.notifyIRGenerationStarted()
+            }
+        )
         CodegenFactory.doCheckCancelled(generationState)
         generationState.factory.done()
 
@@ -144,7 +147,9 @@ private fun writeOutput(
     val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
     if (jarPath != null) {
         val includeRuntime = configuration.get(JVMConfigurationKeys.INCLUDE_RUNTIME, false)
-        CompileEnvironmentUtil.writeToJar(jarPath, includeRuntime, mainClassFqName, outputFiles)
+        val noReflect = configuration.get(JVMConfigurationKeys.NO_REFLECT, false)
+        val resetTimestamps = !configuration.get(JVMConfigurationKeys.NO_RESET_JAR_TIMESTAMPS, false)
+        CompileEnvironmentUtil.writeToJar(jarPath, includeRuntime, noReflect, resetTimestamps, mainClassFqName, outputFiles)
         if (reportOutputFiles) {
             val message = OutputMessageUtil.formatOutputMessage(outputFiles.asList().flatMap { it.sourceFiles }.distinct(), jarPath)
             messageCollector.report(CompilerMessageSeverity.OUTPUT, message)

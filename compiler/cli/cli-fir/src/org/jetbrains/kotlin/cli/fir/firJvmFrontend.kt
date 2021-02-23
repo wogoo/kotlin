@@ -45,6 +45,7 @@ import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.PlatformDependentAnalyzerServices
 import org.jetbrains.kotlin.resolve.diagnostics.SimpleDiagnostics
+import org.jetbrains.kotlin.resolve.diagnostics.SimpleGenericDiagnostics
 import org.jetbrains.kotlin.resolve.jvm.platform.JvmPlatformAnalyzerServices
 import org.jetbrains.kotlin.utils.KotlinPaths
 import org.jetbrains.kotlin.utils.PathUtil
@@ -113,7 +114,7 @@ class FirJvmFrontend internal constructor(
 
         val scope = GlobalSearchScope.filesScope(project, ktFiles.map { it.virtualFile })
             .uniteWith(TopDownAnalyzerFacadeForJVM.AllJavaSourcesInProjectScope(project))
-        val provider = FirProjectSessionProvider(project)
+        val provider = FirProjectSessionProvider()
 
         class FirJvmModuleInfo(override val name: Name) : ModuleInfo {
             constructor(moduleName: String) : this(Name.identifier(moduleName))
@@ -132,23 +133,28 @@ class FirJvmFrontend internal constructor(
         }
 
         val moduleInfo = FirJvmModuleInfo(module.getModuleName())
-        val session: FirSession = FirSessionFactory.createJavaModuleBasedSession(moduleInfo, provider, scope) {
+        val session: FirSession =
+            FirSessionFactory.createJavaModuleBasedSession(
+                moduleInfo, provider, scope, project, null, configuration.languageVersionSettings
+            ) {
 //            if (extendedAnalysisMode) {
 //                registerExtendedCommonCheckers()
 //            }
-        }.also {
-            val dependenciesInfo = FirJvmModuleInfo(Name.special("<dependencies>"))
-            moduleInfo.dependencies.add(dependenciesInfo)
-            val librariesScope = ProjectScope.getLibrariesScope(project)
-            FirSessionFactory.createLibrarySession(dependenciesInfo, provider, librariesScope, project, packagePartProvider)
-        }
+            }.also {
+                val dependenciesInfo = FirJvmModuleInfo(Name.special("<dependencies>"))
+                moduleInfo.dependencies.add(dependenciesInfo)
+                val librariesScope = ProjectScope.getLibrariesScope(project)
+                FirSessionFactory.createLibrarySession(dependenciesInfo, provider, librariesScope, project, packagePartProvider)
+            }
 
         val firAnalyzerFacade = FirAnalyzerFacade(session, actualConfiguration.languageVersionSettings, ktFiles)
 
         firAnalyzerFacade.runResolution()
-        val firDiagnostics = firAnalyzerFacade.runCheckers()
-        val diagnostics = firDiagnostics.map { it.toRegularDiagnostic() }
-        AnalyzerWithCompilerReport.reportDiagnostics(SimpleDiagnostics(diagnostics), messageCollector)
+        val firDiagnostics = firAnalyzerFacade.runCheckers().values.flatten()
+        AnalyzerWithCompilerReport.reportDiagnostics(
+            SimpleGenericDiagnostics(firDiagnostics),
+            messageCollector
+        )
 
         if (firDiagnostics.any { it.severity == Severity.ERROR }) {
             return ExecutionResult.Failure(-1, emptyList())
@@ -167,30 +173,6 @@ class FirJvmFrontend internal constructor(
         )
 
         return ExecutionResult.Success(outputs, emptyList())
-    }
-}
-
-private fun FirDiagnostic<*>.toRegularDiagnostic(): Diagnostic {
-    val psiSource = element as FirPsiSourceElement<*>
-    @Suppress("UNCHECKED_CAST")
-    when (this) {
-        is FirSimpleDiagnostic ->
-            return SimpleDiagnostic(
-                psiSource.psi, factory.psiDiagnosticFactory as DiagnosticFactory0<PsiElement>, severity
-            )
-        is FirDiagnosticWithParameters1<*, *> ->
-            return DiagnosticWithParameters1(
-                psiSource.psi, this.a, factory.psiDiagnosticFactory as DiagnosticFactory1<PsiElement, Any>, severity
-            )
-        is FirDiagnosticWithParameters2<*, *, *> ->
-            return DiagnosticWithParameters2(
-                psiSource.psi, this.a, this.b, factory.psiDiagnosticFactory as DiagnosticFactory2<PsiElement, Any, Any>, severity
-            )
-        is FirDiagnosticWithParameters3<*, *, *, *> ->
-            return DiagnosticWithParameters3(
-                psiSource.psi, this.a, this.b, this.c,
-                factory.psiDiagnosticFactory as DiagnosticFactory3<PsiElement, Any, Any, Any>, severity
-            )
     }
 }
 
