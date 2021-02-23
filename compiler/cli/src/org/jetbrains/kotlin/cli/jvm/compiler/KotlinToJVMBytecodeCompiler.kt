@@ -326,7 +326,6 @@ object KotlinToJVMBytecodeCompiler {
                 syntaxErrors =
                     syntaxErrors or AnalyzerWithCompilerReport.reportSyntaxErrors(ktFile, environment.messageCollector).isHasErrors
             }
-            if (syntaxErrors) return false
 
             val moduleConfiguration = projectConfiguration.applyModuleProperties(module, buildFile)
 
@@ -368,7 +367,7 @@ object KotlinToJVMBytecodeCompiler {
             // TODO: maybe we should not do it in presence of errors, but tests at the moment expect lookups to be reported
             session.firLookupTracker?.flushLookups()
 
-            if (firDiagnostics.any { it.severity == Severity.ERROR }) {
+            if (syntaxErrors || firDiagnostics.any { it.severity == Severity.ERROR }) {
                 return false
             }
 
