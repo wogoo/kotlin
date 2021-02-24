@@ -32,6 +32,10 @@ import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsSubTargetContainerDsl
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsSubTargetDsl
 import org.jetbrains.kotlin.gradle.targets.js.dukat.DukatCompilationResolverPlugin
+import org.jetbrains.kotlin.gradle.targets.js.dukat.DukatCompilationResolverPlugin.Companion.shouldDependOnDukatIntegrationTask
+import org.jetbrains.kotlin.gradle.targets.js.dukat.DukatCompilationResolverPlugin.Companion.shouldLegacyUseIrTargetDukatIntegrationTask
+import org.jetbrains.kotlin.gradle.targets.js.dukat.ExternalsOutputFormat
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
 import org.jetbrains.kotlin.gradle.tasks.dependsOn
 import org.jetbrains.kotlin.gradle.utils.dashSeparatedName
@@ -228,10 +232,25 @@ abstract class AbstractKotlinTarget(
                 }
             }
 
-            (producingCompilation.target as KotlinJsSubTargetContainerDsl)
-                .whenNodejsConfigured(configAction)
-            (producingCompilation.target as KotlinJsSubTargetContainerDsl)
-                .whenBrowserConfigured(configAction)
+            // See DukatCompilationResolverPlugin for details
+            if (producingCompilation.shouldDependOnDukatIntegrationTask()) {
+                (producingCompilation.target as KotlinJsSubTargetContainerDsl)
+                    .whenNodejsConfigured(configAction)
+                (producingCompilation.target as KotlinJsSubTargetContainerDsl)
+                    .whenBrowserConfigured(configAction)
+            } else if (producingCompilation.shouldLegacyUseIrTargetDukatIntegrationTask()) {
+                (producingCompilation.target as KotlinJsIrTarget)
+                    .legacyTarget
+                    ?.compilations
+                    ?.named(producingCompilation.name) {
+                        if (it.externalsOutputFormat == ExternalsOutputFormat.SOURCE) {
+                            (producingCompilation.target as KotlinJsSubTargetContainerDsl)
+                                .whenNodejsConfigured(configAction)
+                            (producingCompilation.target as KotlinJsSubTargetContainerDsl)
+                                .whenBrowserConfigured(configAction)
+                        }
+                    }
+            }
         }
     }
 

@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.gradle.targets.js.dukat
 
 import org.gradle.api.internal.project.ProjectInternal
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJsCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.disambiguateName
 import org.jetbrains.kotlin.gradle.targets.js.KotlinJsTarget
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
@@ -38,31 +39,29 @@ internal class DukatCompilationResolverPlugin(
     val integratedTaskName = npmProject.compilation.disambiguateName(GENERATE_EXTERNALS_INTEGRATED_TASK_SIMPLE_NAME)
     val separateTaskName = npmProject.compilation.disambiguateName(GENERATE_EXTERNALS_TASK_SIMPLE_NAME)
 
+    private val integratedTask by lazy(LazyThreadSafetyMode.NONE) {
+        project.registerTask<IntegratedDukatTask>(
+            integratedTaskName,
+            listOf(compilation)
+        ) {
+            it.group = DUKAT_TASK_GROUP
+            it.description = "Integrated generation Kotlin/JS external declarations for .d.ts files in $compilation"
+            it.externalsOutputFormat = externalsOutputFormat
+            it.dependsOn(nodeJs.npmInstallTaskProvider, npmProject.packageJsonTask)
+        }
+    }
+
     init {
         val externalsOutputFormat = compilation.externalsOutputFormat
 
         gradleModelPostProcess(externalsOutputFormat, npmProject)
 
-        val integratedTask = project.registerTask<IntegratedDukatTask>(
-            integratedTaskName,
-            listOf(compilation)
-        ) {
-            it.group = DUKAT_TASK_GROUP
-            it.description = "Integrated generation Kotlin/JS external declarations for .d.ts files in ${compilation}"
-            it.externalsOutputFormat = externalsOutputFormat
-            it.dependsOn(nodeJs.npmInstallTaskProvider, npmProject.packageJsonTask)
-        }
-
-        val target = compilation.target
-
-        val legacyTargetNotReuseIrTask =
-            target is KotlinJsTarget && (target.irTarget == null || externalsOutputFormat != ExternalsOutputFormat.SOURCE)
-        if (target is KotlinJsIrTarget || legacyTargetNotReuseIrTask) {
+        if (compilation.shouldDependOnDukatIntegrationTask()) {
             compilation.compileKotlinTaskProvider.dependsOn(integratedTask)
         }
 
-        if (target is KotlinJsIrTarget && target.legacyTarget != null) {
-            target.legacyTarget?.compilations?.named(compilation.name) {
+        if (compilation.shouldLegacyUseIrTargetDukatIntegrationTask()) {
+            (compilation.target as KotlinJsIrTarget).legacyTarget?.compilations?.named(compilation.name) {
                 if (it.externalsOutputFormat == ExternalsOutputFormat.SOURCE) {
                     it.compileKotlinTaskProvider.dependsOn(integratedTask)
                 }
@@ -118,6 +117,18 @@ internal class DukatCompilationResolverPlugin(
         const val VERSION = "3"
         internal const val GENERATE_EXTERNALS_INTEGRATED_TASK_SIMPLE_NAME = "generateExternalsIntegrated"
         internal const val GENERATE_EXTERNALS_TASK_SIMPLE_NAME = "generateExternals"
+
+        internal fun KotlinJsCompilation.shouldDependOnDukatIntegrationTask(): Boolean = with(target) {
+            this is KotlinJsIrTarget ||
+                (this is KotlinJsTarget &&
+                    (irTarget == null || externalsOutputFormat != ExternalsOutputFormat.SOURCE)
+                    )
+        }
+
+        internal fun KotlinJsCompilation.shouldLegacyUseIrTargetDukatIntegrationTask(): Boolean =
+            with(target) {
+                this is KotlinJsIrTarget && legacyTarget != null
+            }
     }
 }
 
