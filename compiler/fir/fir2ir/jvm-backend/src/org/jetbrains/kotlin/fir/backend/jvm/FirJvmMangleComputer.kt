@@ -73,21 +73,26 @@ open class FirJvmMangleComputer(
     }
 
     private fun FirDeclaration.visitParent() {
-        val (parentPackageFqName, parentClassId) = when (this) {
-            is FirCallableMemberDeclaration<*> -> this.containingClass()?.classId?.let { it.packageFqName to it } ?: return
-            is FirClassLikeDeclaration<*> -> this.symbol.classId.let { it.packageFqName to it.outerClassId }
+        val parentClassLike = when (this) {
+            is FirCallableMemberDeclaration<*> -> containingClass()?.toSymbol(session)?.fir ?: return
+            is FirClassLikeDeclaration<*> -> {
+                val (parentPackageFqName, parentClassId) = this.symbol.classId.let { it.packageFqName to it.outerClassId }
+                if (parentClassId != null && !parentClassId.isLocal) {
+                    this@FirJvmMangleComputer.session.symbolProvider.getClassLikeSymbolByFqName(parentClassId)?.fir
+                        ?: error("Attempt to find parent ($parentClassId) for probably-local declaration!")
+                } else {
+                    if (parentClassId == null && !parentPackageFqName.isRoot) {
+                        builder.appendName(parentPackageFqName.asString())
+                    }
+                    return
+                }
+            }
             else -> return
         }
-        if (parentClassId != null && !parentClassId.isLocal) {
-            val parentClassLike = this@FirJvmMangleComputer.session.symbolProvider.getClassLikeSymbolByFqName(parentClassId)?.fir
-                ?: error("Attempt to find parent ($parentClassId) for probably-local declaration!")
-            if (parentClassLike is FirRegularClass || parentClassLike is FirTypeAlias) {
-                parentClassLike.accept(this@FirJvmMangleComputer, false)
-            } else {
-                error("Strange class-like declaration: ${parentClassLike.render()}")
-            }
-        } else if (parentClassId == null && !parentPackageFqName.isRoot) {
-            builder.appendName(parentPackageFqName.asString())
+        if (parentClassLike is FirRegularClass || parentClassLike is FirTypeAlias) {
+            parentClassLike.accept(this@FirJvmMangleComputer, false)
+        } else {
+            error("Strange class-like declaration: ${parentClassLike.render()}")
         }
     }
 
