@@ -17,7 +17,8 @@ import org.jetbrains.kotlin.cli.common.ExitCode.COMPILATION_ERROR
 import org.jetbrains.kotlin.cli.common.ExitCode.OK
 import org.jetbrains.kotlin.cli.common.arguments.K2JSCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.K2JsArgumentConstants
-import org.jetbrains.kotlin.cli.common.arguments.K2JsArgumentConstants.*
+import org.jetbrains.kotlin.cli.common.arguments.K2JsArgumentConstants.DCE_RUNTIME_DIAGNOSTIC_EXCEPTION
+import org.jetbrains.kotlin.cli.common.arguments.K2JsArgumentConstants.DCE_RUNTIME_DIAGNOSTIC_LOG
 import org.jetbrains.kotlin.cli.common.config.addKotlinSourceRoot
 import org.jetbrains.kotlin.cli.common.extensions.ScriptEvaluationExtension
 import org.jetbrains.kotlin.cli.common.messages.AnalyzerWithCompilerReport
@@ -203,7 +204,8 @@ class K2JsIrCompiler : CLICompiler<K2JSCompilerArguments>() {
                 irFactory = PersistentIrFactory(), // TODO IrFactoryImpl?
                 outputKlibPath = outputFile.path,
                 nopack = arguments.irProduceKlibDir,
-            jsOutputName = FileUtil.getNameWithoutExtension(outputFile),)
+                jsOutputName = FileUtil.getNameWithoutExtension(outputFile),
+            )
         }
 
         if (arguments.irProduceJs) {
@@ -270,15 +272,12 @@ class K2JsIrCompiler : CLICompiler<K2JSCompilerArguments>() {
                 propertyLazyInitialization = arguments.irPropertyLazyInitialization,
                 traceMethods = arguments.traceMethods,
                 focusOnTest = arguments.irFocusOnTest,
-                    forceAllJs = arguments.irForceAllJs,
-                    legacyPropertyAccess = arguments.irLegacyPropertyAccess,
-                    irPerModulePrefix = arguments.irPerModulePrefix
-                )
-            } catch (e: JsIrCompilationError) {
-                return COMPILATION_ERROR
-            }
+                forceAllJs = arguments.irForceAllJs,
+                legacyPropertyAccess = arguments.irLegacyPropertyAccess,
+                irPerModulePrefix = arguments.irPerModulePrefix
+            )
 
-            val jsCode = if (runDce && !arguments.irDceDriven) compiledModule.dceJsCode!! else compiledModule.jsCode!!
+            val jsCode = if (arguments.irDce && !arguments.irDceDriven) compiledModule.dceJsCode!! else compiledModule.jsCode!!
             outputFile.writeText(jsCode.mainModule)
             jsCode.dependencies.forEach { (name, content) ->
                 outputFile.resolveSibling("$name.js").writeText(content)
