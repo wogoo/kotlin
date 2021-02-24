@@ -85,7 +85,7 @@ class FloorDivModTest {
 
     @Test
     fun byteDivMod() {
-        fun check(a: Byte, b: Byte, expectedFd: Int? = null, expectedMod: Int? = null) {
+        fun check(a: Byte, b: Byte, expectedFd: Int? = null, expectedMod: Byte? = null) {
             val div = a / b
             val rem = a % b
             val fd = a.floorDiv(b)
@@ -95,7 +95,7 @@ class FloorDivModTest {
                 expectedFd?.let { assertEquals(it, fd) }
                 expectedMod?.let { assertEquals(it, mod) }
                 assertEquals(div - if (a.toInt().sign != b.toInt().sign && rem != 0) 1 else 0, fd)
-                assertEquals(a - b * fd, mod)
+                assertEquals(a - b * fd, mod.toInt())
             } catch (e: AssertionError) {
                 fail("a: $a, b: $b, div: $div, rem: $rem, floorDiv: $fd, mod: $mod", e)
             }
@@ -120,7 +120,7 @@ class FloorDivModTest {
     
     @Test
     fun shortDivMod() {
-        fun check(a: Short, b: Short, expectedFd: Int? = null, expectedMod: Int? = null) {
+        fun check(a: Short, b: Short, expectedFd: Int? = null, expectedMod: Short? = null) {
             val div = a / b
             val rem = a % b
             val fd = a.floorDiv(b)
@@ -130,7 +130,7 @@ class FloorDivModTest {
                 expectedFd?.let { assertEquals(it, fd) }
                 expectedMod?.let { assertEquals(it, mod) }
                 assertEquals(div - if (a.toInt().sign != b.toInt().sign && rem != 0) 1 else 0, fd)
-                assertEquals(a - b * fd, mod)
+                assertEquals(a - b * fd, mod.toInt())
             } catch (e: AssertionError) {
                 fail("a: $a, b: $b, div: $div, rem: $rem, floorDiv: $fd, mod: $mod", e)
             }
@@ -151,6 +151,54 @@ class FloorDivModTest {
             val b = Random.nextInt().toShort().let { if (it == 0.toShort()) 1 else it }
             check(a, b)
         }
+    }
+
+    @Test
+    fun longIntMod() {
+        fun check(a: Long, b: Int, expectedFd: Long? = null, expectedMod: Int? = null) {
+            val div = a / b
+            val rem = a % b
+            val fd = a.floorDiv(b)
+            val mod = a.mod(b)
+
+            try {
+                expectedFd?.let { assertEquals(it, fd) }
+                expectedMod?.let { assertEquals(it, mod) }
+                assertEquals(div - if (a.sign != b.sign && rem != 0L) 1 else 0, fd)
+                assertEquals(a - b * fd, mod.toLong())
+            } catch (e: AssertionError) {
+                fail("a: $a, b: $b, div: $div, rem: $rem, floorDiv: $fd, mod: $mod", e)
+            }
+        }
+
+        check(Long.MAX_VALUE, 2, Long.MAX_VALUE / 2, 1)
+        check(Long.MAX_VALUE, 1.shl(30), expectedMod = 1.shl(30) - 1)
+        check(-1L, 1.shl(30), expectedMod = 1.shl(30) - 1)
+        check(Long.MAX_VALUE, Int.MAX_VALUE, expectedMod = 1)
+        check(Long.MAX_VALUE, Int.MIN_VALUE, expectedMod = -1)
+    }
+
+    @Test
+    fun shortIntMod() {
+        fun check(a: Short, b: Int, expectedFd: Int? = null, expectedMod: Int? = null) {
+            val div = a / b
+            val rem = a % b
+            val fd = a.floorDiv(b)
+            val mod = a.mod(b)
+
+            try {
+                expectedFd?.let { assertEquals(it, fd) }
+                expectedMod?.let { assertEquals(it, mod) }
+                assertEquals(div - if (a.toInt().sign != b.sign && rem != 0) 1 else 0, fd)
+                assertEquals(a - b * fd, mod)
+            } catch (e: AssertionError) {
+                fail("a: $a, b: $b, div: $div, rem: $rem, floorDiv: $fd, mod: $mod", e)
+            }
+        }
+
+        check(Short.MAX_VALUE, Int.MAX_VALUE, 0, Short.MAX_VALUE.toInt())
+        check(Short.MAX_VALUE, Int.MIN_VALUE, -1, Int.MIN_VALUE + Short.MAX_VALUE)
+        check((-1).toShort(), 1.shl(30), -1, 1.shl(30) - 1)
     }
 
 }

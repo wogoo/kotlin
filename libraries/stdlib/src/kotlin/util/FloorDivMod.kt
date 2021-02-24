@@ -16,8 +16,8 @@ public inline fun Byte.floorDiv(other: Byte): Int =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Byte.mod(other: Byte): Int = 
-    this.toInt().mod(other.toInt())
+public inline fun Byte.mod(other: Byte): Byte = 
+    this.toInt().mod(other.toInt()).toByte()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
@@ -26,8 +26,8 @@ public inline fun Byte.floorDiv(other: Short): Int =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Byte.mod(other: Short): Int = 
-    this.toInt().mod(other.toInt())
+public inline fun Byte.mod(other: Short): Short = 
+    this.toInt().mod(other.toInt()).toShort()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
@@ -56,8 +56,8 @@ public inline fun Short.floorDiv(other: Byte): Int =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Short.mod(other: Byte): Int = 
-    this.toInt().mod(other.toInt())
+public inline fun Short.mod(other: Byte): Byte = 
+    this.toInt().mod(other.toInt()).toByte()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
@@ -66,8 +66,8 @@ public inline fun Short.floorDiv(other: Short): Int =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Short.mod(other: Short): Int = 
-    this.toInt().mod(other.toInt())
+public inline fun Short.mod(other: Short): Short = 
+    this.toInt().mod(other.toInt()).toShort()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
@@ -96,8 +96,8 @@ public inline fun Int.floorDiv(other: Byte): Int =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Int.mod(other: Byte): Int = 
-    this.mod(other.toInt())
+public inline fun Int.mod(other: Byte): Byte = 
+    this.mod(other.toInt()).toByte()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
@@ -106,8 +106,8 @@ public inline fun Int.floorDiv(other: Short): Int =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Int.mod(other: Short): Int = 
-    this.mod(other.toInt())
+public inline fun Int.mod(other: Short): Short = 
+    this.mod(other.toInt()).toShort()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
@@ -141,8 +141,8 @@ public inline fun Long.floorDiv(other: Byte): Long =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Long.mod(other: Byte): Long = 
-    this.mod(other.toLong())
+public inline fun Long.mod(other: Byte): Byte = 
+    this.mod(other.toLong()).toByte()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
@@ -151,8 +151,8 @@ public inline fun Long.floorDiv(other: Short): Long =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Long.mod(other: Short): Long = 
-    this.mod(other.toLong())
+public inline fun Long.mod(other: Short): Short = 
+    this.mod(other.toLong()).toShort()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
@@ -161,8 +161,8 @@ public inline fun Long.floorDiv(other: Int): Long =
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly
-public inline fun Long.mod(other: Int): Long = 
-    this.mod(other.toLong())
+public inline fun Long.mod(other: Int): Int = 
+    this.mod(other.toLong()).toInt()
 
 @SinceKotlin("1.5")
 @kotlin.internal.InlineOnly

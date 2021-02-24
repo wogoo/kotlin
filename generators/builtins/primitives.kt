@@ -439,23 +439,26 @@ class GenerateFloorDivMod(out: PrintWriter) : BuiltInsSourceGenerator(out) {
     }
 
     private fun generateMod(thisKind: PrimitiveType, otherKind: PrimitiveType) {
-        val returnType = getOperatorReturnType(thisKind, otherKind)
-        val returnTypeName = returnType.capitalized
+        val operationType = getOperatorReturnType(thisKind, otherKind)
+        val returnType = otherKind
         out.println("""@SinceKotlin("1.5")""")
         out.println("@kotlin.internal.InlineOnly")
-        val declaration = "public inline fun ${thisKind.capitalized}.mod(other: ${otherKind.capitalized}): $returnTypeName"
+        val declaration = "public inline fun ${thisKind.capitalized}.mod(other: ${otherKind.capitalized}): ${returnType.capitalized}"
         if (thisKind == otherKind && thisKind >= PrimitiveType.INT) {
             out.println(
                 """
                     $declaration {
                         val r = this % other
-                        return r + (other and (((r xor other) and (r or -r)) shr ${returnType.bitSize - 1}))
+                        return r + (other and (((r xor other) and (r or -r)) shr ${operationType.bitSize - 1}))
                     }
                 """.trimIndent()
             )
         } else {
             out.println("$declaration = ")
-            out.println("    ${convert("this", thisKind, returnType)}.mod(${convert("other", otherKind, returnType)})")
+            out.println("    " + convert(
+                "${convert("this", thisKind, operationType)}.mod(${convert("other", otherKind, operationType)})",
+                operationType, returnType
+            ))
         }
         out.println()
     }
