@@ -45,9 +45,21 @@ public class ArgumentUtils {
     @NotNull
     public static List<String> convertArgumentsToStringList(@NotNull CommonToolArguments arguments)
             throws InstantiationException, IllegalAccessException, InvocationTargetException {
+        return convertArgumentsToStringListInternal(arguments, true);
+    }
+
+    @NotNull
+    public static List<String> convertArgumentsToStringListIgnoreDefaults(@NotNull CommonToolArguments arguments)
+            throws InstantiationException, IllegalAccessException, InvocationTargetException {
+        return convertArgumentsToStringListInternal(arguments, false);
+    }
+
+    @NotNull
+    public static List<String> convertArgumentsToStringListInternal(@NotNull CommonToolArguments arguments, @NotNull boolean withDefaults)
+            throws InstantiationException, IllegalAccessException, InvocationTargetException {
         List<String> result = new ArrayList<>();
         Class<? extends CommonToolArguments> argumentsClass = arguments.getClass();
-        convertArgumentsToStringList(arguments, argumentsClass.newInstance(), JvmClassMappingKt.getKotlinClass(argumentsClass), result);
+        convertArgumentsToStringList(arguments, argumentsClass.newInstance(), JvmClassMappingKt.getKotlinClass(argumentsClass), result, withDefaults);
         result.addAll(arguments.getFreeArgs());
         result.addAll(CollectionsKt.map(arguments.getInternalArguments(), InternalArgument::getStringRepresentation));
         return result;
@@ -58,7 +70,8 @@ public class ArgumentUtils {
             @NotNull CommonToolArguments arguments,
             @NotNull CommonToolArguments defaultArguments,
             @NotNull KClass<?> clazz,
-            @NotNull List<String> result
+            @NotNull List<String> result,
+            @NotNull boolean substituteDefaults
     ) throws IllegalAccessException, InstantiationException, InvocationTargetException {
         for (KProperty1 property : KClasses.getMemberProperties(clazz)) {
             Argument argument = findInstance(property.getAnnotations(), Argument.class);
@@ -69,8 +82,9 @@ public class ArgumentUtils {
             Object value = property.get(arguments);
             Object defaultValue = property.get(defaultArguments);
 
-            if (value == null ||
-                (findInstance(property.getAnnotations(), SubstituteDefaultIfImplicit.class) == null && Objects.equals(value, defaultValue))) {
+            boolean isImplicitDefaultSubstitutable = substituteDefaults && (findInstance(property.getAnnotations(), SubstituteDefaultIfImplicit.class) != null);
+
+            if (value == null || (!isImplicitDefaultSubstitutable && Objects.equals(value, defaultValue))) {
                 continue;
             }
 
