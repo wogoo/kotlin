@@ -152,19 +152,25 @@ class UnsignedTypeGenerator(val type: UnsignedType, out: PrintWriter) : BuiltIns
 
     private fun generateFloorDivMod(name: String, doc: String) {
         for (otherType in UnsignedType.values()) {
-            val returnType = getOperatorReturnType(type, otherType)
+            val operationType = getOperatorReturnType(type, otherType)
+            val returnType = if (name == "mod") otherType else operationType
 
             out.println("    /** $doc */")
             out.println("    @kotlin.internal.InlineOnly")
             out.print("    public inline fun $name(other: ${otherType.capitalized}): ${returnType.capitalized} = ")
-            if (type == otherType && type == returnType) {
+            if (type == otherType && type == operationType) {
                 when (name) {
                     "floorDiv" -> out.println("div(other)")
                     "mod" -> out.println("rem(other)")
                     else -> error(name)
                 }
             } else {
-                out.println("${convert("this", type, returnType)}.$name(${convert("other", otherType, returnType)})")
+                out.println(
+                    convert(
+                        "${convert("this", type, operationType)}.$name(${convert("other", otherType, operationType)})",
+                        operationType, returnType
+                    )
+                )
             }
         }
         out.println()

@@ -148,10 +148,10 @@ public inline class UByte @PublishedApi internal constructor(@PublishedApi inter
 
     /** TODO */
     @kotlin.internal.InlineOnly
-    public inline fun mod(other: UByte): UInt = this.toUInt().mod(other.toUInt())
+    public inline fun mod(other: UByte): UByte = this.toUInt().mod(other.toUInt()).toUByte()
     /** TODO */
     @kotlin.internal.InlineOnly
-    public inline fun mod(other: UShort): UInt = this.toUInt().mod(other.toUInt())
+    public inline fun mod(other: UShort): UShort = this.toUInt().mod(other.toUInt()).toUShort()
     /** TODO */
     @kotlin.internal.InlineOnly
     public inline fun mod(other: UInt): UInt = this.toUInt().mod(other)

@@ -148,13 +148,13 @@ public inline class ULong @PublishedApi internal constructor(@PublishedApi inter
 
     /** TODO */
     @kotlin.internal.InlineOnly
-    public inline fun mod(other: UByte): ULong = this.mod(other.toULong())
+    public inline fun mod(other: UByte): UByte = this.mod(other.toULong()).toUByte()
     /** TODO */
     @kotlin.internal.InlineOnly
-    public inline fun mod(other: UShort): ULong = this.mod(other.toULong())
+    public inline fun mod(other: UShort): UShort = this.mod(other.toULong()).toUShort()
     /** TODO */
     @kotlin.internal.InlineOnly
-    public inline fun mod(other: UInt): ULong = this.mod(other.toULong())
+    public inline fun mod(other: UInt): UInt = this.mod(other.toULong()).toUInt()
     /** TODO */
     @kotlin.internal.InlineOnly
     public inline fun mod(other: ULong): ULong = rem(other)
