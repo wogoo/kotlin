@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.gradle
 
 import org.jetbrains.kotlin.gradle.util.modify
 import org.jetbrains.kotlin.konan.target.HostManager
-import org.junit.Assume
 import java.io.File
 import java.util.zip.ZipFile
 import kotlin.test.Test
@@ -177,7 +176,7 @@ class KlibBasedMppIT : BaseGradleIT() {
 
             assertFileExists("build/classes/kotlin/metadata/commonMain/default/manifest")
             assertFileExists("build/classes/kotlin/metadata/jvmAndJsMain/default/manifest")
-            assertFileExists("build/classes/kotlin/metadata/linuxMain/${projectName}_linuxMain.klib")
+            assertFileExists("build/classes/kotlin/metadata/linuxMain/klib/${projectName}_linuxMain.klib")
 
             // Check that the common and JVM+JS source sets don't receive the Kotlin/Native stdlib in the classpath:
             run {
