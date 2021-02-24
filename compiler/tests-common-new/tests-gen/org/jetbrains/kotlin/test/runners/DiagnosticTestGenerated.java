@@ -17996,6 +17996,52 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
             }
 
             @Nested
+            @TestMetadata("compiler/testData/diagnostics/tests/multiplatform/exhaustiveness")
+            @TestDataPath("$PROJECT_ROOT")
+            public class Exhaustiveness {
+                @Test
+                public void testAllFilesPresentInExhaustiveness() throws Exception {
+                    KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/tests/multiplatform/exhaustiveness"), Pattern.compile("^(.*)\\.kts?$"), Pattern.compile("^(.+)\\.fir\\.kts?$"), true);
+                }
+
+                @Test
+                @TestMetadata("commonEnum.kt")
+                public void testCommonEnum() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/multiplatform/exhaustiveness/commonEnum.kt");
+                }
+
+                @Test
+                @TestMetadata("commonSealedClass.kt")
+                public void testCommonSealedClass() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/multiplatform/exhaustiveness/commonSealedClass.kt");
+                }
+
+                @Test
+                @TestMetadata("commonSealedInterface.kt")
+                public void testCommonSealedInterface() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/multiplatform/exhaustiveness/commonSealedInterface.kt");
+                }
+
+                @Test
+                @TestMetadata("expectEnum.kt")
+                public void testExpectEnum() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/multiplatform/exhaustiveness/expectEnum.kt");
+                }
+
+                @Test
+                @TestMetadata("expectSealedClass.kt")
+                public void testExpectSealedClass() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/multiplatform/exhaustiveness/expectSealedClass.kt");
+                }
+
+                @Test
+                @TestMetadata("expectSealedInterface.kt")
+                public void testExpectSealedInterface() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/multiplatform/exhaustiveness/expectSealedInterface.kt");
+                }
+            }
+
+            @Nested
             @TestMetadata("compiler/testData/diagnostics/tests/multiplatform/generic")
             @TestDataPath("$PROJECT_ROOT")
             public class Generic {
