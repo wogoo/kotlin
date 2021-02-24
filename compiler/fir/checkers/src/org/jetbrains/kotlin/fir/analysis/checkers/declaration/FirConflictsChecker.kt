@@ -144,7 +144,6 @@ object FirConflictsChecker : FirBasicDeclarationChecker() {
                         override fun visitSimpleFunction(simpleFunction: FirSimpleFunction) {}
                     }
 
-
                     if (!declarationName.isSpecial) {
                         packageMemberScope.processClassifiersByNameWithSubstitution(declarationName) { symbol, _ ->
                             collectExternalConflict(
