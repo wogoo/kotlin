@@ -190,7 +190,7 @@ class FloorDivModTest {
                 expectedFd?.let { assertEquals(it, fd) }
                 expectedMod?.let { assertEquals(it, mod) }
                 assertEquals(div - if (a.toInt().sign != b.sign && rem != 0) 1 else 0, fd)
-                assertEquals(a - b * fd, mod)
+                assertEquals(a.toInt() - b * fd, mod) // a.toInt() to workaround Int-out-of-range in JS legacy
             } catch (e: AssertionError) {
                 fail("a: $a, b: $b, div: $div, rem: $rem, floorDiv: $fd, mod: $mod", e)
             }
