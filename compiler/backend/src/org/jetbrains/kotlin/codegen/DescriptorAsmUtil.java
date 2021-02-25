@@ -427,10 +427,6 @@ public class DescriptorAsmUtil {
             return null;
         }
 
-        if (memberDescriptor instanceof FunctionDescriptor && ((FunctionDescriptor) memberDescriptor).isSuspend()) {
-            return NO_FLAG_PACKAGE_PRIVATE;
-        }
-
         if (memberDescriptor instanceof AccessorForCompanionObjectInstanceFieldDescriptor) {
             return NO_FLAG_PACKAGE_PRIVATE;
         }
